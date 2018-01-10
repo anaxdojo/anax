@@ -1,11 +1,14 @@
 package org.anax.framework.config;
 
 import org.anax.framework.configuration.AnaxDriver;
+import org.anax.framework.controllers.WebController;
+import org.anax.framework.controllers.WebDriverWebController;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -47,5 +50,10 @@ public class AnaxChromeDriver {
         }
     }
 
+    @ConditionalOnMissingBean
+    @Bean
+    public WebController getWebController(@Autowired AnaxDriver anaxDriver, @Value("${anax.defaultWaitSeconds:5}") Integer defaultWaitSeconds) throws Exception {
+        return new WebDriverWebController(anaxDriver.getWebDriver(), defaultWaitSeconds);
+    }
 
 }
