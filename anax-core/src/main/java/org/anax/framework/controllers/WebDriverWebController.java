@@ -2,7 +2,6 @@ package org.anax.framework.controllers;
 
 
 import lombok.extern.slf4j.Slf4j;
-import lombok.extern.slf4j.XSlf4j;
 import org.anax.framework.util.HttpCookie;
 import org.openqa.selenium.*;
 
@@ -60,17 +59,6 @@ public class WebDriverWebController implements WebController {
     }
 
 
-
-    /**
-     * Gets the selenium instance.
-     *
-     * @param //baseUrl
-     *            the base url
-     * @return the selenium instance
-     */
-    //public Selenium getSeleniumInstance(String baseUrl) {
-    //	return new WebDriverBackedSelenium(driver, baseUrl);
-    //}
 
     /*
      * (non-Javadoc)
@@ -147,7 +135,7 @@ public class WebDriverWebController implements WebController {
         } else if (locator.startsWith("//")) {
             return By.xpath(locator);
         } else if (locator.startsWith(CSS)) {
-            return ByExtended.cssSelector(findLocatorSubstring(locator));
+            return ByExtended.cssSelector(findLocatorSubstring(locator), getDriver());
         } else if (locator.startsWith(NAME)) {
             return By.name(findLocatorSubstring(locator));
         } else if (locator.startsWith(LINK)) {
