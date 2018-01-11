@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = "org.anax.framework.configuration")
+@ComponentScan(basePackages = "org.anax.framework")
 public class AnaxChromeApplication {
 
 	public static void main(String[] args) {
