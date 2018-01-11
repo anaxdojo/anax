@@ -9,19 +9,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
 
     private final ApplicationContext context;
 
-    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context) {
-        this.context = context;
-    }
+    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context) {this.context = context;}
 
     /**
-     * for every bean that we receive, we check to see if the @AnaxTest annotation is declared on
-     * it's methods. For every method that matches, we add this to our Test execution context
+     * for every bean that we receive, we check to see if the @Anax... annotations is declared on
+     * it's methods or class. For every method that matches, we add this to our Test execution context
      * for later processing
      * @param bean the bean object
      * @param beanName the bean name
@@ -30,28 +32,55 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
      */
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-
-        ReflectionUtils.doWithMethods(bean.getClass(), method -> {
-            for (Annotation ant : method.getDeclaredAnnotations()) {
-
-                if (ant.annotationType() == AnaxTest.class) {
-                    //TODO this method needs to be added to our Test methods to execute
-                    // in our Test Framework bean
-                    AnaxTest testAnnotation = (AnaxTest)ant;
-                    int order = testAnnotation.ordering();
-                    boolean skip = testAnnotation.skip();
-                    if (!skip) {
-                        // add bean, method, order
-                    }
-                } else if (ant.annotationType() == AnaxBeforeClass.class) {
-
-                    //TODO this method needs to be added to our Test methods to execute BEFORE the class
-                } else if (ant.annotationType() == AnaxAfterClass.class) {
-
-                    //TODO this method needs to be added to our Test methods to execute AFTER the class
-                }
+        Class<?> aClass = bean.getClass();
+        //class level:BeforeTest
+        for (Annotation classAnt : aClass.getAnnotations()) {
+            if (classAnt.annotationType() == AnaxBeforeTest.class) {
+                // add bean in order to run before methods annotation
             }
+        }
+
+        // method level:
+        ReflectionUtils.doWithMethods(aClass, method -> {
+            Stream<Annotation> stream = Arrays.stream(method.getDeclaredAnnotations());
+            stream.filter(item -> item.annotationType() == AnaxBeforeTestStep.class)
+                    .findFirst().ifPresent(testAnnotation -> {
+                AnaxBeforeTestStep beforeStep = (AnaxBeforeTestStep) testAnnotation;
+
+                if (!beforeStep.skip()) {
+                    //TODO this method needs to be added to our Test methods to execute BEFORE the step
+                    // in our Test Framework bean
+                }
+            });
+
+            stream.filter(item -> item.annotationType() == AnaxTestStep.class)
+                    .findFirst().ifPresent(testAnnotation -> {
+                AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
+
+                int order = testStep.ordering();
+                boolean skip = testStep.skip();
+                if (!skip) {
+                    // add bean, method, order
+                }
+            });
+
+            stream.filter(item -> item.annotationType() == AnaxAfterTestStep.class)
+                    .findFirst().ifPresent(testAnnotation -> {
+                AnaxAfterTestStep afterStep = (AnaxAfterTestStep) testAnnotation;
+
+                if (!afterStep.skip()) {
+                    //TODO this method needs to be added to our Test methods to execute AFTER the step
+                    // in our Test Framework bean
+                }
+            });
         });
+
+        //class level:AfterTest
+        for (Annotation classAnt : aClass.getAnnotations()) {
+            if (classAnt.annotationType() == AnaxAfterTest.class) {
+                // add bean in order to run after methods annotation
+            }
+        }
 
         return bean;
     }

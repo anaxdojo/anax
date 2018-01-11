@@ -3,10 +3,10 @@ package org.anax.framework.annotations;
 
 import java.lang.annotation.*;
 
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface AnaxTest {
+public @interface AnaxTestStep {
     /**
      * ordering default 0 implies random order
      */
