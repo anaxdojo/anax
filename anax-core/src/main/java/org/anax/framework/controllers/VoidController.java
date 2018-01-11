@@ -20,7 +20,7 @@ class VoidController implements WebController {
     }
 
     @Override
-    public void disableActionsLogging() {
+    public void disableActionsLogging(){
         // TODO Auto-generated method stub
 
     }
