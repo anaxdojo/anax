@@ -6,6 +6,13 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface AnaxBeforeTestStep {
+
+    /**
+     * method name as precondition or postcondition
+     * @return
+     */
+    String value() default "";
+
     boolean skip() default false;
 
 }
