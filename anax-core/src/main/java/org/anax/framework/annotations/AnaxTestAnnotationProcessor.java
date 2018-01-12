@@ -40,10 +40,11 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
         //class level:AnaxTest
         Arrays.stream(aClass.getAnnotations())
             .filter(classAnn->classAnn.annotationType() == AnaxTest.class)
-            .findFirst().ifPresent(item->{
-                    // add bean in order to run before methods annotation
+            .findFirst().ifPresent(classAnnotation ->{
+            // add bean in order to register as valid class for tests
+            //todo register class
 
-            // method level:
+            // then, on method level:
             ReflectionUtils.doWithMethods(aClass, method -> {
                 Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxBeforeTest.class)
                         .findFirst().ifPresent(testAnnotation -> {
