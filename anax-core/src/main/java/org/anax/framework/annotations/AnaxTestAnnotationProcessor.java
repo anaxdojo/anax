@@ -32,16 +32,14 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         Class<?> aClass = bean.getClass();
         //class level:BeforeTest
-        for (Annotation classAnt : aClass.getAnnotations()) {
-            if (classAnt.annotationType() == AnaxBeforeTest.class) {
-                // add bean in order to run before methods annotation
-            }
-        }
+        Arrays.stream(aClass.getAnnotations()).filter(classAnn->classAnn.annotationType() == AnaxBeforeTest.class).findFirst()
+                .ifPresent(item->{
+                    // add bean in order to run before methods annotation
+                });
 
         // method level:
         ReflectionUtils.doWithMethods(aClass, method -> {
-            Stream<Annotation> stream = Arrays.stream(method.getDeclaredAnnotations());
-            stream.filter(item -> item.annotationType() == AnaxBeforeTestStep.class)
+            Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxBeforeTestStep.class)
                     .findFirst().ifPresent(testAnnotation -> {
                 AnaxBeforeTestStep beforeStep = (AnaxBeforeTestStep) testAnnotation;
 
@@ -51,7 +49,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                 }
             });
 
-            stream.filter(item -> item.annotationType() == AnaxTestStep.class)
+            Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxTestStep.class)
                     .findFirst().ifPresent(testAnnotation -> {
                 AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
 
@@ -62,7 +60,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                 }
             });
 
-            stream.filter(item -> item.annotationType() == AnaxAfterTestStep.class)
+            Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxAfterTestStep.class)
                     .findFirst().ifPresent(testAnnotation -> {
                 AnaxAfterTestStep afterStep = (AnaxAfterTestStep) testAnnotation;
 
@@ -74,11 +72,10 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
         });
 
         //class level:AfterTest
-        for (Annotation classAnt : aClass.getAnnotations()) {
-            if (classAnt.annotationType() == AnaxAfterTest.class) {
-                // add bean in order to run after methods annotation
-            }
-        }
+        Arrays.stream(aClass.getAnnotations()).filter(classAnn->classAnn.annotationType() == AnaxAfterTest.class).findFirst()
+                .ifPresent(item->{
+                    // add bean in order to run after methods annotation
+                });
 
         return bean;
     }
