@@ -10,6 +10,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.net.URL;
@@ -26,6 +27,7 @@ public class AnaxFirefoxDriver {
     String remotePort;
 
 
+    @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
         DesiredCapabilities capabilities = DesiredCapabilities.firefox();
@@ -48,6 +50,7 @@ public class AnaxFirefoxDriver {
         }
     }
 
+    @ConditionalOnMissingBean
     @Bean
     public WebController getWebController(@Autowired AnaxDriver anaxDriver, @Value("${anax.defaultWaitSeconds:5}") Integer defaultWaitSeconds) throws Exception {
         return new WebDriverWebController(anaxDriver.getWebDriver(), defaultWaitSeconds);

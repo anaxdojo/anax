@@ -6,10 +6,15 @@
 	<version>0.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>7</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.5.9.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+
+	<properties>
+		<selenium.version>3.8.1</selenium.version>
+	</properties>
 
 	<name>Anax Framework</name>
 	<distributionManagement>
@@ -31,6 +36,7 @@
 		<module>anax-core</module>
 		<module>anax-chrome</module>
 		<module>anax-firefox</module>
+		<module>anax-chrome-demo-app</module>
 	</modules>
 </project>
 

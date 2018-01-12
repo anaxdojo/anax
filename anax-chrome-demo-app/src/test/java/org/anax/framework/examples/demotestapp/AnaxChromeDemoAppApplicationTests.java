@@ -1,4 +1,4 @@
-package org.anax.framework;
+package org.anax.framework.examples.demotestapp;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,7 +7,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class AnaxFirefoxApplicationTests {
+public class AnaxChromeDemoAppApplicationTests {
 
 	@Test
 	public void contextLoads() {
