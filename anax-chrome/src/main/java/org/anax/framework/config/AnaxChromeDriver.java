@@ -3,6 +3,7 @@ package org.anax.framework.config;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -48,10 +49,16 @@ public class AnaxChromeDriver {
                 return driver;
             };
         } else {
-            Augmenter augmenter = new Augmenter(); // adds screenshot capability to a default webdriver.
-            return () -> augmenter.augment(new RemoteWebDriver(
+             // adds screenshot capability to a default webdriver.
+            return () -> {
+                Augmenter augmenter = new Augmenter();
+                augmenter.augment(new RemoteWebDriver(
                     new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
                     capabilities));
+                WebDriver driver = (WebDriver) augmenter;
+                driver.get(targetUrl);
+                return driver;
+            };
         }
     }
 

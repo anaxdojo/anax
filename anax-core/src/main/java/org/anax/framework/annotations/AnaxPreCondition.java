@@ -5,13 +5,14 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface AnaxAfterTestStep {
+public @interface AnaxPreCondition {
 
     /**
-     * method name as precondition or postcondition
+     * method name as precondition
      * @return
      */
-    String value() default "";
+    String[] methodName();
 
     boolean skip() default false;
+
 }

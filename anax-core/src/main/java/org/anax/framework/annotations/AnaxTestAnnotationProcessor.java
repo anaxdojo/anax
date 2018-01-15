@@ -9,9 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.stream.Stream;
 
 @Component
 public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
@@ -52,9 +50,9 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     //TODO this method needs to be added to our Test methods to execute BEFORE the step
                 });
 
-                Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxBeforeTestStep.class)
+                Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxPreCondition.class)
                         .findFirst().ifPresent(testAnnotation -> {
-                    AnaxBeforeTestStep beforeStep = (AnaxBeforeTestStep) testAnnotation;
+                    AnaxPreCondition beforeStep = (AnaxPreCondition) testAnnotation;
 
                     if (!beforeStep.skip()) {
                         //TODO this method needs to be added to our Test methods to execute BEFORE the step
@@ -73,9 +71,9 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     }
                 });
 
-                Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxAfterTestStep.class)
+                Arrays.stream(method.getDeclaredAnnotations()).filter(item -> item.annotationType() == AnaxPostCondition.class)
                         .findFirst().ifPresent(testAnnotation -> {
-                    AnaxAfterTestStep afterStep = (AnaxAfterTestStep) testAnnotation;
+                    AnaxPostCondition afterStep = (AnaxPostCondition) testAnnotation;
 
                     if (!afterStep.skip()) {
                         //TODO this method needs to be added to our Test methods to execute AFTER the step
