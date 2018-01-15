@@ -11,7 +11,7 @@ public @interface AnaxPostCondition {
      * method name as postcondition
      * @return
      */
-    String[] methodName();
+    String[] methodNames();
 
     boolean skip() default false;
 }

@@ -10,6 +10,6 @@ public @interface AnaxTest {
 
     String[] value() default { "Anax Default Suite" };
 
-    long priority() default 0;
+    int priority() default 0;
 
 }

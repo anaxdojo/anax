@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 public class TestGoogle1 {
 
     @AnaxTestStep
-    @AnaxPreCondition(methodName = {"pre"})
+    @AnaxPreCondition(methodNames = {"pre"})
     public void test_step1(){
         log.info("Class1: Test step1");
     }

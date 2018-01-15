@@ -27,7 +27,7 @@ public class TestGoogle2 {
         log.info("Class2: Test step1");
     }
 
-    @AnaxPostCondition(methodName = {"pos"})
+    @AnaxPostCondition(methodNames = {"pos"})
     @AnaxTestStep(ordering = 1)
     public void test_step2(){
         log.info("Class2: Test step2");

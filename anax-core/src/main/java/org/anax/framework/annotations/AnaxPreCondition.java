@@ -11,7 +11,7 @@ public @interface AnaxPreCondition {
      * method name as precondition
      * @return
      */
-    String[] methodName();
+    String[] methodNames();
 
     boolean skip() default false;
 
