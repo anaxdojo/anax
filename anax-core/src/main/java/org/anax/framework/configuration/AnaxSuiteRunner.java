@@ -21,28 +21,32 @@ public class AnaxSuiteRunner {
 
     Map<String,Suite> suitesMap = new HashMap<>();
 
-    public void exposeExecutionPlan() {
+    boolean shouldAlsoExecute = false;
+
+    public void createExecutionPlan(boolean executePlan) {
+
+        if (executePlan) {
+            log.info("Executing detected test suites:");
+        }
+
+        log.info("Configured Suites: {}", suitesMap.keySet());
         suitesMap.keySet().stream().forEach( name -> {
-            log.info("Execution plan:");
-
-            log.info("Configured Suites: {}", suitesMap.keySet());
-
-            suitesMap.values().forEach(this::exposeSuite);
+            suitesMap.values().forEach(this::executeTestSuite);
         });
     }
 
-    public void exposeSuite(Suite suite) {
+    public void executeTestSuite(Suite suite) {
         log.info("--------------");
         log.info("Suite: {}", suite.getName());
 
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
-        copy.forEach(this::exposeTest);
+        copy.forEach(this::executeTest);
     }
 
-    private void exposeTest(Test test) {
+    private void executeTest(Test test) {
         log.info("--------------");
-        log.info("Test: {} - Steps: {}", test.getTestBeanName(), test.getTestMethods().size());
+        log.info("Test: {} - Steps: {}", test.getTestBean().getClass().getName(), test.getTestMethods().size());
 
         //sort by ordering
         List<TestMethod> testMethods = Lists.newArrayList(test.getTestMethods());
@@ -62,7 +66,6 @@ public class AnaxSuiteRunner {
 
             //after testmethod:
             test.getTestAfterMethods().forEach( tm -> log.info("After: {}", tm.getTestMethod().getName()));
-
         });
 
     }
