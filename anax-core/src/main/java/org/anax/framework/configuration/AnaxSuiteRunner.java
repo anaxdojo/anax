@@ -69,7 +69,7 @@ public class AnaxSuiteRunner {
 
     public void executeTestSuite(Suite suite) {
         log.info("--------------");
-        log.info("Suite: {}", suite.getName());
+        log.info("SUITE START: {}", suite.getName());
 
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
@@ -78,6 +78,8 @@ public class AnaxSuiteRunner {
             executeTest(suite, test);
             reporter.endTest(test);
         });
+        log.info("SUITE END: {}", suite.getName());
+
     }
 
     private void executeTest(Suite suite, Test test) {
