@@ -19,7 +19,7 @@ public class TestGoogle2 {
     @AnaxBeforeTest
     public void test_Before() throws Exception{
         controller.navigate("www.google.gr");
-        log.info("Class2: Before Test");
+        log.info("Class2: Runs once Before Class");
     }
 
     @AnaxTestStep
@@ -27,7 +27,7 @@ public class TestGoogle2 {
         log.info("Class2: Test step1");
     }
 
-    @AnaxPostCondition(methodNames = {"pos"})
+    @AnaxPostCondition(methodNames = {"afterConditionOfTestStep1"})
     @AnaxTestStep(ordering = 1)
     public void test_step2(){
         log.info("Class2: Test step2");
@@ -38,7 +38,7 @@ public class TestGoogle2 {
         log.info("Class2: After Test");
     }
 
-    public void pos() {
-        log.info("Class2: Run after Test step2");
+    public void afterConditionOfTestStep1() {
+        log.info("Class2:Runs once after Test step2");
     }
 }

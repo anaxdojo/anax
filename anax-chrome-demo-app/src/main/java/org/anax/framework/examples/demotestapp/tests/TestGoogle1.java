@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 public class TestGoogle1 {
 
     @AnaxTestStep
-    @AnaxPreCondition(methodNames = {"pre"})
+    @AnaxPreCondition(methodNames = {"preConditionOfTestStep1"})
     public void test_step1(){
         log.info("Class1: Test step1");
     }
@@ -26,7 +26,7 @@ public class TestGoogle1 {
     @AnaxTestStep(ordering = 4,skip = true)
     public void test_step4(){
         log.info("Class1: Test step4::SKIPPED");
-        Assert.isTrue(false);
+        Assert.isTrue(false,"failed");
     }
 
     @AnaxTestStep(ordering = 1)
@@ -34,8 +34,8 @@ public class TestGoogle1 {
         log.info("Class1: Test step1");
     }
 
-    public void pre(){
-        log.info("Class1: Runs before test_step1");
+    public void preConditionOfTestStep1(){
+        log.info("Class1: Runs once before test_step1");
     }
 
 }
