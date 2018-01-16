@@ -12,7 +12,7 @@ public interface AnaxTestReporter {
 
     void setSystemError(String out);
 
-    void startTestSuite(Suite suite);
+    void startTestSuite(Suite suite) throws ReportException;
 
     void endTestSuite(Suite suite) throws ReportException;
 

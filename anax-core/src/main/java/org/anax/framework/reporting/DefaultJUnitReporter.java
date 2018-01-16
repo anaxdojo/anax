@@ -98,7 +98,13 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      */
     private OutputStream out;
 
+    public DefaultJUnitReporter() {
 
+    }
+
+    public DefaultJUnitReporter(OutputStream outputStream) {
+        setOutput(outputStream);
+    }
 
 
     @Override
@@ -121,7 +127,12 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      * @param suite the testsuite.
      */
     @Override
-    public void startTestSuite(Suite suite) {
+    public void startTestSuite(Suite suite) throws ReportException {
+
+        if (out == null) {
+            throw new ReportException("Cannot start test suite without output stream configured");
+        }
+
         doc = getDocumentBuilder().newDocument();
         rootElement = doc.createElement(TESTSUITE);
         String n = suite.getName();

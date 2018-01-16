@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class ReportAutoConfiguration {
 
 
+
     @Bean
     @ConditionalOnMissingBean
     AnaxTestReporter defaultJUnitTestReporter() {
