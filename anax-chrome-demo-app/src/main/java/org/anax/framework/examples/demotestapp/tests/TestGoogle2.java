@@ -18,7 +18,7 @@ public class TestGoogle2 {
 
     @AnaxBeforeTest
     public void test_Before() throws Exception{
-        controller.navigate("www.google.gr");
+        controller.navigate("http://www.google.gr");
         log.info("Class2: Runs once Before Class");
     }
 

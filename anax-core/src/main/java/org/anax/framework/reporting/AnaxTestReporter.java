@@ -2,6 +2,7 @@ package org.anax.framework.reporting;
 
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
+import org.anax.framework.model.TestMethod;
 
 import java.io.OutputStream;
 
@@ -20,9 +21,9 @@ public interface AnaxTestReporter {
 
     void endTest(Test test);
 
-    void addFailure(Test test, Throwable t);
+    void addFailure(Test test, TestMethod method, Throwable t);
 
-    void addSkipped(Test test, String skipReason);
+    void addSkipped(Test test, TestMethod method, String skipReason);
 
-    void addError(Test test, Throwable t);
+    void addError(Test test, TestMethod method, Throwable t);
 }

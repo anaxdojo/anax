@@ -22,6 +22,7 @@ package org.anax.framework.reporting;
 
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
+import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.IOUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
@@ -139,7 +140,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         rootElement.setAttribute(ATTR_NAME, n == null ? UNKNOWN : n);
 
         //add the timestamp
-        final String timestamp = DateTimeFormatter.ISO_DATE_TIME.format(new Date().toInstant());
+        final String timestamp = DateTimeFormatter.ISO_INSTANT.format(new Date().toInstant());
         rootElement.setAttribute(TIMESTAMP, timestamp);
         //and the hostname.
         rootElement.setAttribute(HOSTNAME, getHostname());
@@ -169,17 +170,16 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      */
     @Override
     public void endTestSuite(Suite suite) throws ReportException {
-        rootElement.setAttribute(ATTR_TESTS, "" + suite.runCount());
-        rootElement.setAttribute(ATTR_FAILURES, "" + suite.failureCount());
-        rootElement.setAttribute(ATTR_ERRORS, "" + suite.errorCount());
-        rootElement.setAttribute(ATTR_SKIPPED, "" + suite.skipCount());
+        rootElement.setAttribute(ATTR_TESTS, "" + suite.getExecutedTests());
+        rootElement.setAttribute(ATTR_FAILURES, "" + suite.getFailedTests());
+        rootElement.setAttribute(ATTR_ERRORS, "" + suite.getErroredTests());
+        rootElement.setAttribute(ATTR_SKIPPED, "" + suite.getSkippedTests());
         rootElement.setAttribute(
-                ATTR_TIME, "" + (suite.getRunTime() / ONE_SECOND));
+                ATTR_TIME, "" + (suite.getTotalRunTime() / ONE_SECOND));
         if (out != null) {
             Writer wri = null;
             try {
                 wri = new BufferedWriter(new OutputStreamWriter(out, "UTF8"));
-                wri.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
 
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
                 Transformer transformer = transformerFactory.newTransformer();
@@ -219,11 +219,14 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         testStarts.put(createDescription(t), System.currentTimeMillis());
     }
 
+    private static String createDescription(Test test, TestMethod method) {
+        return test.getTestBean().getClass().getCanonicalName();
+
+    }
     private static String createDescription(Test test) {
         return test.getTestBean().getClass().getCanonicalName();
 
     }
-
     /**
      * Interface TestListener.
      *
@@ -266,18 +269,16 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      * @param t the exception.
      */
     @Override
-    public void addFailure(Test test, Throwable t) {
+    public void addFailure(Test test, TestMethod method, Throwable t) {
         formatError(FAILURE, test, t);
     }
     @Override
-    public void addSkipped(Test test, String skipReason) {
+    public void addSkipped(Test test,  TestMethod method, String skipReason) {
         formatSkip(test, skipReason);
         if (test != null) {
-            ignoredTests.put(createDescription(test), test);
+            ignoredTests.put(createDescription(test,method), test);
         }
     }
-
-
 
 
     /**
@@ -288,7 +289,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      * @param t the error.
      */
     @Override
-    public void addError(Test test, Throwable t) {
+    public void addError(Test test,  TestMethod method, Throwable t) {
         formatError(ERROR, test, t);
     }
 
@@ -335,7 +336,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
     }
 
 
-    public void formatSkip(Test test, String message) {
+    private void formatSkip(Test test, String message) {
         if (test != null) {
             endTest(test);
         }
@@ -354,12 +355,6 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         }
 
         currentTest.appendChild(nested);
-
-    }
-
-    public void testAssumptionFailure(Test test, Throwable failure) {
-        formatSkip(test, failure.getMessage());
-        skippedTests.put(createDescription(test), test);
 
     }
 }
