@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public abstract class ByExtended extends By {
-//    private static final Logger LOG = LoggerFactory.getLogger(ByExtended.class);
 
     /**
      * Finds elements via the driver's underlying W3 Selector engine. If the

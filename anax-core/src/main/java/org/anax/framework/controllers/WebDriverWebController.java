@@ -27,7 +27,7 @@ public class WebDriverWebController implements WebController {
     private static final int TO_MILLIS = 1000;
 
     /** The Constant THREAD_SLEEP. */
-    private static final long THREAD_SLEEP = 100;
+    private static final long THREAD_SLEEP = 10000;
 
     /** The Constant XPATH. */
     private static final String XPATH = "xpath";
