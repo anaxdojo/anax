@@ -1,6 +1,5 @@
 package org.anax.framework.controllers;
 
-import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.util.HttpCookie;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.Point;
@@ -12,10 +11,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * the interface contract for a WebController
+ * Web Controllers are the interfaces to testing web applications. Other controllers like a mobile or desktop controller
+ * may build upon this contract.
+ */
 public interface WebController {
 
 
-    public enum KeyInfo {
+    enum KeyInfo {
 
 
         CANCEL       (Keys.CANCEL, KeyEvent.VK_CANCEL),
