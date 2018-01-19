@@ -25,14 +25,15 @@
         </repository>
 
 
+
     </distributionManagement>
 
-    <modules>
-        <module>anax-core</module>
-        <module>anax-chrome</module>
-        <module>anax-firefox</module>
-        <module>anax-chrome-demo-app</module>
+	<modules>
+		<module>anax-core</module>
+		<module>anax-chrome</module>
+		<module>anax-firefox</module>
+		<module>anax-chrome-demo-app</module>
+        <module>anax-winium</module>
     </modules>
-
 </project>
 
