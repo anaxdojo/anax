@@ -36,7 +36,8 @@ public class AnaxFirefoxDriver {
         if (useLocal) {
 
             firefoxoptions = new FirefoxOptions();
-            firefoxoptions.addArguments("start-maximized");
+            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
+            firefoxoptions.addArguments(x);
             return () -> {
                 FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
                 driver.get(targetUrl);

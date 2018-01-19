@@ -166,7 +166,7 @@ public class Verify {
      */
     public void elementPresent(String locator) {
         try {
-            Assert.isTrue(controller.isComponentPresent(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentPresent(locator),ELEMENT_LOCATOR + locator + NOT_FOUND);
             info(ELEMENT_LOCATOR + locator + FOUND);
         } catch (IllegalArgumentException e) {
             error(ELEMENT_LOCATOR + locator + NOT_FOUND);
@@ -182,7 +182,7 @@ public class Verify {
      */
     public void elementPresent(String locator,long seconds) {
         try {
-            Assert.isTrue(controller.isComponentPresent(locator,seconds),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentPresent(locator,seconds),ELEMENT_LOCATOR + locator + NOT_FOUND);
             info(ELEMENT_LOCATOR + locator + FOUND);
         } catch (IllegalArgumentException e) {
             error(ELEMENT_LOCATOR + locator + NOT_FOUND);
@@ -197,7 +197,7 @@ public class Verify {
      */
     public void elementNotPresent(String locator) {
         try {
-            Assert.isTrue(controller.isComponentNotPresent(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentNotPresent(locator),ELEMENT_LOCATOR + locator + NOT_FOUND);
             info(ELEMENT_LOCATOR + locator + NOT_FOUND);
         } catch (IllegalArgumentException e) {
             error(ELEMENT_LOCATOR + locator + FOUND);
@@ -212,7 +212,7 @@ public class Verify {
      */
     public void elementVisible(String locator) {
         try {
-            Assert.isTrue(controller.isComponentVisible(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentVisible(locator),ELEMENT_LOCATOR + locator + IS_VISIBLE);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + IS_VISIBLE);
         } catch (IllegalArgumentException e) {
@@ -229,7 +229,7 @@ public class Verify {
      */
     public void elementVisible(String locator,long seconds) {
         try {
-            Assert.isTrue(controller.isComponentVisible(locator,seconds),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentVisible(locator,seconds),ELEMENT_LOCATOR + locator + IS_NOT_VISIBLE);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + IS_VISIBLE);
         } catch (IllegalArgumentException e) {

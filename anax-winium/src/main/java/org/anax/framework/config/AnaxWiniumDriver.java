@@ -10,6 +10,9 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.winium.DesktopOptions;
+import org.openqa.selenium.winium.WiniumDriver;
+import org.openqa.selenium.winium.WiniumDriverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -33,10 +36,9 @@ public class AnaxWiniumDriver {
     @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
-        DesktopOptions options = DesktopOptions();
+        DesktopOptions options = new DesktopOptions();
         options.setApplicationPath("C:\\Windows\\System32\\notepad.exe");
             WiniumDriverService service = new WiniumDriverService.Builder()
-                    .usingDriverExecutable("path_to_driver_executable")
                     .usingAnyFreePort()
                     .withVerbose(true)
                     .withSilent(false)
