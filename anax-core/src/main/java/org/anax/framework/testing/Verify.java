@@ -449,7 +449,7 @@ public class Verify {
                 else{
                     controller.highlight(controller.getTableElementSpecificRowAndColumnLocator(locator, String.valueOf(i+1), String.valueOf(j+1)),FAIL_COLOR);
                     error("The table elements are not equal! EXPECTED VALUE: " + expectedArray[i][j] + " - ACTUAL VALUE: " + actualArray[i][j]);
-                    throw new AssertionError();
+                    throw new AssertionError("The table elements are not equal! EXPECTED VALUE: " + expectedArray[i][j] + " - ACTUAL VALUE: " + actualArray[i][j]);
                 }
             }
         }
