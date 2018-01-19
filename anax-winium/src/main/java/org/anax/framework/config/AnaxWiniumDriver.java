@@ -35,14 +35,11 @@ public class AnaxWiniumDriver {
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
         DesktopOptions options = DesktopOptions();
         options.setApplicationPath("C:\\Windows\\System32\\notepad.exe");
-
-        if (useLocal) {
-
             WiniumDriverService service = new WiniumDriverService.Builder()
                     .usingDriverExecutable("path_to_driver_executable")
                     .usingAnyFreePort()
                     .withVerbose(true)
-                    .withSilent(false);
+                    .withSilent(false)
                     .buildDesktopService();
 
             return () -> {
