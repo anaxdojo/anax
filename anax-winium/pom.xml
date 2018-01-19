@@ -10,6 +10,28 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-winium</artifactId>
+    <version>0.1.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
+    <name>Anax :: Winium</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.anax.framework</groupId>
+            <artifactId>anax-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.2gis.winium</groupId>
+            <artifactId>winium-webdriver</artifactId>
+            <version>0.1.0-1</version>
+        </dependency>
+    </dependencies>
 
 </project>
