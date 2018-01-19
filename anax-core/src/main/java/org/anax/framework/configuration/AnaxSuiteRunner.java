@@ -1,7 +1,10 @@
 package org.anax.framework.configuration;
 
 import com.google.common.collect.Lists;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
@@ -12,31 +15,44 @@ import org.anax.framework.reporting.ReportException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import javax.annotation.PostConstruct;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-@Getter
-@Setter
-@ToString
-@NoArgsConstructor
 @Component
 @Slf4j
 public class AnaxSuiteRunner {
+
+    private final AnaxTestReporter reporter;
 
     Map<String,Suite> suitesMap = new HashMap<>();
 
     boolean shouldAlsoExecute = false;
 
-    @Autowired
-    AnaxTestReporter reporter;
+    @Value("${anax.report.directory:reports/}")
+    String reportDirectory;
+
+
+    public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
+        this.reporter = reporter;
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+
+        File dir = new File(reportDirectory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+    }
+
 
     public void createExecutionPlan(boolean executePlan) {
         shouldAlsoExecute = executePlan;
@@ -50,16 +66,11 @@ public class AnaxSuiteRunner {
             try {
                 final Suite suite = suitesMap.get(name);
 
-                ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                reporter.setOutput(bout);
-                reporter.startTestSuite(suite);
-                executeTestSuite(suite);
-
-                reporter.setSystemError(suite.getErr().toString());
-                reporter.setSystemOutput(suite.getOut().toString());
-                reporter.endTestSuite(suite);
-
-                log.info("Report: {}", bout.toString());
+                try (FileOutputStream outputStream = new FileOutputStream(new File(reportDirectory, createReportFilename(name))) ) {
+                    executeTestSuite(suite,outputStream);
+                } catch (IOException ioe) {
+                    throw new ReportException("IO Error writing report file : "+ioe.getMessage(),ioe);
+                }
 
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
@@ -67,17 +78,49 @@ public class AnaxSuiteRunner {
         });
     }
 
-    public void executeTestSuite(Suite suite) {
+    private String createReportFilename(String name) {
+        return "junit-compat-report-"+normalizeFile(name)+"-"+ Long.toHexString(System.currentTimeMillis()) + ".xml";
+    }
+
+    private String normalizeFile(String s) {
+        char fileSep = File.pathSeparatorChar;
+        char escape = '_'; // ... or some other legal char.
+        int len = s.length();
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            char ch = s.charAt(i);
+            if (ch <= ' ' || ch >= 0x7F || ch == fileSep ||
+                (ch == '.' && i == 0)
+                    || ch == escape) {
+                sb.append(escape);
+
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    public void executeTestSuite(Suite suite, OutputStream out) throws ReportException {
         log.info("--------------");
         log.info("SUITE START: {}", suite.getName());
+        log.trace("Starting suite reporting...");
+        reporter.setOutput(out);
+        reporter.startTestSuite(suite);
+        log.trace("About to execute suite tests: {}",suite.getTests().size());
 
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
         copy.forEach(test -> {
-            reporter.startTest(test);
             executeTest(suite, test);
-            reporter.endTest(test);
         });
+
+        log.trace("Setting stderr and stdout to suite");
+        reporter.setSystemError(suite.getErr().toString());
+        reporter.setSystemOutput(suite.getOut().toString());
+        log.trace("Ending suite reporting...");
+        reporter.endTestSuite(suite);
+        log.trace("Suite reporting has completed");
         log.info("SUITE END: {}", suite.getName());
 
     }
@@ -88,10 +131,17 @@ public class AnaxSuiteRunner {
         log.info("--------------");
 
         //sort by ordering
-        List<TestMethod> testMethods = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip()).collect(Collectors.toList());
-        log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), test.getTestMethods().size(), test.getTestMethods().size() - testMethods.size());
+        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip()).collect(Collectors.toList());
 
-        testMethods.sort(Comparator.comparingInt(TestMethod::getOrdering));
+        List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
+        skippedTests.removeAll(testsToRun);
+        skippedTests.forEach( testMethod -> {
+            reporter.addSkipped(test, testMethod, "Skipped due to Annotation configuration");
+        });
+        log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
+
+
+        testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
 
         //before testmethod:
         test.getTestBeforeMethods().forEach(tm -> {
@@ -103,8 +153,11 @@ public class AnaxSuiteRunner {
             log.info("---- BEFORE END: {}", tm.getTestMethod());
         });
 
-        testMethods.forEach(testMethod -> {
+        testsToRun.forEach(testMethod -> {
             AtomicBoolean localSkip = new AtomicBoolean(false);
+            reporter.startTest(test, testMethod);
+
+
             try {
                 if (globalSkip.get()) {
                     reporter.addSkipped(test, testMethod, "Skipped due to @AnaxBefore failure");
@@ -114,18 +167,15 @@ public class AnaxSuiteRunner {
                     //precondition:
                     testMethod.getPreconditions().forEach(tp -> {
                         log.info("---- PRECON START: {}", tp.getTestMethod());
-                        if (localSkip.get() == false) {
-                            TestResult result = executeRecordingResult(suite, test, tp, false);
-                            if (result.notPassed()) {
-                                localSkip.set(true);
-                            }
-                        }
+                        executePrePost(suite, test, testMethod, localSkip, tp);
                         log.info("---- PRECON END: {}", tp.getTestMethod());
                     });
 
                     //execute method!
                     if (localSkip.get() == false) {
                         TestResult result = executeRecordingResult(suite, test, testMethod, true);
+                        testMethod.getStdErr().append(result.getStdError());
+                        testMethod.getStdOut().append(result.getStdOutput());
                         if (result.notPassed()) {
                             localSkip.set(true);
                             if (result.isInError()) {
@@ -133,23 +183,23 @@ public class AnaxSuiteRunner {
                             } else if (result.isFailed()) {
                                 reporter.addFailure(test,testMethod, result.getThrowable());
                             }
+                            testMethod.setPassed(false);
+                        } else {
+                            testMethod.setPassed(true);
                         }
                     }
                     //postcondition:
                     testMethod.getPostconditions().forEach(tp -> {
                         log.info("---- POSTCON START: {}", tp.getTestMethod());
-                        if (localSkip.get() == false) {
-                            TestResult result = executeRecordingResult(suite, test, tp, false);
-                            if (result.notPassed()) {
-                                localSkip.set(true);
-                            }
-                        }
+                        executePrePost(suite, test, testMethod, localSkip,  tp);
                         log.info("---- POSTCON END: {}", tp.getTestMethod());
                     });
 
 
                 }
             } finally {
+                reporter.endTest(test, testMethod);
+
                 log.info("---- STEP END: {} ---", testMethod.getTestMethod());
 
             }
@@ -165,6 +215,17 @@ public class AnaxSuiteRunner {
             log.info("AFTER END: {}", tm.getTestMethod());
 
         });
+    }
+
+    private void executePrePost(Suite suite, Test test, TestMethod testMethod, AtomicBoolean localSkip, TestMethod tp) {
+        if (localSkip.get() == false) {
+            TestResult result = executeRecordingResult(suite, test, tp, false);
+            testMethod.getStdErr().append(result.getStdError());
+            testMethod.getStdOut().append(result.getStdOutput());
+            if (result.notPassed()) {
+                localSkip.set(true);
+            }
+        }
     }
 
     private TestResult executeRecordingResult(Suite suite, Test test, TestMethod tm, boolean isTest) {

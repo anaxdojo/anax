@@ -20,38 +20,40 @@ package org.anax.framework.reporting;
  */
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.IOUtils;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import org.springframework.core.env.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.stream.StreamSupport;
 
-
+@Slf4j
 public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
     private static final double ONE_SECOND = 1000.0;
 
     /** constant for unnnamed testsuites/cases */
     private static final String UNKNOWN = "unknown";
+
+
+    private final Environment environment;
 
     private static DocumentBuilder getDocumentBuilder() {
         try {
@@ -99,12 +101,9 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      */
     private OutputStream out;
 
-    public DefaultJUnitReporter() {
+    public DefaultJUnitReporter(Environment environment) {
 
-    }
-
-    public DefaultJUnitReporter(OutputStream outputStream) {
-        setOutput(outputStream);
+        this.environment = environment;
     }
 
 
@@ -115,12 +114,12 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
     @Override
     public void setSystemOutput(String out) {
-        formatOutput(SYSTEM_OUT, out);
+        formatOutput(rootElement, SYSTEM_OUT, out);
     }
 
     @Override
     public void setSystemError(String out) {
-        formatOutput(SYSTEM_ERR, out);
+        formatOutput(rootElement, SYSTEM_ERR, out);
     }
 
     /**
@@ -140,14 +139,32 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         rootElement.setAttribute(ATTR_NAME, n == null ? UNKNOWN : n);
 
         //add the timestamp
-        final String timestamp = DateTimeFormatter.ISO_INSTANT.format(new Date().toInstant());
-        rootElement.setAttribute(TIMESTAMP, timestamp);
+        LocalDateTime dateTime = LocalDateTime.now();
+        //2014-01-21T16:17:18
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        //String text = dateTime.format(formatter);
+        //rootElement.setAttribute(TIMESTAMP, text);
         //and the hostname.
         rootElement.setAttribute(HOSTNAME, getHostname());
 
         // Output properties
         Element propsElement = doc.createElement(PROPERTIES);
         rootElement.appendChild(propsElement);
+
+        if (environment instanceof StandardEnvironment) {
+
+            MutablePropertySources propSrcs = ((AbstractEnvironment) environment).getPropertySources();
+            StreamSupport.stream(propSrcs.spliterator(), false)
+                    .filter(ps -> ps instanceof EnumerablePropertySource)
+                    .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
+                    .flatMap(Arrays::<String>stream)
+                    .forEach(propName ->  {
+                        Element prop = doc.createElement(PROPERTY);
+                        prop.setAttribute("name", propName);
+                        prop.setAttribute("value", environment.getProperty(propName));
+                        propsElement.appendChild(prop);
+                    });
+        }
 
     }
 
@@ -174,25 +191,28 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         rootElement.setAttribute(ATTR_FAILURES, "" + suite.getFailedTests());
         rootElement.setAttribute(ATTR_ERRORS, "" + suite.getErroredTests());
         rootElement.setAttribute(ATTR_SKIPPED, "" + suite.getSkippedTests());
-        rootElement.setAttribute(
-                ATTR_TIME, "" + (suite.getTotalRunTime() / ONE_SECOND));
+        rootElement.setAttribute(ATTR_TIME, "" + (suite.getTotalRunTime() / ONE_SECOND));
         if (out != null) {
             Writer wri = null;
             try {
+                log.trace("Writing report to stream {}",out);
                 wri = new BufferedWriter(new OutputStreamWriter(out, "UTF8"));
 
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
                 Transformer transformer = transformerFactory.newTransformer();
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
                 DOMSource source = new DOMSource(rootElement);
 
                 BufferedOutputStream bos = new BufferedOutputStream(out);
                 StreamResult result = new StreamResult(bos);
                 transformer.transform(source, result);
-
+                log.trace("Report: report writing completed");
             } catch (IOException exc) {
-                throw new ReportException("Unable to write log file", exc);
+                throw new ReportException("Unable to write report, error = "+exc.getMessage(), exc);
             } catch (TransformerException e) {
-                e.printStackTrace();
+                throw new ReportException("Unable to write report", e);
             } finally {
                 if (wri != null) {
                     try {
@@ -208,110 +228,107 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         }
     }
 
-    /**
-     * Interface TestListener.
-     *
-     * <p>A new Test is started.
-     * @param t the test.
-     */
+
+
     @Override
-    public void startTest(Test t) {
-        testStarts.put(createDescription(t), System.currentTimeMillis());
+    public void startTest(Test test, TestMethod testMethod) {
+        testStarts.put(createTestDescription(test,testMethod), System.currentTimeMillis());
     }
 
-    private static String createDescription(Test test, TestMethod method) {
-        return test.getTestBean().getClass().getCanonicalName();
+    private String createTestDescription(Test test, TestMethod method) {
+        return createTestClass(test) + " - " + method.getTestMethod().getName();
 
     }
-    private static String createDescription(Test test) {
-        return test.getTestBean().getClass().getCanonicalName();
 
+    private String createTestClass(Test test) {
+        final String fullName = test.getTestBean().getClass().getName();
+//        if (fullName.contains(".")) {
+//            return fullName.substring(fullName.lastIndexOf(".")+1);
+//        } else
+            return fullName;
     }
     /**
      * Interface TestListener.
      *
      * <p>A Test is finished.
      * @param test the test.
+     * @param testMethod
      */
     @Override
-    public void endTest(Test test) {
-        String testDescription = createDescription(test);
+    public void endTest(Test test, TestMethod testMethod) {
+        String testDescription = createTestDescription(test,testMethod);
 
         if (!testStarts.containsKey(testDescription)) {
-            startTest(test);
+            startTest(test, testMethod);
         }
         Element currentTest;
-        if (!failedTests.containsKey(test) && !skippedTests.containsKey(testDescription) && !ignoredTests.containsKey(testDescription)) {
+        boolean createdNow = false;
+        if (!failedTests.containsKey(testDescription) && !skippedTests.containsKey(testDescription) && !ignoredTests.containsKey(testDescription)) {
             currentTest = doc.createElement(TESTCASE);
-            String n = createDescription(test);
-            currentTest.setAttribute(ATTR_NAME,
-                    n == null ? UNKNOWN : n);
+            currentTest.setAttribute(ATTR_NAME, test.getTestBean().getClass().getName()+"."+testMethod.getTestMethod().getName()+"()");
             // a TestSuite can contain Tests from multiple classes,
             // even tests with the same name - disambiguate them.
-            currentTest.setAttribute(ATTR_CLASSNAME,
-                    createDescription(test));
+            currentTest.setAttribute(ATTR_CLASSNAME, test.getTestBean().getClass().getName());
             rootElement.appendChild(currentTest);
-            testElements.put(createDescription(test), currentTest);
+            testElements.put(testDescription, currentTest);
+            createdNow = true;
         } else {
             currentTest = testElements.get(testDescription);
         }
 
-        Long l = testStarts.get(createDescription(test));
+        Long l = testStarts.get(testDescription);
         currentTest.setAttribute(ATTR_TIME,
                 "" + ((System.currentTimeMillis() - l) / ONE_SECOND));
-    }
 
-    /**
-     * Interface TestListener for JUnit &lt;= 3.4.
-     *
-     * <p>A Test failed.
-     * @param test the test.
-     * @param t the exception.
-     */
-    @Override
-    public void addFailure(Test test, TestMethod method, Throwable t) {
-        formatError(FAILURE, test, t);
-    }
-    @Override
-    public void addSkipped(Test test,  TestMethod method, String skipReason) {
-        formatSkip(test, skipReason);
-        if (test != null) {
-            ignoredTests.put(createDescription(test,method), test);
+        if (!createdNow || testMethod.isPassed()) {
+            formatOutput(currentTest, SYSTEM_ERR, testMethod.getStdErr().toString());
+            formatOutput(currentTest, SYSTEM_OUT, testMethod.getStdOut().toString());
         }
     }
 
 
-    /**
-     * Interface TestListener.
-     *
-     * <p>An error occurred while running the test.
-     * @param test the test.
-     * @param t the error.
-     */
     @Override
-    public void addError(Test test,  TestMethod method, Throwable t) {
-        formatError(ERROR, test, t);
+    public void addSkipped(Test test,  TestMethod method, String skipReason) {
+        formatSkip(test, method, skipReason);
+        if (test != null) {
+            ignoredTests.put(createTestDescription(test,method), test);
+        }
     }
 
-    private void formatError(String type, Test test, Throwable t) {
+    @Override
+    public void addFailure(Test test, TestMethod method, Throwable t) {
+        formatProblems(FAILURE, test, method, t);
+    }
+
+    @Override
+    public void addError(Test test,  TestMethod testMethod, Throwable t) {
+        formatProblems(ERROR, test, testMethod, t);
+    }
+
+    private void formatProblems(String type, Test test,  TestMethod testMethod, Throwable t) {
         if (test != null) {
-            endTest(test);
-            failedTests.put(test, test);
+            endTest(test, testMethod);
+            failedTests.put(createTestDescription(test,testMethod), test);
         }
 
         Element nested = doc.createElement(type);
         Element currentTest;
         if (test != null) {
-            currentTest = testElements.get(createDescription(test));
+            currentTest = testElements.get(createTestDescription(test,testMethod));
         } else {
             currentTest = rootElement;
         }
 
         currentTest.appendChild(nested);
 
-        String message = t.getMessage();
+        Throwable actual = t;
+        String message = actual.getMessage();
+        while (message == null && actual.getCause() != null) {
+            actual = actual.getCause();
+            message = actual.getMessage();
+        }
         if (message != null && message.length() > 0) {
-            nested.setAttribute(ATTR_MESSAGE, t.getMessage());
+            nested.setAttribute(ATTR_MESSAGE, message);
         }
         nested.setAttribute(ATTR_TYPE, t.getClass().getName());
 
@@ -320,6 +337,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         nested.appendChild(trace);
     }
 
+
     public static String getFilteredTrace(Throwable t) {
         final StringWriter out = new StringWriter();
         PrintWriter writer = new PrintWriter(out);
@@ -327,18 +345,20 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         return out.toString();
     }
 
+    private static final String deAnsify(String text) {
+        return text.replaceAll("(\\x1b\\x5b|\\x9b)[\\x30-\\x3f]*[\\x20-\\x2f]*[\\x40-\\x7e]", "");
+    }
 
-
-    private void formatOutput(String type, String output) {
+    private void formatOutput(Element el, String type, String output) {
         Element nested = doc.createElement(type);
-        rootElement.appendChild(nested);
-        nested.appendChild(doc.createCDATASection(output));
+        el.appendChild(nested);
+        nested.appendChild(doc.createCDATASection(deAnsify(output)));
     }
 
 
-    private void formatSkip(Test test, String message) {
+    private void formatSkip(Test test, TestMethod testMethod, String message) {
         if (test != null) {
-            endTest(test);
+            endTest(test, testMethod);
         }
 
         Element nested = doc.createElement("skipped");
@@ -349,7 +369,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
         Element currentTest;
         if (test != null) {
-            currentTest = testElements.get(createDescription(test));
+            currentTest = testElements.get(createTestDescription(test, testMethod));
         } else {
             currentTest = rootElement;
         }

@@ -15,8 +15,6 @@ import java.util.List;
 @Slf4j
 public class Verify {
 
-    @Autowired
-    WebController    controller;
 
     /** The log. */
     /** The pass color. */
@@ -91,8 +89,12 @@ public class Verify {
     private static final String TABLE_ELEMENT = "The table element '";
 
 
+    private final WebController controller;
+
+
     /** Instantiates a new verify.*/
-    public Verify() {
+    public Verify(@Autowired WebController controller) {
+        this.controller = controller;
         System.setProperty("org.uncommons.reportng.escape-output", "false");
     }
 

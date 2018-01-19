@@ -17,5 +17,9 @@ public class TestMethod {
     Method testMethod;
     int ordering;
     boolean skip;
+    boolean passed;
+
+    @Builder.Default StringBuilder stdOut = new StringBuilder();
+    @Builder.Default StringBuilder stdErr = new StringBuilder();
 
 }
