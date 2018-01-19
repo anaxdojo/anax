@@ -137,7 +137,7 @@ public class Verify {
      */
     public void textPresent(String text) {
         try {
-            Assert.isTrue(controller.isTextPresent(text),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isTextPresent(text),TEXT + text + NOT_FOUND);
             info(TEXT + text + FOUND);
         } catch (IllegalArgumentException e) {
             error(TEXT + text + NOT_FOUND);
@@ -152,7 +152,7 @@ public class Verify {
      */
     public void textNotPresent(String text) {
         try {
-            Assert.isTrue(controller.isTextNotPresent(text),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isTextNotPresent(text),TEXT + text + FOUND);
             info(TEXT + text + NOT_FOUND);
         } catch (IllegalArgumentException e) {
             error(TEXT + text + FOUND);
