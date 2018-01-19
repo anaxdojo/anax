@@ -7,6 +7,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -359,7 +360,7 @@ public interface WebController {
      *
      * @throws IOException Signals that an I/O exception has occurred.
      */
-    void takeScreenShot() throws IOException;
+    File takeScreenShot() throws IOException;
 
 
     /**

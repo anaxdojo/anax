@@ -1,6 +1,7 @@
 package org.anax.framework.controllers;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -190,9 +191,9 @@ class VoidController implements WebController {
     }
 
     @Override
-    public void takeScreenShot() throws IOException {
+    public File takeScreenShot() throws IOException {
         // TODO Auto-generated method stub
-
+        return null;
     }
 
     @Override

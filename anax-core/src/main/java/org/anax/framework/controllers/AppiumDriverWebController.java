@@ -16,6 +16,7 @@ import org.openqa.selenium.remote.RemoteWebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -192,11 +193,12 @@ public class AppiumDriverWebController implements WebController{
     }
 
     @Override
-    public void takeScreenShot() throws IOException {
+    public File takeScreenShot() throws IOException {
         log.info("Take Screenshot");
         // TODO
 //        File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
 //        FileUtils.copyFile(scrFile, new File("build/reports/tests/html/screenshots/TestError.jpg"),true);
+        return null;
     }
 
     @Override

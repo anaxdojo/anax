@@ -21,9 +21,11 @@ package org.anax.framework.reporting;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.env.*;
 import org.w3c.dom.Document;
@@ -39,6 +41,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,6 +57,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
 
     private final Environment environment;
+    private final WebController controller;
 
     private static DocumentBuilder getDocumentBuilder() {
         try {
@@ -101,9 +105,12 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
      */
     private OutputStream out;
 
-    public DefaultJUnitReporter(Environment environment) {
+    private String reportScreenshotDirectory;
 
+    public DefaultJUnitReporter(Environment environment, WebController controller, String reportScreenshotDirectory) {
         this.environment = environment;
+        this.controller = controller;
+        this.reportScreenshotDirectory = reportScreenshotDirectory;
     }
 
 
@@ -332,9 +339,30 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         }
         nested.setAttribute(ATTR_TYPE, t.getClass().getName());
 
+        //take screenshot here
+        takeScreenshot(test,testMethod);
+        //TODO figure what to do with it...
+
         String strace = getFilteredTrace(t);
         Text trace = doc.createTextNode(strace);
         nested.appendChild(trace);
+    }
+
+    private void takeScreenshot(Test test, TestMethod testMethod) {
+
+        try {
+            File screenShotFile = controller.takeScreenShot();
+            File destScreenshotFile = new File(reportScreenshotDirectory, test.getTestBean().getClass().getName()+"."+testMethod.getTestMethod().getName()+".png");
+
+            if (!destScreenshotFile.getParentFile().exists()) {
+                destScreenshotFile.getParentFile().mkdirs();
+            }
+            Files.move(screenShotFile.toPath(),destScreenshotFile.toPath());
+
+
+        } catch (IOException ioe ) {
+            log.info("Failed to create screenshot : "+ ioe.getMessage());
+        }
     }
 
 

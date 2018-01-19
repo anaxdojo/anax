@@ -2,12 +2,15 @@ package org.anax.framework.testing;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.controllers.WebController;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -16,7 +19,6 @@ import java.util.List;
 public class Verify {
 
 
-    /** The log. */
     /** The pass color. */
     private static final String PASS_COLOR = "Lime";
     /** The fail color. */
@@ -90,11 +92,13 @@ public class Verify {
 
 
     private final WebController controller;
+    private final String reportScreenshotsDirectory;
 
 
     /** Instantiates a new verify.*/
-    public Verify(@Autowired WebController controller) {
+    public Verify(@Autowired WebController controller, @Value("${anax.report.screenshots.directory:reports/screenshots}") String reportScreenshotsDirectory) {
         this.controller = controller;
+        this.reportScreenshotsDirectory = reportScreenshotsDirectory;
         System.setProperty("org.uncommons.reportng.escape-output", "false");
     }
 
@@ -123,11 +127,6 @@ public class Verify {
      */
     public void error(String message) {
         log.error(message);
-        try {
-            controller.takeScreenShot();
-        } catch (IOException ioe ) {
-            log.info("Failed to create screenshot : "+ ioe.getMessage());
-        }
     }
 
     /**

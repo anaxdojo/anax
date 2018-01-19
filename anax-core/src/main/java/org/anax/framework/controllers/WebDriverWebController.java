@@ -550,7 +550,7 @@ public class WebDriverWebController implements WebController {
      * (java.io.File, java.lang.String)
      */
     @Override
-    public void takeScreenShot() throws IOException {
+    public File takeScreenShot() throws IOException {
 
         File scrFile = null;
         try {
@@ -559,13 +559,7 @@ public class WebDriverWebController implements WebController {
             log.error("Failed to generate screenshot, problem with driver: {} ", e.getMessage());
         }
 
-        //TODO check if this is used at all
-//        if (scrFile != null) {
-//            File file = createScreenshotFile();
-//            FileUtils.copyFile(scrFile, file);
-//
-//            reportLogScreenshot(file);
-//        }
+        return scrFile;
     }
 
     /*
