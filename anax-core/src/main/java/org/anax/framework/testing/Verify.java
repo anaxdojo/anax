@@ -2,16 +2,11 @@ package org.anax.framework.testing;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.controllers.WebController;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 @Component
@@ -245,7 +240,7 @@ public class Verify {
      */
     public void elementNotVisible(String locator) {
         try {
-            Assert.isTrue(controller.isComponentNotVisible(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentNotVisible(locator),ELEMENT_LOCATOR + locator + IS_VISIBLE);
             info(ELEMENT_LOCATOR + locator + IS_NOT_VISIBLE);
         } catch (IllegalArgumentException e) {
             controller.highlight(locator,FAIL_COLOR);
@@ -262,7 +257,7 @@ public class Verify {
      */
     public void value(String locator, String expectedValue) {
         try {
-            Assert.isTrue(controller.getInputValue(locator).equals(expectedValue),"Assertion failed, Values are not equals.Check...");
+            Assert.isTrue(controller.getInputValue(locator).equals(expectedValue),ELEMENT_LOCATOR + locator + NOT_FOUND_WITH_VALUE + expectedValue + "' but with value "+controller.getInputValue(locator)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_WITH_VALUE + expectedValue + "'!");
         } catch (IllegalArgumentException e) {
@@ -280,7 +275,7 @@ public class Verify {
      */
     public void text(String locator, String expectedText) {
         try {
-            Assert.isTrue(controller.getText(locator).equals(expectedText),"Assertion failed, Texts are not equals.Check...");
+            Assert.isTrue(controller.getText(locator).equals(expectedText),ELEMENT_LOCATOR + locator + NOT_FOUND_WITH_TEXT+ expectedText + "' but with text "+controller.getText(locator)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_WITH_TEXT+ expectedText + "'!");
         } catch (IllegalArgumentException e) {
@@ -302,7 +297,7 @@ public class Verify {
             info(ELEMENT_LOCATOR + locator + FOUND_CONTAINING_TEXT + expectedText + "'!");
         } else {
             controller.highlight(locator, FAIL_COLOR);
-            error(ELEMENT_LOCATOR + locator + NOT_FOUND_CONTAINING_TEXT + expectedText + "'!");
+            error(ELEMENT_LOCATOR + locator + NOT_FOUND_CONTAINING_TEXT + expectedText + "' since the actual text is: "+controller.getText(locator)+"'!");
             throw new AssertionError(ELEMENT_LOCATOR + locator + NOT_FOUND_CONTAINING_TEXT + expectedText + "'!");
         }
     }
@@ -314,7 +309,7 @@ public class Verify {
      */
     public void editable(String locator) {
         try {
-            Assert.isTrue(controller.isComponentEditable(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentEditable(locator),ELEMENT_LOCATOR + locator + FOUND_DISABLED);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_EDITABLE);
         } catch (IllegalArgumentException e) {
@@ -331,7 +326,7 @@ public class Verify {
      */
     public void disabled(String locator) {
         try {
-            Assert.isTrue(controller.isComponentDisabled(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentDisabled(locator),ELEMENT_LOCATOR + locator + FOUND_EDITABLE);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_DISABLED);
         } catch (IllegalArgumentException e) {
@@ -348,7 +343,7 @@ public class Verify {
      */
     public void selected(String locator) {
         try {
-            Assert.isTrue(controller.isComponentSelected(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentSelected(locator),ELEMENT_LOCATOR + locator + NOT_FOUND_SELECTED);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_SELECTED);
         } catch (IllegalArgumentException e) {
@@ -365,7 +360,7 @@ public class Verify {
      */
     public void notSelected(String locator) {
         try {
-            Assert.isTrue(controller.isComponentNotSelected(locator),"Assertion failed, condition is not true.Check...");
+            Assert.isTrue(controller.isComponentNotSelected(locator),ELEMENT_LOCATOR + locator + FOUND_SELECTED);
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + NOT_FOUND_SELECTED);
         } catch (IllegalArgumentException e) {
@@ -385,7 +380,7 @@ public class Verify {
      */
     public void tableElementTextUnderHeader(String locator, String elementName, String headerName, String expectedText) {
         try {
-            Assert.isTrue(controller.getTableElementTextUnderHeader(locator, elementName,headerName).equals(expectedText),"Assertion failed, Texts are not equals.Check...");
+            Assert.isTrue(controller.getTableElementTextUnderHeader(locator, elementName,headerName).equals(expectedText),TABLE_ELEMENT + elementName + NOT_FOUND_WITH_TEXT+ expectedText + "' for header '" + headerName + "'!");
             controller.highlight(controller.getTableElementSpecificHeaderLocator(locator, elementName, headerName),PASS_COLOR);
             info(TABLE_ELEMENT + elementName + FOUND_WITH_TEXT+ expectedText + "' for header '" + headerName + "'!");
         } catch (IllegalArgumentException e) {
@@ -405,7 +400,7 @@ public class Verify {
      */
     public void tableElementTextForSpecificRowAndColumn(String locator,String row, String column, String expectedText) {
         try {
-            Assert.isTrue(controller.getTableElementTextForRowAndColumn(locator, row, column).equals(expectedText),"Assertion failed, Check...");
+            Assert.isTrue(controller.getTableElementTextForRowAndColumn(locator, row, column).equals(expectedText),"The table element in row '" + row + "' and column '" + column + NOT_FOUND_WITH_TEXT + expectedText + "'!");
             controller.highlight(controller.getTableElementSpecificRowAndColumnLocator(locator, row, column),PASS_COLOR);
             info("The table element in row '" + row + "' and column '" + column + FOUND_WITH_TEXT + expectedText + "'!");
         } catch (IllegalArgumentException e) {
@@ -424,7 +419,7 @@ public class Verify {
      */
     public void tableElementAtRowPosition(String locator,String elementName, String expectedRow) {
         try {
-            Assert.isTrue(controller.getTableElementRowPosition(locator, elementName).equals(expectedRow),"Assertion failed, Check...");
+            Assert.isTrue(controller.getTableElementRowPosition(locator, elementName).equals(expectedRow),TABLE_ELEMENT + elementName + "' was not found in row '"+ expectedRow + "' but in row "+controller.getTableElementRowPosition(locator, elementName)+"'!");
             info(TABLE_ELEMENT + elementName + "' was found in row '"+ expectedRow + "'!");
         } catch (IllegalArgumentException e) {
             error(TABLE_ELEMENT + elementName + "' was not found in row '"+ expectedRow + "'!");
@@ -501,7 +496,7 @@ public class Verify {
      */
     public void allListOptions(String locator, List<String> expectedOptions){
         try {
-            Assert.isTrue(controller.getAllListOptions(locator).equals(expectedOptions),"Assertion failed, Lists are not equal, Check...");
+            Assert.isTrue(controller.getAllListOptions(locator).equals(expectedOptions),ELEMENT_LOCATOR + locator + NOT_FOUND_WITH_OPTIONS  + expectedOptions  + "' but with options: "+controller.getAllListOptions(locator)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_WITH_OPTIONS  + expectedOptions  + "'!");
         } catch (IllegalArgumentException e) {
@@ -519,7 +514,7 @@ public class Verify {
      */
     public void selectedListOptions(String locator,List<String> expectedOptions){
         try {
-            Assert.isTrue(controller.getSelectedOptions(locator).equals(expectedOptions),"Assertion failed, Lists are not equal, Check...");
+            Assert.isTrue(controller.getSelectedOptions(locator).equals(expectedOptions),ELEMENT_LOCATOR + locator + NOT_FOUND_WITH_SELECTED_OPTIONS + expectedOptions + "' but with options: "+controller.getSelectedOptions(locator)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_WITH_SELECTED_OPTIONS + expectedOptions + "'!");
         } catch (IllegalArgumentException e) {
@@ -537,7 +532,7 @@ public class Verify {
      */
     public void selectedListOption(String locator, String expectedOption){
         try {
-            Assert.isTrue(controller.getSelectedOption(locator).equals(expectedOption),"Assertion failed, List option is not the correct, Check...");
+            Assert.isTrue(controller.getSelectedOption(locator).equals(expectedOption),ELEMENT_LOCATOR + locator + NOT_FOUND_WITH_SELECTED_OPTION + expectedOption + "' but with option: "+controller.getSelectedOption(locator)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info(ELEMENT_LOCATOR + locator + FOUND_WITH_SELECTED_OPTION + expectedOption + "'!");
         } catch (IllegalArgumentException e) {
@@ -556,7 +551,7 @@ public class Verify {
      */
     public void attributeValue (String locator,String attribute,String desiredValue){
         try {
-            Assert.isTrue(controller.getAttributeValue(locator, attribute).equals(desiredValue),"Assertion failed, Attribute value is not the correct, Check...");
+            Assert.isTrue(controller.getAttributeValue(locator, attribute).equals(desiredValue),"The '" + attribute + ELEMENT_LOCATOR_ATTRIBUTE + locator +  NOT_FOUND_WITH_VALUE + desiredValue+ "' but with value "+controller.getAttributeValue(locator, attribute)+"'!");
             controller.highlight(locator,PASS_COLOR);
             info("The '" + attribute + ELEMENT_LOCATOR_ATTRIBUTE + locator +  FOUND_WITH_VALUE + desiredValue+ "'!");
         }
@@ -582,7 +577,7 @@ public class Verify {
         else{
             controller.highlight(locator,FAIL_COLOR);
             error("The '" + attribute + ELEMENT_LOCATOR_ATTRIBUTE + locator + NOT_FOUND_CONTAINING_VALUE + desiredValue+ "'!");
-            throw new AssertionError("The '" + attribute + ELEMENT_LOCATOR_ATTRIBUTE + locator + NOT_FOUND_CONTAINING_VALUE + desiredValue+ "'!");
+            throw new AssertionError("The '" + attribute + ELEMENT_LOCATOR_ATTRIBUTE + locator + NOT_FOUND_CONTAINING_VALUE + desiredValue+ "' but found to contain: "+controller.getAttributeValue(locator, attribute)+"'!");
         }
     }
 
@@ -625,7 +620,7 @@ public class Verify {
      */
     public void alertText(String alertText){
         try {
-            Assert.isTrue(controller.getAlertText().equals(alertText),"Assertion failed, Text is not the correct, Check...");
+            Assert.isTrue(controller.getAlertText().equals(alertText),NOT_FOUND_ALERT_WITH_MESSAGE + alertText +"' but with text"+controller.getAlertText()+"'!");
             info(FOUND_ALERT_WITH_MESSAGE + alertText +"'!");
         }
         catch(AssertionError e){
@@ -633,5 +628,4 @@ public class Verify {
             throw e;
         }
     }
-
 }
