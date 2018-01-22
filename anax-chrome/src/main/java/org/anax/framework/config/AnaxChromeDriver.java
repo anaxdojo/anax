@@ -40,7 +40,8 @@ public class AnaxChromeDriver {
 
             ChromeDriverService service = new ChromeDriverService.Builder().build();
             options = new ChromeOptions();
-            options.addArguments("start-maximized");
+            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
+            options.addArguments(x);
             options.merge(capabilities);
 
             return () -> {

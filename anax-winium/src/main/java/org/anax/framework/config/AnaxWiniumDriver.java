@@ -3,23 +3,29 @@ package org.anax.framework.config;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.winium.DesktopOptions;
+import org.openqa.selenium.winium.WiniumDriver;
+import org.openqa.selenium.winium.WiniumDriverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import java.net.URL;
 
 
 @Configuration
-public class AnaxFirefoxDriver {
+public class AnaxWiniumDriver {
 
-    @Value("${anax.target.url:http://www.google.com}")
+    @Value("${anax.target.url:C:\\Windows\\System32\notepad.exe}")
     String targetUrl;
     @Value("${anax.remote.host:NOT_CONFIGURED}")
     String remoteHost;
@@ -30,25 +36,19 @@ public class AnaxFirefoxDriver {
     @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
-        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-        FirefoxOptions firefoxoptions;
+        DesktopOptions options = new DesktopOptions();
+        options.setApplicationPath("C:\\Windows\\System32\\notepad.exe");
+            WiniumDriverService service = new WiniumDriverService.Builder()
+                    .usingAnyFreePort()
+                    .withVerbose(true)
+                    .withSilent(false)
+                    .buildDesktopService();
 
-        if (useLocal) {
-
-            firefoxoptions = new FirefoxOptions();
-            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
-            firefoxoptions.addArguments(x);
             return () -> {
-                FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
+                WiniumDriver driver = new WiniumDriver(service, options);
                 driver.get(targetUrl);
                 return driver;
             };
-        } else {
-            Augmenter augmenter = new Augmenter(); // adds screenshot capability to a default webdriver.
-            return () -> augmenter.augment(new RemoteWebDriver(
-                    new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
-                    capabilities));
-        }
     }
 
     @ConditionalOnMissingBean
