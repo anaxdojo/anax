@@ -43,6 +43,10 @@ public class AnaxSuiteRunner {
         this.reporter = reporter;
     }
 
+    @Value("${anax.exec.suite:ALL}")
+    String executeSuite;
+
+
     @PostConstruct
     public void postConstruct() {
 
@@ -64,14 +68,18 @@ public class AnaxSuiteRunner {
         }
         suitesMap.keySet().stream().forEach( (String name) -> {
             try {
-                final Suite suite = suitesMap.get(name);
+                if (!executeSuite.contentEquals("ALL") &&
+                        !executeSuite.contentEquals(name)) {
+                    log.warn("Suite {} not selected for execution (selected: {})", name, executeSuite);
+                } else {
+                    final Suite suite = suitesMap.get(name);
 
-                try (FileOutputStream outputStream = new FileOutputStream(new File(reportDirectory, createReportFilename(name))) ) {
-                    executeTestSuite(suite,outputStream);
-                } catch (IOException ioe) {
-                    throw new ReportException("IO Error writing report file : "+ioe.getMessage(),ioe);
+                    try (FileOutputStream outputStream = new FileOutputStream(new File(reportDirectory, createReportFilename(name)))) {
+                        executeTestSuite(suite, outputStream);
+                    } catch (IOException ioe) {
+                        throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
+                    }
                 }
-
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
             }
