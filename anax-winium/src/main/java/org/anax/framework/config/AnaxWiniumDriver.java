@@ -3,13 +3,6 @@ package org.anax.framework.config;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeDriverService;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.Augmenter;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.winium.DesktopOptions;
 import org.openqa.selenium.winium.WiniumDriver;
 import org.openqa.selenium.winium.WiniumDriverService;
@@ -18,9 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.net.URL;
-
 
 @Configuration
 public class AnaxWiniumDriver {

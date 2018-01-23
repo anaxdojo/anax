@@ -12,7 +12,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 
 
-class VoidController implements WebController {
+public class VoidController implements WebController {
 
     @Override
     public void enableActionsLogging() {
