@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-@AnaxTest
+@AnaxTest(value = "S1")
 @Component
 @Slf4j
 public class TestGoogle1 {

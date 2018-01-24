@@ -2,15 +2,14 @@ package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.*;
-import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@AnaxTest(value = "S1",priority = 1)
+@AnaxTest(value = "S1",priority = 2)
 @Component
 @Slf4j
-public class TestGoogle2 {
+public class TestGoogle3 {
 
     @Autowired
     WebController controller;

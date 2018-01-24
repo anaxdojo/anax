@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.anax.framework.controllers.WebController;
+import org.anax.framework.controllers.WebDriverWebController;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.Suite;
@@ -44,6 +46,8 @@ public class AnaxSequentialSuiteRunner extends AnaxSuiteRegistrar implements Ana
     @Value("${anax.exec.suite:ALL}")
     protected String executeSuite;
 
+    @Autowired
+    protected WebController controller;
 
     @PostConstruct
     public void postConstruct() {
@@ -81,8 +85,12 @@ public class AnaxSequentialSuiteRunner extends AnaxSuiteRegistrar implements Ana
                 }
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
+            } finally {
+                //close the browser
+                controller.quit();
             }
         });
+
     }
 
     protected String createReportFilename(String name) {

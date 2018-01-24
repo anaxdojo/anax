@@ -17,7 +17,7 @@ public class AnaxPlainDriver {
     }
 
     @Bean
-    public WebController getWebController() {
+    public WebController defaultWebController() {
         return new VoidController();
     }
 }

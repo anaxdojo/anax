@@ -12,4 +12,12 @@ public @interface AnaxTest {
 
     int priority() default 0;
 
+    /**
+     * By default test classes run single threaded (1 thread).
+     * Configure this parameter to allow parallel execution of tests
+     * @return
+     */
+    int parallelClassThreads() default 1;
+
+
 }

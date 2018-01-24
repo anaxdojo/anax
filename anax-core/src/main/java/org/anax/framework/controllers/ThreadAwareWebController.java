@@ -6,6 +6,7 @@ import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 
+import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -18,6 +19,7 @@ public class ThreadAwareWebController implements WebController {
     public ThreadAwareWebController(Supplier<WebController> supplier) {
         this.webControllers = ThreadLocal.withInitial(supplier);
     }
+
 
     protected WebController getThreadDelegate() {
         return webControllers.get();
