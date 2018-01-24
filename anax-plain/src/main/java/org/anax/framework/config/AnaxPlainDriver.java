@@ -12,11 +12,10 @@ import org.anax.framework.controllers.VoidController;
 public class AnaxPlainDriver {
     @ConditionalOnMissingBean
     @Bean
-    public AnaxDriver getWebDriver() {
+    public AnaxDriver defaultAnaxDriver() {
         return () -> null;
     }
 
-    @ConditionalOnMissingBean
     @Bean
     public WebController getWebController() {
         return new VoidController();

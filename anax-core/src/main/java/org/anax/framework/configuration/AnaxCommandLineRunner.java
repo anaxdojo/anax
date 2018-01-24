@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class AnaxBaseRunner implements CommandLineRunner{
+public class AnaxCommandLineRunner implements CommandLineRunner{
 
     private final AnaxSuiteRunner suiteRunner;
 
-    public AnaxBaseRunner(@Autowired AnaxSuiteRunner suiteRunner) {
+    public AnaxCommandLineRunner(@Autowired AnaxSuiteRunner suiteRunner) {
         this.suiteRunner = suiteRunner;
     }
 

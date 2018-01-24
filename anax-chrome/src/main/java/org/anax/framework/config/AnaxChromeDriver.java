@@ -32,7 +32,7 @@ public class AnaxChromeDriver {
 
     @ConditionalOnMissingBean
     @Bean
-    public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
+    public AnaxDriver defaultAnaxDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
         DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         ChromeOptions options;
 
@@ -63,10 +63,5 @@ public class AnaxChromeDriver {
         }
     }
 
-    @ConditionalOnMissingBean
-    @Bean
-    public WebController getWebController(@Autowired AnaxDriver anaxDriver, @Value("${anax.defaultWaitSeconds:5}") Integer defaultWaitSeconds) throws Exception {
-        return new WebDriverWebController(anaxDriver.getWebDriver(), defaultWaitSeconds);
-    }
 
 }

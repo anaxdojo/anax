@@ -2,7 +2,7 @@ package org.anax.framework.annotations;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.configuration.AnaxSuiteRunner;
+import org.anax.framework.configuration.AnaxSequentialSuiteRunner;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
 
     private final ApplicationContext context;
-    private final AnaxSuiteRunner suiteRunner;
+    private final AnaxSequentialSuiteRunner suiteRunner;
 
-    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context, @Autowired AnaxSuiteRunner suiteRunner) {
+    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context, @Autowired AnaxSequentialSuiteRunner suiteRunner) {
         this.context = context;
         this.suiteRunner = suiteRunner;
     }
