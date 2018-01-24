@@ -1,8 +1,10 @@
-package org.anax.framework.annotations;
+package org.anax.framework.annotations.processors;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.configuration.AnaxSequentialSuiteRunner;
+import org.anax.framework.annotations.*;
+import org.anax.framework.configuration.AnaxSuiteRegistrar;
+import org.anax.framework.configuration.AnaxSuiteRunner;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
@@ -24,11 +26,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
 
     private final ApplicationContext context;
-    private final AnaxSequentialSuiteRunner suiteRunner;
+    private final AnaxSuiteRegistrar registrar;
 
-    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context, @Autowired AnaxSequentialSuiteRunner suiteRunner) {
+    public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context, @Autowired AnaxSuiteRegistrar registrar) {
         this.context = context;
-        this.suiteRunner = suiteRunner;
+        this.registrar = registrar;
     }
 
     /**
@@ -54,11 +56,11 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
             List<Suite> rgSuites = new ArrayList<>();
 
             for (String name: anaxTest.value()) {
-                Suite r = suiteRunner.registerSuite(name);
+                Suite r = registrar.registerSuite(name);
                 rgSuites.add(r);
             }
 
-            Test test = suiteRunner.registerTest(bean, beanName, anaxTest.priority(), rgSuites);
+            Test test = registrar.registerTest(bean, beanName, anaxTest.priority(), rgSuites);
 
             // then, on method level:
             ReflectionUtils.doWithMethods(aClass, method -> {
@@ -68,7 +70,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxBeforeTest beforeTest = (AnaxBeforeTest) testAnnotation;
 
-                    suiteRunner.registerBeforeTest(test, method);
+                    registrar.registerBeforeTest(test, method);
                 });
 
                 //we need the AtomicReference to simulate the "effectively final"
@@ -77,7 +79,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
 
-                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.ordering(), testStep.skip()));
+                    mainTestMethod.set(registrar.registerTestMethod(test, method, testStep.ordering(), testStep.skip()));
                 });
 
 
@@ -90,7 +92,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     Arrays.stream(aClass.getDeclaredMethods())
                         .filter(m -> names.contains(m.getName()))
                         .forEach( m -> {
-                            final TestMethod preCMethod = suiteRunner.registerPrecondition(test, m, preCondition.skip());
+                            final TestMethod preCMethod = registrar.registerPrecondition(test, m, preCondition.skip());
                             mainTestMethod.get().getPreconditions().add(preCMethod);
                         });
 
@@ -105,7 +107,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     Arrays.stream(aClass.getDeclaredMethods())
                         .filter(m -> names.contains(m.getName()))
                         .forEach( m -> {
-                            TestMethod postCMethod = suiteRunner.registerPostcondition(test, m, postCondition.skip());
+                            TestMethod postCMethod = registrar.registerPostcondition(test, m, postCondition.skip());
                             mainTestMethod.get().getPostconditions().add(postCMethod);
                         });
 
@@ -114,7 +116,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxAfterTest.class)
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxAfterTest afterStep = (AnaxAfterTest) testAnnotation;
-                    suiteRunner.registerAfterTest(test, method);
+                    registrar.registerAfterTest(test, method);
                 });
             });
 

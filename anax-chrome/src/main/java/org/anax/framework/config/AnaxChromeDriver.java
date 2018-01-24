@@ -28,6 +28,8 @@ public class AnaxChromeDriver {
     String remoteHost;
     @Value("${anax.remote.port:NOT_CONFIGURED}")
     String remotePort;
+    @Value("${anax.chrome.startsMaximized:true}")
+    Boolean startMaximized;
 
 
     @ConditionalOnMissingBean
@@ -40,8 +42,10 @@ public class AnaxChromeDriver {
 
             ChromeDriverService service = new ChromeDriverService.Builder().build();
             options = new ChromeOptions();
-            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
-            options.addArguments(x);
+            if (startMaximized) {
+                String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
+                options.addArguments(x);
+            }
             options.merge(capabilities);
 
             return () -> {

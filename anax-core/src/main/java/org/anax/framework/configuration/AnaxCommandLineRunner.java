@@ -25,9 +25,17 @@ public class AnaxCommandLineRunner implements CommandLineRunner{
         log.info("");
 
         for (String option : strings) {
-            log.debug("Option: {}", option);
+            log.debug("cmd option: {}", option);
         }
-
+        //TODO check if execute is true or false (e.g. only show plan not truly execute)
         suiteRunner.createExecutionPlan(true);
+
+        log.info("");
+        log.info("");
+        log.info("");
+
+        log.info("------------------------------------------------");
+        log.info("Anax execution finished. Shutting down....      ");
+        log.info("------------------------------------------------");
     }
 }

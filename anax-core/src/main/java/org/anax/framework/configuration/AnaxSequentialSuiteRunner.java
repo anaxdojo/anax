@@ -1,11 +1,7 @@
 package org.anax.framework.configuration;
 
 import com.google.common.collect.Lists;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.anax.framework.controllers.WebController;
-import org.anax.framework.controllers.WebDriverWebController;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.Suite;
@@ -16,20 +12,16 @@ import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Component
 @Slf4j
-public class AnaxSequentialSuiteRunner extends AnaxSuiteRegistrar implements AnaxSuiteRunner {
+public class AnaxSequentialSuiteRunner extends AnaxDefaultSuiteRegistrar implements AnaxSuiteRunner {
 
     protected final AnaxTestReporter reporter;
 
