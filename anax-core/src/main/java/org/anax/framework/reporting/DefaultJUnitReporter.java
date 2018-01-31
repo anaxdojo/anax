@@ -21,6 +21,7 @@ package org.anax.framework.reporting;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.controllers.VoidController;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
@@ -340,7 +341,10 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         nested.setAttribute(ATTR_TYPE, t.getClass().getName());
 
         //take screenshot here
-        takeScreenshot(test,testMethod);
+
+        if(controller.getClass()!= VoidController.class) {
+            takeScreenshot(test, testMethod);
+        }
         //TODO figure what to do with it...
 
         String strace = getFilteredTrace(t);
