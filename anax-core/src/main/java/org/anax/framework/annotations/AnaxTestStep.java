@@ -12,6 +12,8 @@ public @interface AnaxTestStep {
      */
     int ordering() default 0;
 
+    String description() default "";
+
     boolean skip() default false;
 
 }
