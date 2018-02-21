@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.anax.framework</groupId>
 		<artifactId>anax-parent</artifactId>
-		<version>0.1.1-SNAPSHOT</version>
+		<version>0.1.1</version>
 	</parent>
 
 	<properties>
@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>org.anax.framework</groupId>
 			<artifactId>anax-chrome</artifactId>
-			<version>0.1.1-SNAPSHOT</version>
+			<version>0.1.1</version>
 		</dependency>
 
 		<dependency>

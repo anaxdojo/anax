@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import org.anax.framework.controllers.WebController;
 
 @Component
 @Slf4j
@@ -38,6 +39,8 @@ public class AnaxSuiteRunner {
     @Value("${anax.report.directory:reports/}")
     String reportDirectory;
 
+    @Autowired
+    WebController controller;
 
     public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
         this.reporter = reporter;
@@ -78,7 +81,9 @@ public class AnaxSuiteRunner {
                         executeTestSuite(suite, outputStream);
                     } catch (IOException ioe) {
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
-                    }
+                    } finally {
+			controller.quit();
+		    }
                 }
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
