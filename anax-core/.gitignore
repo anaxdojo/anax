@@ -1,6 +1,5 @@
 # Compiled class file
 *.class
-*.versionsBackup
 
 # Log file
 *.log
@@ -25,4 +24,3 @@ hs_err_pid*
 
 .idea
 target/
-reports/
