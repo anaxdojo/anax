@@ -68,7 +68,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxBeforeTest beforeTest = (AnaxBeforeTest) testAnnotation;
 
-                    suiteRunner.registerBeforeTest(test, method);
+                    suiteRunner.registerBeforeTest(test, method, beforeTest.ordering());
                 });
 
                 //we need the AtomicReference to simulate the "effectively final"
@@ -95,7 +95,6 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         });
 
                 });
-
 
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxPostCondition.class)
                         .findFirst().ifPresent(testAnnotation -> {

@@ -326,8 +326,8 @@ public class AnaxSuiteRunner {
         return test;
     }
 
-    public void registerBeforeTest(Test test, Method method) {
-        TestMethod testMethod = TestMethod.builder().testMethod(method).build();
+    public void registerBeforeTest(Test test, Method method, int ordering) {
+        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).build();
         test.getTestBeforeMethods().add(testMethod);
     }
     public void registerAfterTest(Test test, Method method) {

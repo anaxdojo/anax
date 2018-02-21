@@ -7,4 +7,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface AnaxBeforeTest {
+
+    int ordering() default 0;
 }
