@@ -25,7 +25,8 @@ public class AnaxFirefoxDriver {
     String remoteHost;
     @Value("${anax.remote.port:NOT_CONFIGURED}")
     String remotePort;
-
+    @Value("${anax.maximize:false}")
+    String maximize;
 
     @ConditionalOnMissingBean
     @Bean
@@ -36,8 +37,10 @@ public class AnaxFirefoxDriver {
         if (useLocal) {
 
             firefoxoptions = new FirefoxOptions();
-            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
-            firefoxoptions.addArguments(x);
+            if(maximize.equals("true")) {
+                String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
+                firefoxoptions.addArguments(x);
+            }
             return () -> {
                 FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
                 driver.get(targetUrl);

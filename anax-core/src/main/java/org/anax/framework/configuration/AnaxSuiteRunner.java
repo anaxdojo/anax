@@ -152,6 +152,7 @@ public class AnaxSuiteRunner {
         testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
 
         //before testmethod:
+        test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
             log.info("---- BEFORE START: {}", tm.getTestMethod());
             TestResult result = executeRecordingResult(suite, test, tm, false);
