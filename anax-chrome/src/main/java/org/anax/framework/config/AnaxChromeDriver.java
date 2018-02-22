@@ -1,6 +1,6 @@
 package org.anax.framework.config;
 
-import com.oracle.tools.packager.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
@@ -16,11 +16,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import java.net.URL;
 
 
 @Configuration
+@Slf4j
 public class AnaxChromeDriver {
 
     @Value("${anax.target.url:http://www.google.com}")
@@ -55,7 +55,7 @@ public class AnaxChromeDriver {
                 return driver;
             };
         } else {
-            Log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
+            log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
             // adds screenshot capability to a default webdriver.
             return () -> {
                 Augmenter augmenter = new Augmenter();

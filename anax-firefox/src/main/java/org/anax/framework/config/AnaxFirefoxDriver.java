@@ -1,6 +1,6 @@
 package org.anax.framework.config;
 
-import com.oracle.tools.packager.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
@@ -19,6 +19,7 @@ import java.net.URL;
 
 
 @Configuration
+@Slf4j
 public class AnaxFirefoxDriver {
 
     @Value("${anax.target.url:http://www.google.com}")
@@ -49,7 +50,7 @@ public class AnaxFirefoxDriver {
                 return driver;
             };
         } else {
-            Log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
+            log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
             return () -> {
                     Augmenter augmenter = new Augmenter();
                 WebDriver driver = augmenter.augment(new RemoteWebDriver(
