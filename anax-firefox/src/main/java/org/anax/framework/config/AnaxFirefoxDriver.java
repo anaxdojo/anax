@@ -3,6 +3,7 @@ package org.anax.framework.config;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.Augmenter;
@@ -47,10 +48,14 @@ public class AnaxFirefoxDriver {
                 return driver;
             };
         } else {
-            Augmenter augmenter = new Augmenter(); // adds screenshot capability to a default webdriver.
-            return () -> augmenter.augment(new RemoteWebDriver(
-                    new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
-                    capabilities));
+            return () -> {
+                Augmenter augmenter = new Augmenter();
+                WebDriver driver = augmenter.augment(new RemoteWebDriver(
+                        new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
+                        capabilities));
+                driver.get(targetUrl);
+                return driver;
+            };
         }
     }
 
