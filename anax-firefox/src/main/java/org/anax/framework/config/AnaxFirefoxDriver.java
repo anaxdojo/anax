@@ -1,5 +1,6 @@
 package org.anax.framework.config;
 
+import com.oracle.tools.packager.Log;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
@@ -48,8 +49,9 @@ public class AnaxFirefoxDriver {
                 return driver;
             };
         } else {
+            Log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
             return () -> {
-                Augmenter augmenter = new Augmenter();
+                    Augmenter augmenter = new Augmenter();
                 WebDriver driver = augmenter.augment(new RemoteWebDriver(
                         new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
                         capabilities));
