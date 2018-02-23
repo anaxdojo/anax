@@ -26,12 +26,10 @@ import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.env.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -351,6 +349,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         Text trace = doc.createTextNode(strace);
         nested.appendChild(trace);
     }
+
 
     private void takeScreenshot(Test test, TestMethod testMethod) {
 
