@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import org.anax.framework.controllers.WebController;
 
 @Component
 @Slf4j
@@ -38,6 +39,8 @@ public class AnaxSuiteRunner {
     @Value("${anax.report.directory:reports/}")
     String reportDirectory;
 
+    @Autowired
+    WebController controller;
 
     public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
         this.reporter = reporter;
@@ -78,7 +81,9 @@ public class AnaxSuiteRunner {
                         executeTestSuite(suite, outputStream);
                     } catch (IOException ioe) {
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
-                    }
+                    } finally {
+			controller.quit();
+		    }
                 }
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
@@ -152,6 +157,7 @@ public class AnaxSuiteRunner {
         testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
 
         //before testmethod:
+        test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
             log.info("---- BEFORE START: {}", tm.getTestMethod());
             TestResult result = executeRecordingResult(suite, test, tm, false);
@@ -326,8 +332,8 @@ public class AnaxSuiteRunner {
         return test;
     }
 
-    public void registerBeforeTest(Test test, Method method) {
-        TestMethod testMethod = TestMethod.builder().testMethod(method).build();
+    public void registerBeforeTest(Test test, Method method, int ordering) {
+        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).build();
         test.getTestBeforeMethods().add(testMethod);
     }
     public void registerAfterTest(Test test, Method method) {

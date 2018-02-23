@@ -1,10 +1,7 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.AnaxPostCondition;
-import org.anax.framework.annotations.AnaxPreCondition;
-import org.anax.framework.annotations.AnaxTest;
-import org.anax.framework.annotations.AnaxTestStep;
+import org.anax.framework.annotations.*;
 import org.anax.framework.examples.demotestapp.pageObjects.GooglePageObject;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +18,16 @@ public class TestGoogle1 {
 
     @Autowired
     protected Verify                  verify;
+
+    @AnaxBeforeTest
+    public void load(){
+        log.info("First");
+    }
+
+    @AnaxBeforeTest(ordering = 1)
+    public void create(){
+        log.info("Second");
+    }
 
     @AnaxTestStep
     @AnaxPreCondition(methodNames = {"inputValuesToGoogle"})
