@@ -150,6 +150,7 @@ public class AnaxSuiteRunner {
         skippedTests.removeAll(testsToRun);
         skippedTests.forEach( testMethod -> {
             reporter.addSkipped(test, testMethod, "Skipped due to Annotation configuration");
+            testMethod.setSkip(true);
         });
         log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
 
@@ -175,6 +176,7 @@ public class AnaxSuiteRunner {
             try {
                 if (globalSkip.get()) {
                     reporter.addSkipped(test, testMethod, "Skipped due to @AnaxBefore failure");
+                    testMethod.setSkip(true);
                 } else {
                     log.info("---- STEP START: {} ---", testMethod.getTestMethod());
 
@@ -201,6 +203,8 @@ public class AnaxSuiteRunner {
                         } else {
                             testMethod.setPassed(true);
                         }
+                    } else {
+                        testMethod.setSkip(true);
                     }
                     //postcondition:
                     testMethod.getPostconditions().forEach(tp -> {

@@ -197,6 +197,11 @@ public class VoidController implements WebController {
     }
 
     @Override
+    public byte[] takeScreenShotAsBytes() throws IOException {
+        return new byte[0];
+    }
+
+    @Override
     public String getText(String locator) {
         // TODO Auto-generated method stub
         return null;

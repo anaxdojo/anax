@@ -364,6 +364,14 @@ public interface WebController {
 
 
     /**
+     * Take screen shot.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    byte[] takeScreenShotAsBytes() throws IOException;
+
+
+    /**
      * Gets the text. This works for any element that contains text.
      *
      * @param locator of the element
