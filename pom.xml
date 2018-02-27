@@ -23,10 +23,15 @@
             <name>thanosa75-maven</name>
             <url>https://api.bintray.com/maven/thanosa75/maven/Anax/;publish=1</url>
         </repository>
-
-
-
     </distributionManagement>
+
+    <repositories>
+    <repository>
+            <id>central</id>
+            <url>http://artifactory.ath.persado.com:8081/artifactory/libs-release-local</url>
+        </repository>
+    </repositories>
+
 
     <modules>
 	<module>anax-core</module>
