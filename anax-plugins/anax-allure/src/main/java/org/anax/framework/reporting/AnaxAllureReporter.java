@@ -1,11 +1,12 @@
 package org.anax.framework.reporting;
 
-import atu.testrecorder.ATUTestRecorder;
-import atu.testrecorder.exceptions.ATUTestRecorderException;
-import io.qameta.allure.Allure;
-import io.qameta.allure.AllureLifecycle;
-import io.qameta.allure.Severity;
+import io.qameta.allure.*;
+import io.qameta.allure.core.Configuration;
+import io.qameta.allure.core.Plugin;
 import io.qameta.allure.model.*;
+import io.qameta.allure.model.Attachment;
+import io.qameta.allure.model.Link;
+import io.qameta.allure.plugin.DefaultPluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.controllers.WebController;
@@ -13,38 +14,36 @@ import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.FileUtils;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.io.*;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import static io.qameta.allure.util.ResultsUtils.getHostName;
 import static io.qameta.allure.util.ResultsUtils.getThreadName;
 import static org.mockito.Mockito.mock;
 
-@Service("defaultJUnitTestReporter")
+@Service("anaxTestReporter")
 @Slf4j
-public class AnaxAllureReporter implements AnaxTestReporter {
+public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
-    @Value("${video.record:true}") String video;
-
-    private static  ATUTestRecorder recorder;
-    private String recordingName;
     private final AllureLifecycle lifecycle;
     private String suiteName;
 
     @Autowired
     WebController controller;
-
-    public AnaxAllureReporter(WebController controller, AllureLifecycle lifecycle) {
-        this.controller = controller;
-        this.lifecycle = lifecycle;
-    }
+    private boolean screenshotEnable;
+    private boolean videoEnable;
+    private String videoBaseDirectory;
+    private String reportDirectory;
 
     public AnaxAllureReporter() {
         this.lifecycle = Allure.getLifecycle();
@@ -55,10 +54,11 @@ public class AnaxAllureReporter implements AnaxTestReporter {
     }
 
 
-
     @Override
-    public void setOutput(OutputStream outputStream) {
+    public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
 
+        this.reportDirectory = reportDirectory;
+        this.suiteName = suiteName;
     }
 
     @Override
@@ -85,12 +85,15 @@ public class AnaxAllureReporter implements AnaxTestReporter {
     @Override
     public void endTestSuite(Suite suite) throws ReportException {
         try{
-            String command = "allure generate allure-results --clean";
-            Process process = Runtime.getRuntime().exec(command);
-            log.info("Generate and open allure results");
-            process.waitFor();
-            Runtime.getRuntime().exec("allure open");
-            log.info("Open results");
+
+            generate(new File(reportDirectory).toPath(), Arrays.asList(new Path[] { new File("allure-results").toPath()}), true);
+
+//            String command = "allure generate allure-results --clean";
+//            Process process = Runtime.getRuntime().exec(command);
+//            log.info("Generate and open allure results");
+//            process.waitFor();
+//            Runtime.getRuntime().exec("allure open");
+//            log.info("Open results");
         }catch(Exception e){
             log.info("Report not generated: "+e.getMessage());
         }
@@ -98,52 +101,54 @@ public class AnaxAllureReporter implements AnaxTestReporter {
 
     @Override
     public void startTest(Test test, TestMethod testMethod) {
-        String Test_UUID = getUniqueUuid(test,testMethod);
+        String testUniqueID = getUniqueUuid(test,testMethod);
         final TestResult result = createTestResult(test, testMethod);
-        getLifecycle().scheduleTestCase(Test_UUID, result);
-        getLifecycle().startTestCase(Test_UUID);
+        getLifecycle().scheduleTestCase(testUniqueID, result);
+        getLifecycle().startTestCase(testUniqueID);
 
-        recordingName = "test"+ UUID.randomUUID();
-        if(video.equals("true")) {
-            try {
-                recorder = new ATUTestRecorder(getPath(), recordingName, false);
-            } catch (ATUTestRecorderException e) {
-                e.printStackTrace();
-            }
-            try {
-                recorder.start();
-            } catch (ATUTestRecorderException e) {
-                e.printStackTrace();
-            }
+        if (videoEnable) {
+//        if(video.equals("true")) {
+//            try {
+//                recorder = new ATUTestRecorder(getPath(), recordingName, false);
+//            } catch (ATUTestRecorderException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                recorder.start();
+//            } catch (ATUTestRecorderException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        } else {
+            log.warn("Video recording feature disabled");
         }
     }
 
     @Override
     public void endTest(Test test, TestMethod testMethod) {
-        String Test_UUID = getUniqueUuid(test,testMethod);
+        String testUniqueID = getUniqueUuid(test,testMethod);
+
+        if(videoEnable) {
+//            try {
+//                recorder.stop();
+//            } catch (ATUTestRecorderException e) {
+//                e.printStackTrace();
+//            }
+//            getLifecycle().updateTestCase(testUniqueID, setRecording());
+        }
+
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStep(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setSeverity(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
-        getLifecycle().updateTestCase(Test_UUID, setStatus(getStepStatus(testMethod)));
-        getLifecycle().updateTestCase(Test_UUID,setRecording());
-        getLifecycle().updateTestCase(Test_UUID,setPassStdOut(testMethod));
+        getLifecycle().updateTestCase(testUniqueID, setStatus(getStepStatus(testMethod)));
+        getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));
 
-        if(video.equals("true")) {
-            try {
-                recorder.stop();
-            } catch (ATUTestRecorderException e) {
-                e.printStackTrace();
-            }
-        }
-
-        getLifecycle().stopTestCase(Test_UUID);
-        getLifecycle().writeTestCase(Test_UUID);
+        getLifecycle().stopTestCase(testUniqueID);
+        getLifecycle().writeTestCase(testUniqueID);
     }
 
     @Override
     public void addFailure(Test test, TestMethod testMethod, Throwable throwable) {
-        Throwable actual = throwable;
-        String message = actual.getMessage();
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable, testMethod));
         try {
             takeScreenshotOnFailure();
@@ -164,8 +169,6 @@ public class AnaxAllureReporter implements AnaxTestReporter {
 
     @Override
     public void addError(Test test, TestMethod testMethod, Throwable throwable) {
-        Throwable actual = throwable;
-        String message = actual.getMessage();
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable,testMethod));
         try {
             takeScreenshotOnFailure();
@@ -279,9 +282,12 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         return id;
     }
 
-    public byte[] takeScreenshotOnFailure() throws IOException {
-        Allure.addAttachment("Screenshot",new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
-        return controller.takeScreenShotAsBytes();
+    private void takeScreenshotOnFailure() throws IOException {
+        if (screenshotEnable) {
+            Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
+        } else {
+            log.warn("Screenshot feature disabled");
+        }
     }
 
 
@@ -306,10 +312,10 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         };
     }
 
-    private Consumer<TestResult> setRecording() {
+    private Consumer<TestResult> setRecording(String UUID) {
         return result -> {
             result.withAttachments(
-                    new Attachment().withName("Recording").withSource(getPath()+"/"+recordingName+".mov").withType("mov")
+                    new Attachment().withName("Recording").withSource(videoBaseDirectory+"/"+UUID+".mov").withType("mov")
             );
         };
     }
@@ -326,12 +332,38 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         }
     }
 
-    private Supplier<InputStream> getStreamWithTimeout(final long sec) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(sec);
-        return () -> mock(InputStream.class);
+
+    @Override
+    public void screenshotRecording(boolean enable) {
+        screenshotEnable = enable;
     }
 
-    private String getPath(){
-        return new File("reports").getAbsolutePath();
+    @Override
+    public void videoRecording(boolean enable, String videoBaseDirectory) {
+        this.videoEnable = enable;
+        this.videoBaseDirectory = videoBaseDirectory;
     }
+
+    public void generate(final Path reportDirectory,
+                             final List<Path> resultsDirectories,
+                             final boolean clean) {
+        final boolean directoryExists = Files.exists(reportDirectory);
+        if (clean && directoryExists) {
+            FileUtils.deleteQuietly(reportDirectory.toFile());
+        }
+
+        try {
+            ReportGenerator generator = new ReportGenerator(new ConfigurationBuilder()
+                    .useDefault()
+                    .build());
+            generator.generate(reportDirectory, resultsDirectories);
+        } catch (IOException e) {
+            log.error("Could not generate report: {}", e);
+        }
+        log.info("Report successfully generated to {}", reportDirectory);
+    }
+
+
+
+
 }

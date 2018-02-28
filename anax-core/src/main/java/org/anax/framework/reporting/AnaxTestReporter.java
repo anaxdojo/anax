@@ -4,10 +4,12 @@ import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 
+import java.io.FileNotFoundException;
 import java.io.OutputStream;
 
 public interface AnaxTestReporter {
-    void setOutput(OutputStream out);
+
+    void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException;
 
     void setSystemOutput(String out);
 
