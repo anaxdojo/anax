@@ -14,6 +14,7 @@ import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.io.*;
 import java.util.Arrays;
@@ -26,10 +27,11 @@ import static io.qameta.allure.util.ResultsUtils.getHostName;
 import static io.qameta.allure.util.ResultsUtils.getThreadName;
 import static org.mockito.Mockito.mock;
 
-
 @Service("defaultJUnitTestReporter")
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter {
+
+    @Value("${video.record:true}") String video;
 
     private static  ATUTestRecorder recorder;
     private String recordingName;
@@ -102,15 +104,17 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         getLifecycle().startTestCase(Test_UUID);
 
         recordingName = "test"+ UUID.randomUUID();
-        try {
-            recorder = new ATUTestRecorder(getPath(),recordingName,false);
-        } catch (ATUTestRecorderException e) {
-            e.printStackTrace();
-        }
-        try {
-            recorder.start();
-        } catch (ATUTestRecorderException e) {
-            e.printStackTrace();
+        if(video.equals("true")) {
+            try {
+                recorder = new ATUTestRecorder(getPath(), recordingName, false);
+            } catch (ATUTestRecorderException e) {
+                e.printStackTrace();
+            }
+            try {
+                recorder.start();
+            } catch (ATUTestRecorderException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -122,11 +126,14 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
         getLifecycle().updateTestCase(Test_UUID, setStatus(getStepStatus(testMethod)));
         getLifecycle().updateTestCase(Test_UUID,setRecording());
-        try {
+        getLifecycle().updateTestCase(Test_UUID,setPassStdOut(testMethod));
 
-            recorder.stop();
-        } catch (ATUTestRecorderException e) {
-            e.printStackTrace();
+        if(video.equals("true")) {
+            try {
+                recorder.stop();
+            } catch (ATUTestRecorderException e) {
+                e.printStackTrace();
+            }
         }
 
         getLifecycle().stopTestCase(Test_UUID);
@@ -180,14 +187,12 @@ public class AnaxAllureReporter implements AnaxTestReporter {
             result.withStatus(status);
             StatusDetails det = new StatusDetails();
 
+            StringBuilder html = new StringBuilder();
             if (throwable!=null) {
                 det.setMessage(throwable.getMessage()); //TODO find the correct message
                 result.withStatusDetails(det);
                 StringWriter wr = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(wr));
-
-
-                StringBuilder html = new StringBuilder();
 
                 html.append("<h3>Console Logs</h3>");
                 html.append("<pre>" + method.getStdOut().toString() + "</pre>");
@@ -195,9 +200,18 @@ public class AnaxAllureReporter implements AnaxTestReporter {
 
                 html.append("<h3>Exception Detail</h3>");
                 html.append("<pre>" + wr.toString() + "</pre>");
-
                 result.withDescriptionHtml(html.toString());
             }
+        };
+    }
+
+    private Consumer<TestResult> setPassStdOut(TestMethod method) {
+        return result -> {
+            StringBuilder html = new StringBuilder();
+
+            html.append("<h3>Console Logs</h3>");
+            html.append("<pre>" + method.getStdOut().toString() + "</pre>");
+            result.withDescriptionHtml(html.toString());
         };
     }
 
@@ -241,7 +255,7 @@ public class AnaxAllureReporter implements AnaxTestReporter {
     private TestResult createTestResult(Test test, TestMethod testMethod) {
         final String className = test.getTestBeanName();
         final String methodName = testMethod.getTestMethod().getName();
-        final String name = Objects.nonNull(className+methodName) ? methodName : className;
+        final String name = Objects.nonNull(methodName) ? className+"_"+methodName : className;
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
 
 
@@ -251,7 +265,7 @@ public class AnaxAllureReporter implements AnaxTestReporter {
                 .withName(name)
                 .withFullName(fullName)
                 .withLabels(
-                        new Label().withName("package").withValue("mypackage"),
+                        new Label().withName("package").withValue(test.getClass().getPackage().toString()),
                         new Label().withName("testClass").withValue(className),
                         new Label().withName("testMethod").withValue(name),
                         new Label().withName("suite").withValue(suiteName),
