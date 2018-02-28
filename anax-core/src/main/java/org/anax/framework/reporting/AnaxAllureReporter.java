@@ -126,7 +126,7 @@ public class AnaxAllureReporter implements AnaxTestReporter {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
         getLifecycle().updateTestCase(Test_UUID, setStatus(getStepStatus(testMethod)));
         getLifecycle().updateTestCase(Test_UUID,setRecording());
-        getLifecycle().updateTestCase(Test_UUID,setPassStdOut(testMethod));
+        if(!testMethod.isSkip()){getLifecycle().updateTestCase(Test_UUID,setPassStdOut(testMethod));}
 
         if(video.equals("true")) {
             try {
@@ -196,7 +196,6 @@ public class AnaxAllureReporter implements AnaxTestReporter {
 
                 html.append("<h3>Console Logs</h3>");
                 html.append("<pre>" + method.getStdOut().toString() + "</pre>");
-
 
                 html.append("<h3>Exception Detail</h3>");
                 html.append("<pre>" + wr.toString() + "</pre>");
