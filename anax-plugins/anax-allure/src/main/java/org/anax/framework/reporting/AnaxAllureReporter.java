@@ -141,7 +141,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setSeverity(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
         getLifecycle().updateTestCase(testUniqueID, setStatus(getStepStatus(testMethod)));
-        getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));
+        if(!testMethod.isSkip()){getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));}
 
         getLifecycle().stopTestCase(testUniqueID);
         getLifecycle().writeTestCase(testUniqueID);
