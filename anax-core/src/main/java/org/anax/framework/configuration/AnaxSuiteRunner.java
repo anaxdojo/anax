@@ -74,7 +74,7 @@ public class AnaxSuiteRunner {
 
         //configuring reporters here
         if (reporter instanceof ReporterSupportsVideo) {
-            ((ReporterSupportsVideo) reporter).videoRecording(true, reportDirectory + "/recordings");
+            ((ReporterSupportsVideo) reporter).videoRecording(true, "allure-recordings");
             log.info("Enabled Video recordings");
         }
         if (reporter instanceof ReporterSupportsScreenshot) {

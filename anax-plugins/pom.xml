@@ -22,6 +22,7 @@
     </properties>
 
     <modules>
+        <module>anax-videorec</module>
         <module>anax-allure</module>
     </modules>
 </project>

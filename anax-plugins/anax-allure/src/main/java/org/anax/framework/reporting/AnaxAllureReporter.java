@@ -9,6 +9,7 @@ import io.qameta.allure.model.Link;
 import io.qameta.allure.plugin.DefaultPluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
+import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
@@ -37,6 +38,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     private final AllureLifecycle lifecycle;
     private String suiteName;
+
+
+    private VideoMaker videoMaker;
 
     @Autowired
     WebController controller;
@@ -107,18 +111,15 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         getLifecycle().startTestCase(testUniqueID);
 
         if (videoEnable) {
-//        if(video.equals("true")) {
-//            try {
-//                recorder = new ATUTestRecorder(getPath(), recordingName, false);
-//            } catch (ATUTestRecorderException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                recorder.start();
-//            } catch (ATUTestRecorderException e) {
-//                e.printStackTrace();
-//            }
-//        }
+            try {
+                videoMaker = new VideoMaker();
+                File base = new File(videoBaseDirectory);
+                base.mkdirs();
+                videoMaker.createVideo(new File(videoBaseDirectory+"/"+testUniqueID+".mov").toPath(), 24, 15);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         } else {
             log.warn("Video recording feature disabled");
         }
@@ -128,13 +129,28 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public void endTest(Test test, TestMethod testMethod) {
         String testUniqueID = getUniqueUuid(test,testMethod);
 
-        if(videoEnable) {
-//            try {
-//                recorder.stop();
-//            } catch (ATUTestRecorderException e) {
-//                e.printStackTrace();
-//            }
-//            getLifecycle().updateTestCase(testUniqueID, setRecording());
+        if (videoEnable) {
+           if (videoMaker != null) {
+               try {
+                   videoMaker.completeVideo();
+
+                   switch (getStepStatus(testMethod)) {
+                       case PASSED:
+                           //NOOP
+                           break;
+                       case FAILED:
+                       case SKIPPED:
+                       case BROKEN:
+                           getLifecycle().updateTestCase(testUniqueID, setRecording(testUniqueID));
+                           break;
+
+                   }
+               } catch (Exception e) {
+                   log.error("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
+               }
+           }
+
+//
         }
 
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStep(testMethod));
@@ -256,9 +272,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
 
     private TestResult createTestResult(Test test, TestMethod testMethod) {
-        final String className = test.getTestBeanName();
+        final String className = test.getTestBean().getClass().getName();
         final String methodName = testMethod.getTestMethod().getName();
-        final String name = Objects.nonNull(methodName) ? className+"_"+methodName : className;
+        final String name = Objects.nonNull(methodName) ? className+"."+methodName : className;
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
 
 
@@ -268,7 +284,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                 .withName(name)
                 .withFullName(fullName)
                 .withLabels(
-                        new Label().withName("package").withValue(test.getClass().getPackage().toString()),
+                        new Label().withName("package").withValue(test.getClass().getPackage().getName()),
                         new Label().withName("testClass").withValue(className),
                         new Label().withName("testMethod").withValue(name),
                         new Label().withName("suite").withValue(suiteName),
@@ -314,9 +330,12 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     private Consumer<TestResult> setRecording(String UUID) {
         return result -> {
-            result.withAttachments(
-                    new Attachment().withName("Recording").withSource(videoBaseDirectory+"/"+UUID+".mov").withType("mov")
-            );
+            try {
+                Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
+                Allure.addAttachment("Recording." + UUID + ".mov", "video/quicktime", Files.newInputStream(recording), "mov");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         };
     }
 
@@ -357,6 +376,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     .useDefault()
                     .build());
             generator.generate(reportDirectory, resultsDirectories);
+
+            if (videoEnable) {
+                FileUtils.deleteQuietly(new File(videoBaseDirectory));
+            }
         } catch (IOException e) {
             log.error("Could not generate report: {}", e);
         }
