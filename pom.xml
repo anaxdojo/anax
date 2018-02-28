@@ -25,21 +25,20 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-    <repository>
-            <id>central</id>
-            <url>http://artifactory.ath.persado.com:8081/artifactory/libs-release-local</url>
-        </repository>
-    </repositories>
-
+    <!-- NOTE: we do not put artifactory here with central as the id! -->
 
     <modules>
-	<module>anax-core</module>
-	<module>anax-chrome</module>
-	<module>anax-firefox</module>
-	<module>anax-chrome-demo-app</module>
+        <module>anax-core</module>
+        <module>anax-chrome</module>
+        <module>anax-firefox</module>
         <module>anax-winium</module>
         <module>anax-plain</module>
+
+        <module>anax-plugins</module>
+
+        <!-- demo app should be the last -->
+        <module>anax-chrome-demo-app</module>
+
     </modules>
 </project>
 

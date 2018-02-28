@@ -18,7 +18,7 @@ public class ReportAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    AnaxTestReporter defaultJUnitTestReporter(@Value("${anax.reports.screenshot.dir:reports/screenshots}") String reportScreenshotDir,
+    AnaxTestReporter anaxTestReporter(@Value("${anax.reports.screenshot.dir:reports/screenshots}") String reportScreenshotDir,
             @Autowired Environment environment, @Autowired WebController controller) {
         return new DefaultJUnitReporter(environment, controller, reportScreenshotDir);
     }

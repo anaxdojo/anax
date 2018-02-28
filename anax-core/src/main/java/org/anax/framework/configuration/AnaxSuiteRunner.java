@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.anax.framework.reporting.ReporterSupportsScreenshot;
+import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.Suite;
@@ -69,6 +71,18 @@ public class AnaxSuiteRunner {
         } else {
             log.info("Planning for execution of Suites: {}", suitesMap.keySet());
         }
+
+        //configuring reporters here
+        if (reporter instanceof ReporterSupportsVideo) {
+            ((ReporterSupportsVideo) reporter).videoRecording(true, reportDirectory + "/recordings");
+            log.info("Enabled Video recordings");
+        }
+        if (reporter instanceof ReporterSupportsScreenshot) {
+            ((ReporterSupportsScreenshot) reporter).screenshotRecording(true);
+            log.info("Enabled Screenshots");
+        }
+
+
         suitesMap.keySet().stream().forEach( (String name) -> {
             try {
                 if (!executeSuite.contentEquals("ALL") &&
@@ -77,13 +91,14 @@ public class AnaxSuiteRunner {
                 } else {
                     final Suite suite = suitesMap.get(name);
 
-                    try (FileOutputStream outputStream = new FileOutputStream(new File(reportDirectory, createReportFilename(name)))) {
-                        executeTestSuite(suite, outputStream);
+                    try  {
+                        reporter.startOutput(reportDirectory, name);
+                        executeTestSuite(suite);
                     } catch (IOException ioe) {
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
                     } finally {
-			controller.quit();
-		    }
+			            controller.quit();
+		            }
                 }
             } catch (ReportException rpe) {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
@@ -91,34 +106,10 @@ public class AnaxSuiteRunner {
         });
     }
 
-    private String createReportFilename(String name) {
-        return "junit-compat-report-"+normalizeFile(name)+"-"+ Long.toHexString(System.currentTimeMillis()) + ".xml";
-    }
-
-    private String normalizeFile(String s) {
-        char fileSep = File.pathSeparatorChar;
-        char escape = '_'; // ... or some other legal char.
-        int len = s.length();
-        StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++) {
-            char ch = s.charAt(i);
-            if (ch <= ' ' || ch >= 0x7F || ch == fileSep ||
-                (ch == '.' && i == 0)
-                    || ch == escape) {
-                sb.append(escape);
-
-            } else {
-                sb.append(ch);
-            }
-        }
-        return sb.toString();
-    }
-
-    public void executeTestSuite(Suite suite, OutputStream out) throws ReportException {
+    public void executeTestSuite(Suite suite) throws ReportException {
         log.info("--------------");
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
-        reporter.setOutput(out);
         reporter.startTestSuite(suite);
         log.trace("About to execute suite tests: {}",suite.getTests().size());
 
