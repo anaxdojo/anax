@@ -7,7 +7,7 @@ import org.anax.framework.controllers.WebController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@AnaxTest(priority = 1)
+//@AnaxTest(priority = 1)
 @Component
 @Slf4j
 public class TestGoogle2 {

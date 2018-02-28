@@ -1,8 +1,10 @@
 package org.anax.framework.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.Augmenter;
@@ -17,6 +19,7 @@ import java.net.URL;
 
 
 @Configuration
+@Slf4j
 public class AnaxFirefoxDriver {
 
     @Value("${anax.target.url:http://www.google.com}")
@@ -25,7 +28,8 @@ public class AnaxFirefoxDriver {
     String remoteHost;
     @Value("${anax.remote.port:NOT_CONFIGURED}")
     String remotePort;
-
+    @Value("${anax.maximize:false}")
+    String maximize;
 
     @ConditionalOnMissingBean
     @Bean
@@ -36,18 +40,25 @@ public class AnaxFirefoxDriver {
         if (useLocal) {
 
             firefoxoptions = new FirefoxOptions();
-            String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
-            firefoxoptions.addArguments(x);
+            if(maximize.equals("true")) {
+                String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
+                firefoxoptions.addArguments(x);
+            }
             return () -> {
                 FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
                 driver.get(targetUrl);
                 return driver;
             };
         } else {
-            Augmenter augmenter = new Augmenter(); // adds screenshot capability to a default webdriver.
-            return () -> augmenter.augment(new RemoteWebDriver(
-                    new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
-                    capabilities));
+            log.info("Remote url is: "+"http://" + remoteHost + ":" + remotePort + "/wd/hub");
+            return () -> {
+                    Augmenter augmenter = new Augmenter();
+                WebDriver driver = augmenter.augment(new RemoteWebDriver(
+                        new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
+                        capabilities));
+                driver.get(targetUrl);
+                return driver;
+            };
         }
     }
 

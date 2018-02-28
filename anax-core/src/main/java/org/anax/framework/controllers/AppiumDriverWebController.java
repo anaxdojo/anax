@@ -202,6 +202,11 @@ public class AppiumDriverWebController implements WebController{
     }
 
     @Override
+    public byte[] takeScreenShotAsBytes() throws IOException {
+        return new byte[0];
+    }
+
+    @Override
     public String getText(String locator) {
         WebElement element = waitForElement(locator,defaultWaitSeconds);
         return element.getText();

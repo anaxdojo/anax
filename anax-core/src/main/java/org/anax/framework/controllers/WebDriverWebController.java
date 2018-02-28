@@ -562,6 +562,16 @@ public class WebDriverWebController implements WebController {
         return scrFile;
     }
 
+    @Override
+    public byte[] takeScreenShotAsBytes() throws IOException {
+        try {
+            return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        } catch (Exception e) {
+            log.error("Failed to generate screenshot, problem with driver: {} ", e.getMessage());
+        }
+        return null;
+    }
+
     /*
      * (non-Javadoc)
      *

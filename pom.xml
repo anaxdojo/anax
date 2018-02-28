@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.anax.framework</groupId>
     <artifactId>anax-parent</artifactId>
-    <version>0.1.1</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -23,18 +23,22 @@
             <name>thanosa75-maven</name>
             <url>https://api.bintray.com/maven/thanosa75/maven/Anax/;publish=1</url>
         </repository>
-
-
-
     </distributionManagement>
 
+    <!-- NOTE: we do not put artifactory here with central as the id! -->
+
     <modules>
-	<module>anax-core</module>
-	<module>anax-chrome</module>
-	<module>anax-firefox</module>
-	<module>anax-chrome-demo-app</module>
+        <module>anax-core</module>
+        <module>anax-chrome</module>
+        <module>anax-firefox</module>
         <module>anax-winium</module>
         <module>anax-plain</module>
+
+        <module>anax-plugins</module>
+
+        <!-- demo app should be the last -->
+        <module>anax-chrome-demo-app</module>
+
     </modules>
 </project>
 

@@ -26,12 +26,10 @@ import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.env.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -49,7 +47,7 @@ import java.util.HashMap;
 import java.util.stream.StreamSupport;
 
 @Slf4j
-public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
+public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, ReporterSupportsScreenshot {
 
     private static final double ONE_SECOND = 1000.0;
 
@@ -59,6 +57,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
     private final Environment environment;
     private final WebController controller;
+    private boolean screenshotEnable;
 
     private static DocumentBuilder getDocumentBuilder() {
         try {
@@ -116,8 +115,33 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
 
 
     @Override
-    public void setOutput(OutputStream out) {
+    public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
+        FileOutputStream out = new FileOutputStream(new File(reportDirectory, createReportFilename(suiteName)));
         this.out = out;
+    }
+
+
+    private String createReportFilename(String name) {
+        return "junit-compat-report-"+normalizeFile(name)+"-"+ Long.toHexString(System.currentTimeMillis()) + ".xml";
+    }
+
+    private String normalizeFile(String s) {
+        char fileSep = File.pathSeparatorChar;
+        char escape = '_'; // ... or some other legal char.
+        int len = s.length();
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            char ch = s.charAt(i);
+            if (ch <= ' ' || ch >= 0x7F || ch == fileSep ||
+                    (ch == '.' && i == 0)
+                    || ch == escape) {
+                sb.append(escape);
+
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
     }
 
     @Override
@@ -340,17 +364,17 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         }
         nested.setAttribute(ATTR_TYPE, t.getClass().getName());
 
-        //take screenshot here
-
-        if(controller.getClass()!= VoidController.class) {
+        if(controller.getClass()!= VoidController.class && screenshotEnable) {
             takeScreenshot(test, testMethod);
+        } else {
+            log.warn("Screenshot feature is disabled - no screenshot taken");
         }
-        //TODO figure what to do with it...
 
         String strace = getFilteredTrace(t);
         Text trace = doc.createTextNode(strace);
         nested.appendChild(trace);
     }
+
 
     private void takeScreenshot(Test test, TestMethod testMethod) {
 
@@ -407,6 +431,12 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter {
         }
 
         currentTest.appendChild(nested);
+
+    }
+
+    @Override
+    public void screenshotRecording(boolean enable) {
+        screenshotEnable = enable;
 
     }
 }
