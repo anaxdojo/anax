@@ -9,6 +9,7 @@ public class AnaxChromeDemoAppApplication {
 
 	public static void main(String[] args) {
 		SpringApplicationBuilder builder = new SpringApplicationBuilder(AnaxChromeDemoAppApplication.class);
-		builder.headless(false).run(args);
+		// not needed, VideoMaker does it on its own, if enabled!
+		builder.run(args);
 	}
 }

@@ -47,7 +47,7 @@ Then, add the dependency for Chrome to your project:
 <dependency> 
     <groupId>org.anax.framework</groupId> 
     <artifactId>anax-chrome</artifactId> 
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -60,7 +60,7 @@ repositories { maven { url "https://dl.bintray.com/thanosa75/maven" } }
 
 Then, add the dependency for Anax-Chrome to your project:
 ```gradle
-compile 'org.anax.framework:anax-chrome:0.1.0'
+compile 'org.anax.framework:anax-chrome:0.2.0'
 ```
 
 And off you go... You should be reading the Wiki first, though....

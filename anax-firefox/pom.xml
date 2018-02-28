@@ -3,14 +3,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.anax.framework</groupId>
     <artifactId>anax-firefox</artifactId>
-    <version>0.1.5-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
 
 
     <parent>
         <groupId>org.anax.framework</groupId>
         <artifactId>anax-parent</artifactId>
-        <version>0.1.5-SNAPSHOT</version>
+        <version>0.2.0</version>
     </parent>
 
 
