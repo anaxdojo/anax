@@ -241,7 +241,7 @@ public class AnaxAllureReporter implements AnaxTestReporter {
     private TestResult createTestResult(Test test, TestMethod testMethod) {
         final String className = test.getTestBeanName();
         final String methodName = testMethod.getTestMethod().getName();
-        final String name = Objects.nonNull(methodName) ? methodName : className;
+        final String name = Objects.nonNull(className+methodName) ? methodName : className;
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
 
 
