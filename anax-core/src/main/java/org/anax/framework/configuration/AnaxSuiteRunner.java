@@ -34,9 +34,9 @@ public class AnaxSuiteRunner {
 
     boolean shouldAlsoExecute = false;
 
-    @Value("${anax.report.directory:allure-report/}") String reportDirectory;
+    @Value("${anax.report.directory:reports/}") String reportDirectory;
     @Value("${anax.exec.suite:ALL}") String executeSuite;
-    @Value("${enable.video:true}") String videoOn;
+    @Value("${enable.video:true}") Boolean videoOn;
 
     @Autowired
     WebController controller;
@@ -67,8 +67,8 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if (reporter instanceof ReporterSupportsVideo && videoOn.equals("true")) {
-            ((ReporterSupportsVideo) reporter).videoRecording(true, "allure-recordings");
+        if (reporter instanceof ReporterSupportsVideo) {
+            ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings");
         }
         if (reporter instanceof ReporterSupportsScreenshot) {

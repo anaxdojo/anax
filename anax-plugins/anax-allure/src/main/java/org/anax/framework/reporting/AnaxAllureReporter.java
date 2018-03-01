@@ -36,10 +36,9 @@ import static org.mockito.Mockito.mock;
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
+    @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     private final AllureLifecycle lifecycle;
     private String suiteName;
-
-
     private VideoMaker videoMaker;
 
     @Autowired
@@ -60,8 +59,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     @Override
     public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
-        this.reportDirectory = reportDirectory;
+        this.reportDirectory = reportDirectory.contentEquals("reports/")?reportAllureDirectory:reportDirectory;
         this.suiteName = suiteName;
+        log.info("Allure output directory {} suite name {}",this.reportDirectory,suiteName);
     }
 
     @Override
