@@ -51,9 +51,25 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-
+        <!--<dependency>-->
+            <!--<groupId>ro.ghionoiu</groupId>-->
+            <!--<artifactId>dev-screen-record</artifactId>-->
+            <!--<version>0.0.5</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>io.humble</groupId>-->
+            <!--<artifactId>humble-video-all</artifactId>-->
+            <!--<version>0.2.1</version>-->
+        <!--</dependency>-->
     </dependencies>
-
-
-
+    <!--<repositories>-->
+        <!--<repository>-->
+            <!--<snapshots>-->
+                <!--<enabled>false</enabled>-->
+            <!--</snapshots>-->
+            <!--<id>bintray-julianghionoiu-maven</id>-->
+            <!--<name>bintray</name>-->
+            <!--<url>https://dl.bintray.com/julianghionoiu/maven</url>-->
+        <!--</repository>-->
+    <!--</repositories>-->
 </project>

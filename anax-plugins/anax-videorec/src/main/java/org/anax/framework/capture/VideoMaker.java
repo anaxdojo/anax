@@ -4,13 +4,18 @@ package org.anax.framework.capture;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.capture.qt.QuickTimeWriter;
 
-import java.awt.image.IndexColorModel;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+//import tdl.record.screen.image.input.InputFromScreen;
+//import tdl.record.screen.image.input.ScaleToOptimalSizeImage;
+//import tdl.record.screen.utils.ImageQualityHint;
+//import tdl.record.screen.video.VideoRecorder;
 
 @Slf4j
 public class VideoMaker {
@@ -108,13 +113,22 @@ public class VideoMaker {
 
 
     public static void main(String[] args) throws Exception {
-        VideoMaker maker = new VideoMaker();
-        maker.createVideo( new File("movie.mov").toPath(), 12, 5);
-        Thread.sleep(120000);
+//        VideoMaker maker = new VideoMaker();
+//        maker.createVideo( new File("movie.mov").toPath(), 12, 5);
+//        Thread.sleep(120000);
+//        maker.completeVideo();
 
-        maker.completeVideo();
+/*        String destinationPath = "./screen.mp4";
+        VideoRecorder videoRecorder = new VideoRecorder
+                .Builder(new ScaleToOptimalSizeImage(ImageQualityHint.MEDIUM, new InputFromScreen()))
+                .build();
 
 
+        int snapsPerSecond = 25;
+        int timeSpeedUpFactor = 4;
+        videoRecorder.open(destinationPath, snapsPerSecond, timeSpeedUpFactor);
+        videoRecorder.start(Duration.of(1, ChronoUnit.MINUTES)); //Will block
+        videoRecorder.close();*/
     }
 
 }

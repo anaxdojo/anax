@@ -38,6 +38,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
+    /** do not change the FPS value over 15, due to h/w limitations */
+    @Value("${anax.allure.video.fps:10}") Integer videoFramesPerSec;
+    /** how many seconds to continue recording, after the "end recording" has been called */
+    @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
 
 
     private final AllureLifecycle lifecycle;
@@ -112,7 +116,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                 videoMaker = new VideoMaker();
                 File base = new File(videoBaseDirectory);
                 base.mkdirs();
-                videoMaker.createVideo(new File(videoBaseDirectory+"/"+testUniqueID+".mov").toPath(), 24, 15);
+                videoMaker.createVideo(new File(videoBaseDirectory+"/"+testUniqueID+".mov").toPath(),
+                        videoFramesPerSec, videoWaitSeconds);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -327,11 +332,14 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     private Consumer<TestResult> setRecording(String UUID) {
         return result -> {
-            try {
-                Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
-                Allure.addAttachment("Recording." + UUID + ".mov", "video/quicktime", Files.newInputStream(recording), "mov");
-            } catch (Exception e) {
-                e.printStackTrace();
+            Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
+            if (recording.toFile().exists()) {
+                try (InputStream videoData = Files.newInputStream(recording)) {
+                    Allure.addAttachment("Recording." + UUID + ".mov",
+                            "video/quicktime", videoData, "mov");
+                } catch(Exception e){
+                    log.error("Exception when adding video to attachments {}",e.getMessage(),e);
+                }
             }
         };
     }
