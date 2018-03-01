@@ -1,32 +1,28 @@
 package org.anax.framework.configuration;
 
 import com.google.common.collect.Lists;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.anax.framework.reporting.ReporterSupportsScreenshot;
-import org.anax.framework.reporting.ReporterSupportsVideo;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.anax.framework.model.TestResult;
 import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
+import org.anax.framework.reporting.ReporterSupportsScreenshot;
+import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-
 import javax.annotation.PostConstruct;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import org.anax.framework.controllers.WebController;
 
 @Component
 @Slf4j
@@ -38,8 +34,10 @@ public class AnaxSuiteRunner {
 
     boolean shouldAlsoExecute = false;
 
-    @Value("${anax.report.directory:reports/}")
-    String reportDirectory;
+    @Value("${anax.report.directory:reports/}") String reportDirectory;
+    @Value("${anax.exec.suite:ALL}") String executeSuite;
+    @Value("${enable.video:true}") Boolean videoOn;
+    @Value("${enable.screenshot:true}") Boolean screenshotOn;
 
     @Autowired
     WebController controller;
@@ -47,9 +45,6 @@ public class AnaxSuiteRunner {
     public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
         this.reporter = reporter;
     }
-
-    @Value("${anax.exec.suite:ALL}")
-    String executeSuite;
 
 
     @PostConstruct
@@ -63,7 +58,7 @@ public class AnaxSuiteRunner {
     }
 
 
-    public void createExecutionPlan(boolean executePlan) {
+    public boolean createExecutionPlan(boolean executePlan) {
         shouldAlsoExecute = executePlan;
 
         if (shouldAlsoExecute) { //TODO handle the boolean for execution or display
@@ -73,15 +68,18 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if (reporter instanceof ReporterSupportsVideo) {
-            ((ReporterSupportsVideo) reporter).videoRecording(true, "allure-recordings");
-            log.info("Enabled Video recordings");
-        }
-        if (reporter instanceof ReporterSupportsScreenshot) {
-            ((ReporterSupportsScreenshot) reporter).screenshotRecording(true);
-            log.info("Enabled Screenshots");
+        if(videoOn && reporter instanceof ReporterSupportsVideo) {
+            ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
+            log.info("Enabled Video recordings feature");
+
         }
 
+        if (screenshotOn && reporter instanceof ReporterSupportsScreenshot) {
+            ((ReporterSupportsScreenshot) reporter).screenshotRecording(screenshotOn);
+            log.info("Enabled Screenshots feature");
+        }
+
+        AtomicBoolean globalFailures = new AtomicBoolean(false);
 
         suitesMap.keySet().stream().forEach( (String name) -> {
             try {
@@ -93,8 +91,10 @@ public class AnaxSuiteRunner {
 
                     try  {
                         reporter.startOutput(reportDirectory, name);
-                        executeTestSuite(suite);
+                        final boolean suiteFail = executeTestSuite(suite);
+                        globalFailures.compareAndSet(false, suiteFail);
                     } catch (IOException ioe) {
+                        globalFailures.set(true);
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
                     } finally {
 			            controller.quit();
@@ -104,9 +104,10 @@ public class AnaxSuiteRunner {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
             }
         });
+        return globalFailures.get();
     }
 
-    public void executeTestSuite(Suite suite) throws ReportException {
+    public boolean executeTestSuite(Suite suite) throws ReportException {
         log.info("--------------");
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
@@ -123,10 +124,11 @@ public class AnaxSuiteRunner {
         reporter.setSystemError(suite.getErr().toString());
         reporter.setSystemOutput(suite.getOut().toString());
         log.trace("Ending suite reporting...");
-        reporter.endTestSuite(suite);
+        final boolean fail = reporter.endTestSuite(suite);
         log.trace("Suite reporting has completed");
         log.info("SUITE END: {}", suite.getName());
 
+        return fail;
     }
 
     private void executeTest(Suite suite, Test test) {
