@@ -1,32 +1,28 @@
 package org.anax.framework.configuration;
 
 import com.google.common.collect.Lists;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.anax.framework.reporting.ReporterSupportsScreenshot;
-import org.anax.framework.reporting.ReporterSupportsVideo;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.anax.framework.model.TestResult;
 import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
+import org.anax.framework.reporting.ReporterSupportsScreenshot;
+import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-
 import javax.annotation.PostConstruct;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import org.anax.framework.controllers.WebController;
 
 @Component
 @Slf4j
@@ -38,8 +34,9 @@ public class AnaxSuiteRunner {
 
     boolean shouldAlsoExecute = false;
 
-    @Value("${anax.report.directory:reports/}")
-    String reportDirectory;
+    @Value("${anax.report.directory:allure-report/}") String reportDirectory;
+    @Value("${anax.exec.suite:ALL}") String executeSuite;
+    @Value("${enable.video:true}") String videoOn;
 
     @Autowired
     WebController controller;
@@ -47,9 +44,6 @@ public class AnaxSuiteRunner {
     public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
         this.reporter = reporter;
     }
-
-    @Value("${anax.exec.suite:ALL}")
-    String executeSuite;
 
 
     @PostConstruct
@@ -73,7 +67,7 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if (reporter instanceof ReporterSupportsVideo) {
+        if (reporter instanceof ReporterSupportsVideo && videoOn.equals("true")) {
             ((ReporterSupportsVideo) reporter).videoRecording(true, "allure-recordings");
             log.info("Enabled Video recordings");
         }

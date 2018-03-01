@@ -14,8 +14,6 @@ import org.springframework.core.env.Environment;
 @Configuration
 public class ReportAutoConfiguration {
 
-
-
     @Bean
     @ConditionalOnMissingBean
     AnaxTestReporter anaxTestReporter(@Value("${anax.reports.screenshot.dir:reports/screenshots}") String reportScreenshotDir,

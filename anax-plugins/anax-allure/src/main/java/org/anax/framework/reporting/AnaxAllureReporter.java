@@ -60,7 +60,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     @Override
     public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
-
         this.reportDirectory = reportDirectory;
         this.suiteName = suiteName;
     }
@@ -89,15 +88,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Override
     public void endTestSuite(Suite suite) throws ReportException {
         try{
-
             generate(new File(reportDirectory).toPath(), Arrays.asList(new Path[] { new File("allure-results").toPath()}), true);
-
-//            String command = "allure generate allure-results --clean";
-//            Process process = Runtime.getRuntime().exec(command);
-//            log.info("Generate and open allure results");
-//            process.waitFor();
-//            Runtime.getRuntime().exec("allure open");
-//            log.info("Open results");
         }catch(Exception e){
             log.info("Report not generated: "+e.getMessage());
         }
