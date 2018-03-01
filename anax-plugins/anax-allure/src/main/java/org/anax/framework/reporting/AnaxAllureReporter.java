@@ -37,6 +37,9 @@ import static org.mockito.Mockito.mock;
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
+    @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
+
+
     private final AllureLifecycle lifecycle;
     private String suiteName;
     private VideoMaker videoMaker;
@@ -47,6 +50,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     private boolean videoEnable;
     private String videoBaseDirectory;
     private String reportDirectory;
+
+    private Boolean failed = false;
 
     public AnaxAllureReporter() {
         this.lifecycle = Allure.getLifecycle();
@@ -86,12 +91,13 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     @Override
-    public void endTestSuite(Suite suite) throws ReportException {
+    public boolean endTestSuite(Suite suite) throws ReportException {
         try{
-            generate(new File(reportDirectory).toPath(), Arrays.asList(new Path[] { new File("allure-results").toPath()}), true);
+            generate(new File(reportDirectory).toPath(), Arrays.asList(new Path[] { new File(resultsAllureDirectory).toPath()}), true);
         }catch(Exception e){
             log.info("Report not generated: "+e.getMessage());
         }
+        return failed;
     }
 
     @Override
@@ -126,11 +132,11 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                    videoMaker.completeVideo();
 
                    switch (getStepStatus(testMethod)) {
+                       case SKIPPED:
                        case PASSED:
                            //NOOP
                            break;
                        case FAILED:
-                       case SKIPPED:
                        case BROKEN:
                            getLifecycle().updateTestCase(testUniqueID, setRecording(testUniqueID));
                            break;
@@ -156,6 +162,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public void addFailure(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable, testMethod));
         try {
+            failed = true;
             takeScreenshotOnFailure();
         } catch (IOException e) {
             e.printStackTrace();
@@ -166,6 +173,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public void addSkipped(Test test, TestMethod testMethod, String skipReason) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.SKIPPED,skipReason));
         try {
+            failed = true;
             takeScreenshotOnFailure();
         } catch (IOException e) {
             e.printStackTrace();
@@ -176,6 +184,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public void addError(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable,testMethod));
         try {
+            failed = true;
             takeScreenshotOnFailure();
         } catch (IOException e) {
             e.printStackTrace();
@@ -306,8 +315,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     result.withSteps(
                             new StepResult().withName("No available description found.").withStatus(getStepStatus(testMethod))
                     );
-                }
-                else {
+                } else {
                     result.withSteps(
                             new StepResult().withName(stepDescription.description().toString()).withStatus(getStepStatus(testMethod))
                     );

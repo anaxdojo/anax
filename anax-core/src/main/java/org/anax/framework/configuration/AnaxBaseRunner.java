@@ -28,6 +28,12 @@ public class AnaxBaseRunner implements CommandLineRunner{
             log.debug("Option: {}", option);
         }
 
-        suiteRunner.createExecutionPlan(true);
+        final boolean planFailed = suiteRunner.createExecutionPlan(true);
+
+        if (planFailed) {
+            System.exit(100);
+        } else {
+            System.exit(0);
+        }
     }
 }

@@ -17,7 +17,7 @@ public interface AnaxTestReporter {
 
     void startTestSuite(Suite suite) throws ReportException;
 
-    void endTestSuite(Suite suite) throws ReportException;
+    boolean endTestSuite(Suite suite) throws ReportException;
 
     void startTest(Test test, TestMethod testMethod);
 

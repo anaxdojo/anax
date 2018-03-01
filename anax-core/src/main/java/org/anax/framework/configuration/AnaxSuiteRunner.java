@@ -58,7 +58,7 @@ public class AnaxSuiteRunner {
     }
 
 
-    public void createExecutionPlan(boolean executePlan) {
+    public boolean createExecutionPlan(boolean executePlan) {
         shouldAlsoExecute = executePlan;
 
         if (shouldAlsoExecute) { //TODO handle the boolean for execution or display
@@ -70,15 +70,16 @@ public class AnaxSuiteRunner {
         //configuring reporters here
         if(videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
-            log.info("Enabled Video recordings");
+            log.info("Enabled Video recordings feature");
 
         }
 
         if (screenshotOn && reporter instanceof ReporterSupportsScreenshot) {
             ((ReporterSupportsScreenshot) reporter).screenshotRecording(screenshotOn);
-            log.info("Enabled Screenshots");
+            log.info("Enabled Screenshots feature");
         }
 
+        AtomicBoolean globalFailures = new AtomicBoolean(false);
 
         suitesMap.keySet().stream().forEach( (String name) -> {
             try {
@@ -90,8 +91,10 @@ public class AnaxSuiteRunner {
 
                     try  {
                         reporter.startOutput(reportDirectory, name);
-                        executeTestSuite(suite);
+                        final boolean suiteFail = executeTestSuite(suite);
+                        globalFailures.compareAndSet(false, suiteFail);
                     } catch (IOException ioe) {
+                        globalFailures.set(true);
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
                     } finally {
 			            controller.quit();
@@ -101,9 +104,10 @@ public class AnaxSuiteRunner {
                 log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
             }
         });
+        return globalFailures.get();
     }
 
-    public void executeTestSuite(Suite suite) throws ReportException {
+    public boolean executeTestSuite(Suite suite) throws ReportException {
         log.info("--------------");
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
@@ -120,10 +124,11 @@ public class AnaxSuiteRunner {
         reporter.setSystemError(suite.getErr().toString());
         reporter.setSystemOutput(suite.getOut().toString());
         log.trace("Ending suite reporting...");
-        reporter.endTestSuite(suite);
+        final boolean fail = reporter.endTestSuite(suite);
         log.trace("Suite reporting has completed");
         log.info("SUITE END: {}", suite.getName());
 
+        return fail;
     }
 
     private void executeTest(Suite suite, Test test) {

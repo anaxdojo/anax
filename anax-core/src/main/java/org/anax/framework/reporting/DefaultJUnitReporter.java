@@ -218,7 +218,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, Rep
      * @throws
      */
     @Override
-    public void endTestSuite(Suite suite) throws ReportException {
+    public boolean endTestSuite(Suite suite) throws ReportException {
         rootElement.setAttribute(ATTR_TESTS, "" + suite.getExecutedTests());
         rootElement.setAttribute(ATTR_FAILURES, "" + suite.getFailedTests());
         rootElement.setAttribute(ATTR_ERRORS, "" + suite.getErroredTests());
@@ -258,6 +258,7 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, Rep
                 }
             }
         }
+        return suite.getFailedTests()+suite.getSkippedTests()+suite.getErroredTests() > 0 ? true : false;
     }
 
 
