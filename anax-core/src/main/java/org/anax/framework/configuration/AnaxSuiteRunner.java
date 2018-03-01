@@ -37,6 +37,7 @@ public class AnaxSuiteRunner {
     @Value("${anax.report.directory:reports/}") String reportDirectory;
     @Value("${anax.exec.suite:ALL}") String executeSuite;
     @Value("${enable.video:true}") Boolean videoOn;
+    @Value("${enable.screenshot:true}") Boolean screenshotOn;
 
     @Autowired
     WebController controller;
@@ -67,12 +68,14 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if (reporter instanceof ReporterSupportsVideo) {
+        if(videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings");
+
         }
-        if (reporter instanceof ReporterSupportsScreenshot) {
-            ((ReporterSupportsScreenshot) reporter).screenshotRecording(true);
+
+        if (screenshotOn && reporter instanceof ReporterSupportsScreenshot) {
+            ((ReporterSupportsScreenshot) reporter).screenshotRecording(screenshotOn);
             log.info("Enabled Screenshots");
         }
 

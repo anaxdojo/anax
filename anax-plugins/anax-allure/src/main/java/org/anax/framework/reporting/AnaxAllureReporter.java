@@ -140,8 +140,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                    log.error("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
                }
            }
-
-//
         }
 
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStep(testMethod));
