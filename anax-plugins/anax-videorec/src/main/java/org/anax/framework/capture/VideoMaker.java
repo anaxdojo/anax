@@ -21,8 +21,10 @@ public class VideoMaker {
     private ScreenCapture sc;
 
     private boolean started = false;
+    private int finalVideoWait;
 
-    public void createVideo(Path movieFile, int depth, int framesPerSec) throws Exception {
+    public void createVideo(final Path movieFile,final int framesPerSec, final int videoWaitAfterEndSeconds) throws Exception {
+        finalVideoWait = videoWaitAfterEndSeconds*1000;
         if (started) {
             throw new IllegalStateException("Cannot start again, already started");
         }
@@ -35,7 +37,7 @@ public class VideoMaker {
                 .build();
         sc = ScreenCapture.builder()
                 .captureDelayMs(1000/framesPerSec)
-                .depth(depth)
+                .depth(24)
                 .mouseCapture(mc)
                 .build();
 
@@ -47,38 +49,45 @@ public class VideoMaker {
         wr.addVideoTrack(QuickTimeWriter.VideoFormat.RLE, 1000L, sc.getRect().width, sc.getRect().height);
         //wr.setVideoColorTable(0, (IndexColorModel)sc.getVideoImg().getColorModel());
 
-        pool.scheduleAtFixedRate(() -> {
+        pool.scheduleWithFixedDelay(() -> {
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             final ArrayBlockingQueue<ScreenCapture.Screenshot> screens = sc.getTrackedScreens();
 
-            ArrayList<ScreenCapture.Screenshot> list = new ArrayList<>();
+            ArrayList<ScreenCapture.Screenshot> list = new ArrayList<>(100);
             screens.drainTo(list);
             long t0 = System.currentTimeMillis();
             long prev = 0;
-            for (ScreenCapture.Screenshot screenshot : list) {
-                try {
+            try {
+                for (ScreenCapture.Screenshot screenshot : list) {
                     long duration = (prev == 0) ? (1000 / framesPerSec) : (screenshot.getTime() - prev);
                     wr.writeFrame(0, screenshot.getScreenshot(), duration);
                     prev = screenshot.getTime();
                     log.trace("Frame ts: {} duration {}", screenshot.getTime(),duration);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    if (1000/duration < framesPerSec-1) {
+                        log.trace("Requested {} frames/sec, actual {} frames/sec",
+                                framesPerSec, 1000/duration);
+                    }
                 }
+            } catch (IOException e) {
+                log.error("Exception {} while writing captured video - {} frames lost", e.getMessage(), list.size());
             }
-            log.debug("Writing {} frames to video - time: {}ms", list.size(), System.currentTimeMillis()-t0);
+            //log.debug("Writing {} frames to video - time: {}ms", list.size(), System.currentTimeMillis()-t0);
 
 
-        },100,1000, TimeUnit.MILLISECONDS);
+        },5,1, TimeUnit.SECONDS);
 
     }
 
     public void completeVideo() throws Exception {
         if (started) {
+            // wait for 2 more seconds
+            Thread.sleep(finalVideoWait);
             started = false;
             sc.captureEnd();
-            log.info("closing....");
+            log.info("closing .... frames left {}/{} ...", sc.getTrackedScreens().size(),sc.getTrackedScreens().remainingCapacity());
             Thread.sleep(1000);
             while (sc.getTrackedScreens().size() > 0) {
-                log.info("closing .... frames left {} ...", sc.getTrackedScreens().size());
+                log.info("waiting .... frames left {}/{} ...", sc.getTrackedScreens().size(),sc.getTrackedScreens().remainingCapacity());
                 Thread.sleep(1000);
             }
             pool.shutdownNow();
@@ -100,8 +109,8 @@ public class VideoMaker {
 
     public static void main(String[] args) throws Exception {
         VideoMaker maker = new VideoMaker();
-        maker.createVideo( new File("movie.mov").toPath(), 24, 12);
-        Thread.sleep(20000);
+        maker.createVideo( new File("movie.mov").toPath(), 12, 5);
+        Thread.sleep(120000);
 
         maker.completeVideo();
 
