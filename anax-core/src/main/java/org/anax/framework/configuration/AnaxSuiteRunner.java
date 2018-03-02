@@ -54,7 +54,6 @@ public class AnaxSuiteRunner {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-
     }
 
 
@@ -71,7 +70,6 @@ public class AnaxSuiteRunner {
         if(videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings feature");
-
         }
 
         if (screenshotOn && reporter instanceof ReporterSupportsScreenshot) {
