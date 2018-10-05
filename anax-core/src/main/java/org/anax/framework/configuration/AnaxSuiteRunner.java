@@ -319,9 +319,9 @@ public class AnaxSuiteRunner {
 
     }
 
-    public Test registerTest(Object bean, String beanName, int priority, List<Suite> rgSuites) {
+    public Test registerTest(Object bean,String beanDescription ,String beanName, int priority, List<Suite> rgSuites) {
 
-        Test test = Test.builder().testBean(bean).testBeanName(beanName).priority(priority).build();
+        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).build();
         for (Suite s : rgSuites) {
             if (!suitesMap.containsKey(s.getName())) {
                 suitesMap.put(s.getName(),s);

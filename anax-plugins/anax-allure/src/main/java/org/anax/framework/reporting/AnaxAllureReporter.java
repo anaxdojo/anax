@@ -1,12 +1,16 @@
 package org.anax.framework.reporting;
 
-import io.qameta.allure.*;
-import io.qameta.allure.core.Configuration;
-import io.qameta.allure.core.Plugin;
-import io.qameta.allure.model.*;
-import io.qameta.allure.model.Attachment;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AllureLifecycle;
+import io.qameta.allure.ConfigurationBuilder;
+import io.qameta.allure.ReportGenerator;
+import io.qameta.allure.Severity;
+import io.qameta.allure.model.Label;
 import io.qameta.allure.model.Link;
-import io.qameta.allure.plugin.DefaultPluginLoader;
+import io.qameta.allure.model.Status;
+import io.qameta.allure.model.StatusDetails;
+import io.qameta.allure.model.StepResult;
+import io.qameta.allure.model.TestResult;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
@@ -15,22 +19,27 @@ import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.FileUtils;
-import org.mockito.Mockito;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static io.qameta.allure.util.ResultsUtils.getHostName;
 import static io.qameta.allure.util.ResultsUtils.getThreadName;
-import static org.mockito.Mockito.mock;
 
 @Service("anaxTestReporter")
 @Slf4j
@@ -217,8 +226,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                 throwable.printStackTrace(new PrintWriter(wr));
 
                 html.append("<h3>Console Logs</h3>");
-                html.append("<pre>" + method.getStdOut().toString() + "</pre>");
-
+                html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(),"Caused by:") + "</pre>");
 
                 html.append("<h3>Exception Detail</h3>");
                 html.append("<pre>" + wr.toString() + "</pre>");
@@ -232,7 +240,12 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             StringBuilder html = new StringBuilder();
 
             html.append("<h3>Console Logs</h3>");
-            html.append("<pre>" + method.getStdOut().toString() + "</pre>");
+            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(),"Caused by:") + "</pre>");
+
+            html.append("<h3>Special Info</h3>");
+
+//            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(), ":") + "</pre>");
+
             result.withDescriptionHtml(html.toString());
         };
     }
@@ -279,12 +292,18 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         final String methodName = testMethod.getTestMethod().getName();
         final String name = Objects.nonNull(methodName) ? className+"."+methodName : className;
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
-
+        String fullName1;
+        if(!test.getTestBeanDescription().equals("")){
+            fullName1 = String.format("%s.%s", test.getTestBeanDescription(), methodName);
+        }
+        else{
+            fullName1 = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
+        }
 
         final TestResult testResult = new TestResult()
                 .withUuid(getUniqueUuid(test,testMethod))
                 .withHistoryId(getUniqueUuid(test,testMethod))
-                .withName(name)
+                .withName(fullName1)
                 .withFullName(fullName)
                 .withLabels(
                         new Label().withName("package").withValue(test.getClass().getPackage().getName()),
