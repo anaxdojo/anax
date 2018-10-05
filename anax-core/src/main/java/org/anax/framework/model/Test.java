@@ -15,6 +15,8 @@ public class Test {
     Object testBean;
     String testBeanName;
 
+    String testBeanDescription;
+
     @Builder.Default List<TestMethod> testMethods = new ArrayList<>();
 
     @Builder.Default List<TestMethod> testBeforeMethods = new ArrayList<>();
