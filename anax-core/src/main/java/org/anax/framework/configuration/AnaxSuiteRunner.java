@@ -54,7 +54,6 @@ public class AnaxSuiteRunner {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-
     }
 
 
@@ -71,7 +70,6 @@ public class AnaxSuiteRunner {
         if(videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings feature");
-
         }
 
         if (screenshotOn && reporter instanceof ReporterSupportsScreenshot) {
@@ -321,9 +319,9 @@ public class AnaxSuiteRunner {
 
     }
 
-    public Test registerTest(Object bean, String beanName, int priority, List<Suite> rgSuites) {
+    public Test registerTest(Object bean,String beanDescription ,String beanName, int priority, List<Suite> rgSuites) {
 
-        Test test = Test.builder().testBean(bean).testBeanName(beanName).priority(priority).build();
+        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).build();
         for (Suite s : rgSuites) {
             if (!suitesMap.containsKey(s.getName())) {
                 suitesMap.put(s.getName(),s);
@@ -355,8 +353,14 @@ public class AnaxSuiteRunner {
     }
 
 
-    public TestMethod registerTestMethod(Test test, Method method, int ordering, boolean skip) {
-        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).skip(skip).build();
+//    public TestMethod registerTestMethod(Test test, Method method, int ordering, boolean skip) {
+//        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).skip(skip).build();
+//        test.getTestMethods().add(testMethod);
+//        return testMethod;
+//    }
+
+    public TestMethod registerTestMethod(Test test, Method method,String description, int ordering, boolean skip) {
+        TestMethod testMethod = TestMethod.builder().testMethod(method).description(description).ordering(ordering).skip(skip).build();
         test.getTestMethods().add(testMethod);
         return testMethod;
     }

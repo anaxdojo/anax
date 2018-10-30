@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-@AnaxTest
+@AnaxTest(description="Test Description")
+
 @Component
 @Slf4j
 public class TestGoogle1 {
@@ -29,9 +30,10 @@ public class TestGoogle1 {
         log.info("Second");
     }
 
-    @AnaxTestStep
+    @AnaxTestStep(description = "Given then ")
     @AnaxPreCondition(methodNames = {"inputValuesToGoogle"})
     public void test_step1() throws Exception{
+        log.info("This is the test info passed to console");
         verify.text(GooglePageObject.GooglePageLocators.LABEL_CALCULATOR_RESULT.get(),"7");
         Thread.sleep(2000);
     }

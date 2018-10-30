@@ -58,7 +58,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                 rgSuites.add(r);
             }
 
-            Test test = suiteRunner.registerTest(bean, beanName, anaxTest.priority(), rgSuites);
+            Test test = suiteRunner.registerTest(bean, anaxTest.description(), beanName ,anaxTest.priority(), rgSuites);
 
             // then, on method level:
             ReflectionUtils.doWithMethods(aClass, method -> {
@@ -77,7 +77,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
 
-                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.ordering(), testStep.skip()));
+                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering(), testStep.skip()));
                 });
 
 

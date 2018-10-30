@@ -2,15 +2,16 @@ package org.anax.framework.capture;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.capture.direct.DirectRobot;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
+import java.awt.image.*;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,39 +30,41 @@ public class ScreenCapture implements Capture {
     private int captureDelayMs = 1000/10; //10 fps
 
     @Builder.Default
-    private ArrayBlockingQueue<Screenshot> trackedScreens = new ArrayBlockingQueue<Screenshot>(1000);
+    private int bufferSeconds = 360; // 6minutes
+
+    ThreadLocal<int[]> localScreenPixels;
+
+
+    private ArrayBlockingQueue<Screenshot> trackedScreens;
 
     @Builder.Default
-    private ScheduledExecutorService threadpool = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService threadpool = Executors.newScheduledThreadPool(16);
 
     private MouseCapture mouseCapture;
 
-    private BufferedImage screenCapture;
-    private BufferedImage videoImg;
-
     @Builder.Default
     private int depth = 24;
-
-    private Graphics2D videoGraphics;
     private Rectangle rect;
-    private Robot robot;
+    //private Robot robot;
+    private DirectRobot robot;
 
     private Cursor cursor;
     private BufferedImage cursorImg;
 
     private long time;
 
+    private GraphicsEnvironment env;
 
     private void init() {
         Window window = new Window(null);
         GraphicsConfiguration cfg = window.getGraphicsConfiguration();
+        env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+
         try {
-            robot = new Robot(cfg.getDevice());
+            robot = new DirectRobot(cfg.getDevice());
             rect = cfg.getBounds();
-            initImage();
             ClassPathResource resource = new ClassPathResource("Cursor.white.png");
             cursorImg = ImageIO.read(resource.getInputStream());
-
         } catch (IOException ioe) {
             log.error("IO Exception {} ",ioe.getMessage(), ioe);
         } catch (AWTException awt) {
@@ -70,32 +73,17 @@ public class ScreenCapture implements Capture {
             if (window != null)
                 window.dispose();
         }
+        // setup a buffer for us
+        if (trackedScreens == null) {
+            trackedScreens = new ArrayBlockingQueue<>( (1000/captureDelayMs) * bufferSeconds );
+            log.info("Allocating buffer for {} seconds [{} frames]", bufferSeconds, trackedScreens.remainingCapacity());
+        }
+
+        if (localScreenPixels == null) {
+            localScreenPixels = ThreadLocal.withInitial(() -> new int[rect.width*rect.height]);
+        }
     }
 
-    private void initImage() throws IOException {
-        if (videoGraphics != null) {
-            videoGraphics.dispose();
-        }
-        if (depth == 24) {
-            videoImg = new BufferedImage(rect.width, rect.height,
-                    1);
-        } else if (depth == 16) {
-            videoImg = new BufferedImage(rect.width, rect.height,
-                    9);
-        } else if (depth == 8) {
-            videoImg = new BufferedImage(rect.width, rect.height,
-                    13, Colors.createMacColors());
-        } else {
-            throw new IOException("Unsupported color depth " + depth);
-        }
-        videoGraphics = videoImg.createGraphics();
-        videoGraphics.setRenderingHint(RenderingHints.KEY_DITHERING,
-                RenderingHints.VALUE_DITHER_DISABLE);
-        videoGraphics.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
-                RenderingHints.VALUE_COLOR_RENDER_SPEED);
-        videoGraphics.setRenderingHint(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_SPEED);
-    }
 
 
     public void captureStart() {
@@ -103,31 +91,43 @@ public class ScreenCapture implements Capture {
         log.info("Capturing video at size {}x{} and {} fps ({}ms.)",
                 rect.width, rect.height, 1000/captureDelayMs, captureDelayMs);
         threadpool.scheduleAtFixedRate(() -> {
-            screenCapture = robot.createScreenCapture(new Rectangle(0, 0,
-                    rect.width, rect.height));
-
+            long t0 = System.currentTimeMillis();
+            BufferedImage screenCapture = grabSnapshotDirect();
             long now = System.currentTimeMillis();
-            videoGraphics.drawImage(screenCapture, 0, 0, null);
-            Point previous = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
-            while ((mouseCapture.getTrackedMovements().peek() != null) && (mouseCapture.getTrackedMovements().peek().getTime() < now)) {
-                MouseCapture.MouseMovement pc = mouseCapture.getTrackedMovements().remove();
-
-                Point p = pc.getLocation();
-
-                videoGraphics.drawImage(cursorImg, p.x, p.y, null);
+            drawMousePointer(now, screenCapture);
+            trackedScreens.offer(new Screenshot(screenCapture, now));
+            long t1 = System.currentTimeMillis();
+            if (t1-t0 > captureDelayMs) {
+                log.debug("Slow capture speed ({}ms > {}ms)", t1 - t0,captureDelayMs);
             }
-            //write complete image
-            trackedScreens.offer(new Screenshot(videoImg, now));
-            log.trace("Image captured");
-            //clear our rendering buffer
-            try {
-                initImage();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
         }, 0, captureDelayMs, TimeUnit.MILLISECONDS);
 
+    }
+
+    private BufferedImage grabSnapshotDirect() {
+        robot.getRGBPixels(0,0,rect.width,rect.height, localScreenPixels.get());
+
+        ColorModel model = new DirectColorModel(32, 0xff0000, 0xff00, 0xff, 0xff000000);
+        return new BufferedImage(model, Raster.createWritableRaster(
+                model.createCompatibleSampleModel(rect.width, rect.height),
+                new DataBufferInt(localScreenPixels.get(), rect.width * rect.height), null), false, new Hashtable<Object, Object>());
+    }
+
+    private void drawMousePointer(long now, BufferedImage captured) {
+        Graphics2D videoGraphics = env.createGraphics(captured);
+
+        videoGraphics.setRenderingHint(RenderingHints.KEY_DITHERING,
+                RenderingHints.VALUE_DITHER_DISABLE);
+        videoGraphics.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_SPEED);
+        videoGraphics.setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_SPEED);
+
+        while ((mouseCapture.getTrackedMovements().peek() != null) && (mouseCapture.getTrackedMovements().peek().getTime() < now)) {
+            MouseCapture.MouseMovement pc = mouseCapture.getTrackedMovements().remove();
+            Point p = pc.getLocation();
+            videoGraphics.drawImage(cursorImg, p.x, p.y, null);
+        }
     }
 
 
