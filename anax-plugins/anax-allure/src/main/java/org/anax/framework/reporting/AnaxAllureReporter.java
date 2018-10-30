@@ -294,7 +294,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
         String fullName1;
         if(!test.getTestBeanDescription().equals("")){
-            fullName1 = String.format("%s.%s", test.getTestBeanDescription(), methodName);
+            fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getDescription());
         }
         else{
             fullName1 = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;

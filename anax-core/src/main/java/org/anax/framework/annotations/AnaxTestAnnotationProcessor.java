@@ -77,7 +77,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
 
-                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.ordering(), testStep.skip()));
+                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering(), testStep.skip()));
                 });
 
 

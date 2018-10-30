@@ -353,8 +353,14 @@ public class AnaxSuiteRunner {
     }
 
 
-    public TestMethod registerTestMethod(Test test, Method method, int ordering, boolean skip) {
-        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).skip(skip).build();
+//    public TestMethod registerTestMethod(Test test, Method method, int ordering, boolean skip) {
+//        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).skip(skip).build();
+//        test.getTestMethods().add(testMethod);
+//        return testMethod;
+//    }
+
+    public TestMethod registerTestMethod(Test test, Method method,String description, int ordering, boolean skip) {
+        TestMethod testMethod = TestMethod.builder().testMethod(method).description(description).ordering(ordering).skip(skip).build();
         test.getTestMethods().add(testMethod);
         return testMethod;
     }

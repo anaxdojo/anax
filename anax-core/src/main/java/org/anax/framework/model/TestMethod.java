@@ -16,6 +16,7 @@ public class TestMethod {
 
     Method testMethod;
     int ordering;
+    String description;
     boolean skip;
     boolean passed;
 

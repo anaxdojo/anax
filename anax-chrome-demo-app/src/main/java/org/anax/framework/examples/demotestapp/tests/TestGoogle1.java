@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-@AnaxTest(description = "Hello World Test")
+@AnaxTest(description="Test Description")
+
 @Component
 @Slf4j
 public class TestGoogle1 {
