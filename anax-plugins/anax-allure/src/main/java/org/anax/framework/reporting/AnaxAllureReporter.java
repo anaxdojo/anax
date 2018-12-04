@@ -45,6 +45,7 @@ import static io.qameta.allure.util.ResultsUtils.getThreadName;
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
+    @Value("${anax.parallel:false}") Boolean parallel;
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
     /** do not change the FPS value over 15, due to h/w limitations */
@@ -95,11 +96,13 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Override
     public void startTestSuite(Suite suite) throws ReportException {
         suiteName = suite.getName();
-        try{
-            FileUtils.cleanDirectory(new File("allure-results"));
-            log.info("Remove files under reports");
-        }catch(Exception e){
-            log.info("Files did not removed: "+e.getMessage());
+        if(!parallel) {
+            try {
+                FileUtils.cleanDirectory(new File(resultsAllureDirectory));
+                log.info("Remove files under reports");
+            } catch (Exception e) {
+                log.info("Files did not removed: " + e.getMessage());
+            }
         }
     }
 
