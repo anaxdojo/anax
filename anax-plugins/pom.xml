@@ -5,12 +5,12 @@
     <parent>
         <artifactId>anax-parent</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.2.5</version>
+        <version>0.3.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-plugins</artifactId>
-    <version>0.2.5</version>
+    <version>0.3.1</version>
     <packaging>pom</packaging>
 
     <name>Anax :: Plugins</name>
