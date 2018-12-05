@@ -45,7 +45,7 @@ import static io.qameta.allure.util.ResultsUtils.getThreadName;
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
-    @Value("${anax.parallel:false}") Boolean parallel;
+    @Value("${anax.clearResults:false}") Boolean clearResults;
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
     /** do not change the FPS value over 15, due to h/w limitations */
@@ -96,7 +96,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Override
     public void startTestSuite(Suite suite) throws ReportException {
         suiteName = suite.getName();
-        if(!parallel) {
+        if(!clearResults) {//In case you need to merge results for all many suites execution
             try {
                 FileUtils.cleanDirectory(new File(resultsAllureDirectory));
                 log.info("Remove files under reports");

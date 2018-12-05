@@ -137,10 +137,9 @@ public class AnaxSuiteRunner {
         //sort by ordering
         List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip()).collect(Collectors.toList());
 
-        List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
+        List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods());//Skipped due to Annotation configuration
         skippedTests.removeAll(testsToRun);
-        skippedTests.forEach( testMethod -> {
-            reporter.addSkipped(test, testMethod, "Skipped due to Annotation configuration");
+        skippedTests.forEach( testMethod -> {//Skipped due to Annotation configuration
             testMethod.setSkip(true);
         });
         log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
@@ -183,7 +182,7 @@ public class AnaxSuiteRunner {
                     });
 
                     //execute method!
-                    if (localSkip.get() == false) {
+                    if (!localSkip.get()) {
                         TestResult result = executeRecordingResult(suite, test, testMethod, true);
                         testMethod.getStdErr().append(result.getStdError());
                         testMethod.getStdOut().append(result.getStdOutput());

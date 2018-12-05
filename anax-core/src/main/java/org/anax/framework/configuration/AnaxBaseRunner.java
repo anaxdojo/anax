@@ -31,8 +31,10 @@ public class AnaxBaseRunner implements CommandLineRunner{
         final boolean planFailed = suiteRunner.createExecutionPlan(true);
 
         if (planFailed) {
+            log.info("Plan failed, make jenkins job unstable");
             System.exit(100);
         } else {
+            log.info("Plan passed");
             System.exit(0);
         }
     }
