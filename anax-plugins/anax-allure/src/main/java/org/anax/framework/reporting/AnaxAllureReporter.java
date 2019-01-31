@@ -294,10 +294,15 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
         String fullName1;
         if(!test.getTestBeanDescription().equals("")){
-            fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getDescription());
+            if (testMethod.getDataproviderValue()!=null) {
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue());
+            } else {
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getTestMethod().getName());
+            }
+
         }
         else{
-            fullName1 = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
+            fullName1 = getUniqueUuid(test,testMethod);
         }
 
         final TestResult testResult = new TestResult()
@@ -316,8 +321,11 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         return testResult;
     }
     private String getUniqueUuid(Test test, TestMethod testMethod) {
-        String id = test.getTestBeanName()+"."+testMethod.getTestMethod().getName();
-        return id;
+        if (testMethod.getDataproviderValue()!=null) {
+            return test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
+        } else {
+            return test.getTestBeanName() + "." + testMethod.getTestMethod().getName();
+        }
     }
 
     private void takeScreenshotOnFailure() throws IOException {

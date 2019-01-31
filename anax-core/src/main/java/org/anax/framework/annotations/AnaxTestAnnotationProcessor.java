@@ -3,6 +3,7 @@ package org.anax.framework.annotations;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxSuiteRunner;
+import org.anax.framework.model.DataProvider;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
@@ -73,14 +74,30 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
 
                 //we need the AtomicReference to simulate the "effectively final"
                 final AtomicReference<TestMethod> mainTestMethod = new AtomicReference<>();
+//--------------------------------- Setting Up the TestStep  ---------------------------------------------------------------------
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxTestStep.class)
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxTestStep testStep = (AnaxTestStep) testAnnotation;
-
-                    mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering(), testStep.skip()));
+                    if(!testStep.dataprovider().isEmpty()){
+                        Object providerBean = context.getBean(testStep.dataprovider());
+                        if(providerBean instanceof DataProvider){
+                            DataProvider d =(DataProvider) providerBean;
+                            final List objects = d.provideTestData();
+                            int bound = objects.size();
+                            for (int nbr = 0; nbr < bound; nbr++) {
+                                mainTestMethod.set(
+                                        suiteRunner.registerTestMethod(test, method, testStep.description()
+                                                , testStep.ordering(), testStep.skip(), objects.get(nbr)));
+                            }
+                        }
+                    }
+                    else {
+                        mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering()
+                                , testStep.skip(), null));
+                    }
                 });
-
-
+//---------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------- Setting Up the TestStep Preconditions ---------------------------------------------------------
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxPreCondition.class)
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxPreCondition preCondition = (AnaxPreCondition) testAnnotation;
@@ -95,7 +112,8 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         });
 
                 });
-
+//---------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------- Setting Up the TestStep Postconditions -------------------------------------------------------
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxPostCondition.class)
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxPostCondition postCondition = (AnaxPostCondition) testAnnotation;
@@ -109,12 +127,14 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         });
 
                 });
-
+//--------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------- Setting Up the AfterTest ---------------------------------------------------------------------
                 Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxAfterTest.class)
                         .findFirst().ifPresent(testAnnotation -> {
                     AnaxAfterTest afterStep = (AnaxAfterTest) testAnnotation;
                     suiteRunner.registerAfterTest(test, method);
                 });
+//---------------------------------------------------------------------------------------------------------------------------------
             });
 
 

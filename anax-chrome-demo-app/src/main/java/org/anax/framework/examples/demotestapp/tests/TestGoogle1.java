@@ -1,14 +1,18 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.*;
+import org.anax.framework.annotations.AnaxBeforeTest;
+import org.anax.framework.annotations.AnaxPostCondition;
+import org.anax.framework.annotations.AnaxPreCondition;
+import org.anax.framework.annotations.AnaxTest;
+import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.examples.demotestapp.pageObjects.GooglePageObject;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-@AnaxTest(description="Test Description")
+@AnaxTest
 
 @Component
 @Slf4j
@@ -65,9 +69,10 @@ public class TestGoogle1 {
         log.info("Class1: Test step5");
     }
 
-    @AnaxTestStep(ordering = 6)
-    public void test_step6(){
+    @AnaxTestStep(ordering = 6, dataprovider="testGoogle1DataProvider")
+    public void test_step6(TestDataObj myDataObj){
         log.info("Class1: Test step6");
+        System.out.println(myDataObj.name);
     }
 
     public void inputValuesToGoogle(){
