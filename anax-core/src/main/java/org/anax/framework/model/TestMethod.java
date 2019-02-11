@@ -20,6 +20,7 @@ public class TestMethod {
     boolean skip;
     boolean passed;
     Object dataproviderValue;
+    Object datasupplierValue;
 
     @Builder.Default StringBuilder stdOut = new StringBuilder();
     @Builder.Default StringBuilder stdErr = new StringBuilder();

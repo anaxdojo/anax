@@ -1,16 +1,8 @@
 package org.anax.framework.reporting;
 
-import io.qameta.allure.Allure;
-import io.qameta.allure.AllureLifecycle;
-import io.qameta.allure.ConfigurationBuilder;
-import io.qameta.allure.ReportGenerator;
-import io.qameta.allure.Severity;
-import io.qameta.allure.model.Label;
+import io.qameta.allure.*;
 import io.qameta.allure.model.Link;
-import io.qameta.allure.model.Status;
-import io.qameta.allure.model.StatusDetails;
-import io.qameta.allure.model.StepResult;
-import io.qameta.allure.model.TestResult;
+import io.qameta.allure.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
@@ -24,18 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static io.qameta.allure.util.ResultsUtils.getHostName;
@@ -45,6 +32,7 @@ import static io.qameta.allure.util.ResultsUtils.getThreadName;
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
+    @Value("${anax.keepResults:false}") Boolean keepResults;
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
     /** do not change the FPS value over 15, due to h/w limitations */
@@ -95,11 +83,13 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Override
     public void startTestSuite(Suite suite) throws ReportException {
         suiteName = suite.getName();
-        try{
-            FileUtils.cleanDirectory(new File("allure-results"));
-            log.info("Remove files under reports");
-        }catch(Exception e){
-            log.info("Files did not removed: "+e.getMessage());
+        if(!keepResults) {//In case you need to merge results for all many suites execution
+            try {
+                FileUtils.cleanDirectory(new File(resultsAllureDirectory));
+                log.info("Remove files under reports");
+            } catch (Exception e) {
+                log.info("Files did not removed: " + e.getMessage());
+            }
         }
     }
 
@@ -295,9 +285,15 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         String fullName1;
         if(!test.getTestBeanDescription().equals("")){
             if (testMethod.getDataproviderValue()!=null) {
-                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue());
-            } else {
-                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), testMethod.getDescription() == null ? methodName : testMethod.getTestMethod().getName());
+                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(s));
+            }
+            else if(testMethod.getDatasupplierValue()!=null){
+                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDatasupplierValue();
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(s));
+            }
+            else {
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(testMethod.getTestMethod().getName()));
             }
 
         }
@@ -322,8 +318,14 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
     private String getUniqueUuid(Test test, TestMethod testMethod) {
         if (testMethod.getDataproviderValue()!=null) {
-            return test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
-        } else {
+            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
+            return s.substring(0, Math.min(s.length(), 100));
+        }
+        else if(testMethod.getDatasupplierValue()!=null){
+            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDatasupplierValue();
+            return s.substring(0, Math.min(s.length(), 100));
+        }
+        else {
             return test.getTestBeanName() + "." + testMethod.getTestMethod().getName();
         }
     }

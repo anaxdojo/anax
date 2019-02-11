@@ -3,10 +3,7 @@ package org.anax.framework.annotations;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxSuiteRunner;
-import org.anax.framework.model.DataProvider;
-import org.anax.framework.model.Suite;
-import org.anax.framework.model.Test;
-import org.anax.framework.model.TestMethod;
+import org.anax.framework.model.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -19,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 @Component
 @Slf4j
@@ -81,19 +80,30 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     if(!testStep.dataprovider().isEmpty()){
                         Object providerBean = context.getBean(testStep.dataprovider());
                         if(providerBean instanceof DataProvider){
-                            DataProvider d =(DataProvider) providerBean;
-                            final List objects = d.provideTestData();
+                            DataProvider dataProvider =(DataProvider) providerBean;
+                            final List objects = dataProvider.provideTestData();
                             int bound = objects.size();
                             for (int nbr = 0; nbr < bound; nbr++) {
                                 mainTestMethod.set(
                                         suiteRunner.registerTestMethod(test, method, testStep.description()
-                                                , testStep.ordering(), testStep.skip(), objects.get(nbr)));
+                                                , testStep.ordering(), testStep.skip(), objects.get(nbr),null));
                             }
+                        }
+                    }
+                    else if(!testStep.datasupplier().isEmpty()){
+                        Object supplierBean = context.getBean(testStep.datasupplier());
+                        if(supplierBean instanceof DataSupplier){
+                            DataSupplier dataSupplier =(DataSupplier) supplierBean;
+                            Stream<Supplier> mySupplier =  dataSupplier.supplyResults();
+                            mySupplier.forEach(s->
+                                    mainTestMethod.set(
+                                            suiteRunner.registerTestMethod(test, method, testStep.description()
+                                                    , testStep.ordering(), testStep.skip(),null ,s)));
                         }
                     }
                     else {
                         mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering()
-                                , testStep.skip(), null));
+                                , testStep.skip(), null,null));
                     }
                 });
 //---------------------------------------------------------------------------------------------------------------------------------

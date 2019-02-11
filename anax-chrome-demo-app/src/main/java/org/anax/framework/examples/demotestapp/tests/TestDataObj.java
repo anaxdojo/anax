@@ -11,4 +11,11 @@ public class TestDataObj {
     String name;
     Integer age;
     Date birthday;
+
+    @Override
+    public String toString() {
+        return "TestDataObj{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }

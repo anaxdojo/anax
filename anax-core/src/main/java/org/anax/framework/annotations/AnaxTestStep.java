@@ -21,4 +21,6 @@ public @interface AnaxTestStep {
     boolean skip() default false;
 
     String dataprovider() default "";
+
+    String datasupplier() default "";
 }

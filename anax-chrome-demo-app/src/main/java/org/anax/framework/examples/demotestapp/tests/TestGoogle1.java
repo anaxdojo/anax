@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-@AnaxTest
+import java.util.function.Supplier;
+
+@AnaxTest(description = "myTest")
 
 @Component
 @Slf4j
@@ -73,6 +75,12 @@ public class TestGoogle1 {
     public void test_step6(TestDataObj myDataObj){
         log.info("Class1: Test step6");
         System.out.println(myDataObj.name);
+    }
+
+    @AnaxTestStep(ordering = 7, datasupplier="testGoogle1DataSupplier")
+    public void test_step7(Supplier<String> myString){
+        log.info("Class1: Test step6");
+        System.out.println(myString.get());
     }
 
     public void inputValuesToGoogle(){
