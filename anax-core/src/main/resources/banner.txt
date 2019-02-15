@@ -1,0 +1,17 @@
+Anax uses Spring Boot ${spring-boot.formatted-version}
+
+      __      _____  ___        __       ___  ___
+     /""\    (\"   \|"  \      /""\     |"  \/"  |
+    /    \   |.\\   \    |    /    \     \   \  /
+   /' /\  \  |: \.   \\  |   /' /\  \     \\  \/
+  //  __'  \ |.  \    \. |  //  __'  \    /\.  \
+ /   /  \\  \|    \    \ | /   /  \\  \  /  \   \
+(___/    \___)\___|\____\)(___/    \___)|___/\___|
+
+${AnsiColor.RED}Thank you for using Anax! fork us in Github -> https://github.com/thanosa75/anax
+${AnsiColor.BLACK}
+
+Anax is now starting up...
+
+
+${AnsiColor.BLACK}
