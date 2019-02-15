@@ -3,14 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.anax.framework</groupId>
     <artifactId>anax-core</artifactId>
-    <version>0.3.1</version>
     <packaging>jar</packaging>
 
     <parent>
 
         <groupId>org.anax.framework</groupId>
         <artifactId>anax-parent</artifactId>
-        <version>0.3.1</version>
+        <version>0.5.0</version>
     </parent>
 
     <properties>

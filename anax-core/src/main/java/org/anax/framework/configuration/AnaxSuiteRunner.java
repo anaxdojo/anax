@@ -260,7 +260,21 @@ public class AnaxSuiteRunner {
         long execTime = 0;
         try {
             long t0 = System.currentTimeMillis();
-            tm.getTestMethod().invoke(test.getTestBean());
+            if(tm.getDataproviderValue()==null && tm.getDatasupplierValue()==null) {
+                tm.getTestMethod().invoke(test.getTestBean());
+            }
+            else {
+                if(tm.getDatasupplierValue()==null && tm.getDataproviderValue()!=null){
+                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDataproviderValue());
+                }
+                else if(tm.getDatasupplierValue()!=null && tm.getDataproviderValue()==null){
+                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDatasupplierValue());
+                }
+            }
+
+
+
+//            tm.getTestMethod().invoke(test.getTestBean());
             long t1 = System.currentTimeMillis();
             //if we're here, this was executed.
             execTime = t1-t0;
@@ -359,8 +373,14 @@ public class AnaxSuiteRunner {
 //        return testMethod;
 //    }
 
-    public TestMethod registerTestMethod(Test test, Method method,String description, int ordering, boolean skip) {
-        TestMethod testMethod = TestMethod.builder().testMethod(method).description(description).ordering(ordering).skip(skip).build();
+    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, Object dataproviderValue, Object datasupplierValue) {
+        TestMethod testMethod = TestMethod.builder()
+                .testMethod(method)
+                .description(description)
+                .ordering(ordering).skip(skip)
+                .dataproviderValue(dataproviderValue)
+                .datasupplierValue(datasupplierValue)
+                .build();
         test.getTestMethods().add(testMethod);
         return testMethod;
     }
