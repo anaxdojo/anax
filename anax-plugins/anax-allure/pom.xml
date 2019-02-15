@@ -5,12 +5,12 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-allure</artifactId>
-    <version>0.3.2-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Plugins :: Allure</name>
@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <allure.version>2.6.0</allure.version>
+        <allure.version>2.9.0</allure.version>
     </properties>
 
     <dependencies>
