@@ -3,8 +3,10 @@ Origin: ἄναξ (pronounced: /á.naks/ → /ˈa.naks/ → /ˈa.naks/) is a Gre
 
 ## Highly experimental
 
-Develop: [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=develop)](https://www.travis-ci.org/thanosa75/anax)
-Master : [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=master)](https://www.travis-ci.org/thanosa75/anax)
+We are using Travis-CI for our builds. Current status:
+
+- Develop [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=develop)](https://www.travis-ci.org/thanosa75/anax)
+- Master [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=master)](https://www.travis-ci.org/thanosa75/anax)
 
 We are currently experimenting with the major directions that Anax is going to take in the future. The 'develop' branch is considered _highly_ volatile, and the master branch is not stable either. However, we've already done *some* effort to decide on publishing and the first artefacts are now available in Bintray.
 

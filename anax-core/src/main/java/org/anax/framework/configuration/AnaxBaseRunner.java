@@ -16,13 +16,6 @@ public class AnaxBaseRunner implements CommandLineRunner{
     }
 
     public void run(String... strings) throws Exception {
-        log.info("------------------------------------------------");
-        log.info("Anax - a modern day testing automation framework");
-        log.info("------------------------------------------------");
-
-        log.info("");
-        log.info("");
-        log.info("");
 
         for (String option : strings) {
             log.debug("Option: {}", option);
