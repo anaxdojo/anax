@@ -1,11 +1,9 @@
 package org.anax.framework.examples.demotestapp.pageObjects;
 
 import org.anax.framework.controllers.WebController;
-import org.anax.framework.controllers.WebDriverWebController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
 import java.text.MessageFormat;
 
 @Component
@@ -17,8 +15,8 @@ public class GooglePageObject{
     public enum GooglePageLocators {
 
         INPUT_GOOGLE_SEARCH("css=input[name='q']"),
-        LABEL_CALCULATOR_RESULT("css=div.cwtlotc span"),
-        BUTTON_ON_CALCULATOR("css=span.cwbts:contains(''{0}'')"),
+        LABEL_CALCULATOR_RESULT("css=span#cwos"),
+        BUTTON_ON_CALCULATOR("css=div:contains(''{0}'')"),
         BTN_GOOGLE_SEARCH("css=input[aria-label*='Google']"),
         ;
 

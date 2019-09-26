@@ -46,7 +46,7 @@
         <module>anax-firefox</module>
         <module>anax-winium</module>
         <module>anax-plain</module>
-
+        <module>anax-saucelabs</module>
         <module>anax-plugins</module>
 
         <!-- demo app should be the last -->
