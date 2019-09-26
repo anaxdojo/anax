@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.anax.framework</groupId>
     <artifactId>anax-parent</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0</version>
     <packaging>pom</packaging>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -46,7 +46,7 @@
         <module>anax-firefox</module>
         <module>anax-winium</module>
         <module>anax-plain</module>
-
+        <module>anax-saucelabs</module>
         <module>anax-plugins</module>
 
         <!-- demo app should be the last -->

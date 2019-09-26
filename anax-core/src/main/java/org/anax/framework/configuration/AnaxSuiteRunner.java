@@ -14,6 +14,7 @@ import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.Method;
@@ -140,7 +141,6 @@ public class AnaxSuiteRunner {
         List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
         skippedTests.removeAll(testsToRun);
         skippedTests.forEach( testMethod -> {
-            reporter.addSkipped(test, testMethod, "Skipped due to Annotation configuration");
             testMethod.setSkip(true);
         });
         log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
