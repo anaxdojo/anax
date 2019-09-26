@@ -7,11 +7,11 @@
     <parent>
         <artifactId>anax-parent</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.7.1-SNAPSHOT</version>
+        <version>0.8.0</version>
     </parent>
 
     <artifactId>anax-saucelabs</artifactId>
-    <version>0.7.1-SNAPSHOT</version>
+    <version>0.8.0</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Sauce lab Support</name>
