@@ -81,24 +81,17 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         Object providerBean = context.getBean(testStep.dataprovider());
                         if(providerBean instanceof DataProvider){
                             DataProvider dataProvider =(DataProvider) providerBean;
-                            final List objects = dataProvider.provideTestData();
-                            int bound = objects.size();
-                            for (int nbr = 0; nbr < bound; nbr++) {
-                                mainTestMethod.set(
-                                        suiteRunner.registerTestMethod(test, method, testStep.description()
-                                                , testStep.ordering(), testStep.skip(), objects.get(nbr),null));
-                            }
+                            mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.description(),
+                                    testStep.ordering(), testStep.skip(),dataProvider,null));
+
                         }
                     }
                     else if(!testStep.datasupplier().isEmpty()){
                         Object supplierBean = context.getBean(testStep.datasupplier());
                         if(supplierBean instanceof DataSupplier){
                             DataSupplier dataSupplier =(DataSupplier) supplierBean;
-                            Stream<Supplier> mySupplier =  dataSupplier.supplyResults();
-                            mySupplier.forEach(s->
-                                    mainTestMethod.set(
-                                            suiteRunner.registerTestMethod(test, method, testStep.description()
-                                                    , testStep.ordering(), testStep.skip(),null ,s)));
+                            mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.description(),
+                                    testStep.ordering(), testStep.skip(),null ,dataSupplier));
                         }
                     }
                     else {

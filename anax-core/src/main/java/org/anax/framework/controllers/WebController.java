@@ -172,6 +172,7 @@ public interface WebController {
      * Find elements.
      *
      * @param locator the element locator
+     * @param waitSeconds time period to wait in seconds
      * @return the list
      */
     List<WebElement> findElements(String locator, long waitSeconds);
@@ -359,6 +360,7 @@ public interface WebController {
      * Take screen shot.
      *
      * @throws IOException Signals that an I/O exception has occurred.
+     * @return File
      */
     File takeScreenShot() throws IOException;
 
@@ -367,6 +369,7 @@ public interface WebController {
      * Take screen shot.
      *
      * @throws IOException Signals that an I/O exception has occurred.
+     * @return bute[]
      */
     byte[] takeScreenShotAsBytes() throws IOException;
 
@@ -384,7 +387,6 @@ public interface WebController {
      * Gets the focus. Move the focus to the specified element
      *
      * @param locator the locator of the element to focus
-     * @return the focus
      */
     void getFocus(String locator);
 

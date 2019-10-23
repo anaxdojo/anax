@@ -3,10 +3,7 @@ package org.anax.framework.configuration;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.controllers.WebController;
-import org.anax.framework.model.Suite;
-import org.anax.framework.model.Test;
-import org.anax.framework.model.TestMethod;
-import org.anax.framework.model.TestResult;
+import org.anax.framework.model.*;
 import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
 import org.anax.framework.reporting.ReporterSupportsScreenshot;
@@ -17,12 +14,15 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Component
@@ -31,14 +31,18 @@ public class AnaxSuiteRunner {
 
     private final AnaxTestReporter reporter;
 
-    Map<String,Suite> suitesMap = new HashMap<>();
+    Map<String, Suite> suitesMap = new HashMap<>();
 
     boolean shouldAlsoExecute = false;
 
-    @Value("${anax.report.directory:reports/}") String reportDirectory;
-    @Value("${anax.exec.suite:ALL}") String executeSuite;
-    @Value("${enable.video:true}") Boolean videoOn;
-    @Value("${enable.screenshot:true}") Boolean screenshotOn;
+    @Value("${anax.report.directory:reports/}")
+    String reportDirectory;
+    @Value("${anax.exec.suite:ALL}")
+    String executeSuite;
+    @Value("${enable.video:true}")
+    Boolean videoOn;
+    @Value("${enable.screenshot:true}")
+    Boolean screenshotOn;
 
     @Autowired
     WebController controller;
@@ -68,7 +72,7 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if(videoOn && reporter instanceof ReporterSupportsVideo) {
+        if (videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings feature");
         }
@@ -80,7 +84,7 @@ public class AnaxSuiteRunner {
 
         AtomicBoolean globalFailures = new AtomicBoolean(false);
 
-        suitesMap.keySet().stream().forEach( (String name) -> {
+        suitesMap.keySet().stream().forEach((String name) -> {
             try {
                 if (!executeSuite.contentEquals("ALL") &&
                         !executeSuite.contentEquals(name)) {
@@ -88,7 +92,7 @@ public class AnaxSuiteRunner {
                 } else {
                     final Suite suite = suitesMap.get(name);
 
-                    try  {
+                    try {
                         reporter.startOutput(reportDirectory, name);
                         final boolean suiteFail = executeTestSuite(suite);
                         globalFailures.compareAndSet(false, suiteFail);
@@ -96,11 +100,11 @@ public class AnaxSuiteRunner {
                         globalFailures.set(true);
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
                     } finally {
-			            controller.quit();
-		            }
+                        controller.quit();
+                    }
                 }
             } catch (ReportException rpe) {
-                log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
+                log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(), rpe);
             }
         });
         return globalFailures.get();
@@ -111,7 +115,7 @@ public class AnaxSuiteRunner {
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
         reporter.startTestSuite(suite);
-        log.trace("About to execute suite tests: {}",suite.getTests().size());
+        log.trace("About to execute suite tests: {}", suite.getTests().size());
 
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
@@ -138,9 +142,9 @@ public class AnaxSuiteRunner {
         //sort by ordering
         List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip()).collect(Collectors.toList());
 
-        List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
+        List<TestMethod> skippedTests = Lists.newArrayList(test.getTestMethods());
         skippedTests.removeAll(testsToRun);
-        skippedTests.forEach( testMethod -> {
+        skippedTests.forEach(testMethod -> {
             testMethod.setSkip(true);
         });
         log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
@@ -152,12 +156,19 @@ public class AnaxSuiteRunner {
         test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
             log.info("---- BEFORE START: {}", tm.getTestMethod());
-            TestResult result = executeRecordingResult(suite, test, tm, false);
+            TestResult result = null;
+            try {
+                result = executeRecordingResult(suite, test, tm, null, false);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
             if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
                 globalSkip.set(true);
                 tm.getStdOut().append(result.getStdOutput());
-                reporter.startTest(test,tm);
-                reporter.addFailure(test,tm, result.getThrowable());
+                reporter.startTest(test, tm);
+                reporter.addFailure(test, tm, result.getThrowable());
                 reporter.endTest(test, tm);
             }
             log.info("---- BEFORE END: {}", tm.getTestMethod());
@@ -165,16 +176,16 @@ public class AnaxSuiteRunner {
 
         testsToRun.forEach(testMethod -> {
             AtomicBoolean localSkip = new AtomicBoolean(false);
-            reporter.startTest(test, testMethod);
-
-
+            AtomicBoolean flag = new AtomicBoolean(false);
+//            reporter.startTest(test, testMethod);
             try {
                 if (globalSkip.get()) {
+                    reporter.startTest(test, testMethod);
                     reporter.addSkipped(test, testMethod, "Skipped due to @AnaxBefore failure");
                     testMethod.setSkip(true);
-                } else {
+                }
+                else {
                     log.info("---- STEP START: {} ---", testMethod.getTestMethod());
-
                     //precondition:
                     testMethod.getPreconditions().forEach(tp -> {
                         log.info("---- PRECON START: {}", tp.getTestMethod());
@@ -184,35 +195,75 @@ public class AnaxSuiteRunner {
 
                     //execute method!
                     if (localSkip.get() == false) {
-                        TestResult result = executeRecordingResult(suite, test, testMethod, true);
-                        testMethod.getStdErr().append(result.getStdError());
-                        testMethod.getStdOut().append(result.getStdOutput());
-                        if (result.notPassed()) {
-                            localSkip.set(true);
-                            if (result.isInError()) {
-                                reporter.addError(test, testMethod, result.getThrowable());
-                            } else if (result.isFailed()) {
-                                reporter.addFailure(test,testMethod, result.getThrowable());
+                        AtomicReference<TestResult> result = new AtomicReference<>(new TestResult());
+
+                        if (testMethod.getDataSupplier() == null && testMethod.getDataProvider() == null) {
+                            try {
+                                reporter.startTest(test, testMethod);
+                                result.set(executeRecordingResult(suite, test, testMethod, null, true));
+                            } catch (InvocationTargetException e) {
+                                e.printStackTrace();
+                            } catch (IllegalAccessException e) {
+                                e.printStackTrace();
+                            }finally {
+                                setMethodStatus(test, testMethod, localSkip, result);
                             }
-                            testMethod.setPassed(false);
-                        } else {
-                            testMethod.setPassed(true);
+                        } else if (testMethod.getDataProvider() != null) {
+                            testMethod.getDataProvider().provideTestData().stream().forEach(it ->
+                            {
+                                try {
+                                    testMethod.setProvidersMethodName(it.toString());
+                                    reporter.startTest(test, testMethod);
+                                    result.get().appendResult(executeRecordingResult(suite, test, testMethod, it, true));
+                                } catch (InvocationTargetException e) {
+                                    e.printStackTrace();
+                                } catch (IllegalAccessException e) {
+                                    e.printStackTrace();
+                                }finally {
+                                    setMethodStatus(test, testMethod, localSkip, result);
+                                    reporter.endTest(test, testMethod);
+                                    flag.set(true);
+                                }
+                            });
+                        } else if (testMethod.getDataSupplier() != null) {
+                            AtomicInteger index = new AtomicInteger(1);
+                            testMethod.getDataSupplier().supplyResults().forEach(it ->
+                            {
+                                try {
+                                    testMethod.setProvidersMethodName("Lamda"+index);
+                                    reporter.startTest(test, testMethod);
+                                    result.get().appendResult(executeRecordingResult(suite, test, testMethod, it, true));
+                                } catch (InvocationTargetException e) {
+                                    e.printStackTrace();
+                                } catch (IllegalAccessException e) {
+                                    e.printStackTrace();
+                                }finally {
+                                    setMethodStatus(test, testMethod, localSkip, result);
+                                    reporter.endTest(test, testMethod);
+                                    flag.set(true);
+                                    index.getAndIncrement();
+                                }
+                            });
                         }
+
+//                        setMethodStatus(test, testMethod, localSkip, result);
                     } else {
+                        reporter.startTest(test, testMethod);
                         testMethod.setSkip(true);
                     }
                     //postcondition:
                     testMethod.getPostconditions().forEach(tp -> {
                         log.info("---- POSTCON START: {}", tp.getTestMethod());
-                        executePrePost(suite, test, testMethod, localSkip,  tp);
+                        executePrePost(suite, test, testMethod, localSkip, tp);
                         log.info("---- POSTCON END: {}", tp.getTestMethod());
                     });
 
 
                 }
             } finally {
-                reporter.endTest(test, testMethod);
-
+                if(!flag.get()) {
+                    reporter.endTest(test, testMethod);
+                }
                 log.info("---- STEP END: {} ---", testMethod.getTestMethod());
 
             }
@@ -221,7 +272,14 @@ public class AnaxSuiteRunner {
         //after testmethod:
         test.getTestAfterMethods().forEach(tm -> {
             log.info("AFTER START: {}", tm.getTestMethod());
-            TestResult result = executeRecordingResult(suite, test, tm, false);
+            TestResult result = null;
+            try {
+                result = executeRecordingResult(suite, test, tm, null, false);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
             if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
                 globalSkip.set(true);
             }
@@ -230,9 +288,32 @@ public class AnaxSuiteRunner {
         });
     }
 
+    private void setMethodStatus(Test test, TestMethod testMethod, AtomicBoolean localSkip, AtomicReference<TestResult> result) {
+        testMethod.getStdErr().append(result.get().getStdError());
+        testMethod.getStdOut().append(result.get().getStdOutput());
+        if (result.get().notPassed()) {
+            localSkip.set(true);
+            if (result.get().isInError()) {
+                reporter.addError(test, testMethod, result.get().getThrowable());
+            } else if (result.get().isFailed()) {
+                reporter.addFailure(test, testMethod, result.get().getThrowable());
+            }
+            testMethod.setPassed(false);
+        } else {
+            testMethod.setPassed(true);
+        }
+    }
+
     private void executePrePost(Suite suite, Test test, TestMethod testMethod, AtomicBoolean localSkip, TestMethod tp) {
         if (localSkip.get() == false) {
-            TestResult result = executeRecordingResult(suite, test, tp, false);
+            TestResult result = null;
+            try {
+                result = executeRecordingResult(suite, test, tp, null, false);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
             testMethod.getStdErr().append(result.getStdError());
             testMethod.getStdOut().append(result.getStdOutput());
             if (result.notPassed()) {
@@ -241,8 +322,7 @@ public class AnaxSuiteRunner {
         }
     }
 
-    private TestResult executeRecordingResult(Suite suite, Test test, TestMethod tm, boolean isTest) {
-
+    private TestResult executeRecordingResult(Suite suite, Test test, TestMethod tm, Object o, boolean isTest) throws InvocationTargetException, IllegalAccessException {
         TestResult result = new TestResult();
         // capture stream for out
         ByteArrayOutputStream storedOut = new ByteArrayOutputStream();
@@ -251,8 +331,8 @@ public class AnaxSuiteRunner {
         PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
 
-        System.setOut( new PrintStream( new DuplicatingOutputStream(originalOut, storedOut) ));
-        System.setErr( new PrintStream( new DuplicatingOutputStream(originalErr, storedErr)));
+        System.setOut(new PrintStream(new DuplicatingOutputStream(originalOut, storedOut)));
+        System.setErr(new PrintStream(new DuplicatingOutputStream(originalErr, storedErr)));
         log.trace("Replaced out and error streams with recording versions");
         //execute method
         log.debug("About to execute {} ", tm.getTestMethod());
@@ -260,24 +340,15 @@ public class AnaxSuiteRunner {
         long execTime = 0;
         try {
             long t0 = System.currentTimeMillis();
-            if(tm.getDataproviderValue()==null && tm.getDatasupplierValue()==null) {
+            if (o == null) {
                 tm.getTestMethod().invoke(test.getTestBean());
+            } else {
+                log.info("----------- Executing with provided value {} --- ",o);
+                tm.getTestMethod().invoke(test.getTestBean(), o);
             }
-            else {
-                if(tm.getDatasupplierValue()==null && tm.getDataproviderValue()!=null){
-                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDataproviderValue());
-                }
-                else if(tm.getDatasupplierValue()!=null && tm.getDataproviderValue()==null){
-                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDatasupplierValue());
-                }
-            }
-
-
-
-//            tm.getTestMethod().invoke(test.getTestBean());
             long t1 = System.currentTimeMillis();
             //if we're here, this was executed.
-            execTime = t1-t0;
+            execTime = t1 - t0;
             log.debug("Test Method {} was executed", tm.getTestMethod());
         } catch (ReflectiveOperationException e) {
             result.setInError(true);
@@ -314,11 +385,8 @@ public class AnaxSuiteRunner {
         System.setOut(originalOut);
         System.setErr(originalErr);
         log.trace("Replaced out and error streams with original versions");
-
-
         return result;
     }
-
 
     public Suite registerSuite(String name) {
 
@@ -326,19 +394,19 @@ public class AnaxSuiteRunner {
             return suitesMap.get(name);
         } else {
             Suite suite = Suite.builder().name(name).build();
-            suitesMap.put(name,suite);
+            suitesMap.put(name, suite);
             return suite;
         }
 
 
     }
 
-    public Test registerTest(Object bean,String beanDescription ,String beanName, int priority, List<Suite> rgSuites) {
+    public Test registerTest(Object bean, String beanDescription, String beanName, int priority, List<Suite> rgSuites) {
 
         Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).build();
         for (Suite s : rgSuites) {
             if (!suitesMap.containsKey(s.getName())) {
-                suitesMap.put(s.getName(),s);
+                suitesMap.put(s.getName(), s);
             }
             s.getTests().add(test);
         }
@@ -349,6 +417,7 @@ public class AnaxSuiteRunner {
         TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).build();
         test.getTestBeforeMethods().add(testMethod);
     }
+
     public void registerAfterTest(Test test, Method method) {
         TestMethod testMethod = TestMethod.builder().testMethod(method).build();
         test.getTestAfterMethods().add(testMethod);
@@ -366,20 +435,13 @@ public class AnaxSuiteRunner {
         return testMethod;
     }
 
-
-//    public TestMethod registerTestMethod(Test test, Method method, int ordering, boolean skip) {
-//        TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).skip(skip).build();
-//        test.getTestMethods().add(testMethod);
-//        return testMethod;
-//    }
-
-    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, Object dataproviderValue, Object datasupplierValue) {
+    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, DataProvider dataprovider, DataSupplier datasupplier) {
         TestMethod testMethod = TestMethod.builder()
                 .testMethod(method)
                 .description(description)
                 .ordering(ordering).skip(skip)
-                .dataproviderValue(dataproviderValue)
-                .datasupplierValue(datasupplierValue)
+                .dataProvider(dataprovider)
+                .dataSupplier(datasupplier)
                 .build();
         test.getTestMethods().add(testMethod);
         return testMethod;
@@ -405,9 +467,10 @@ public class AnaxSuiteRunner {
             firstStream.write(b);
             secondStream.write(b);
         }
+
         public void write(byte b[], int off, int len) throws IOException {
-            firstStream.write(b,off,len);
-            secondStream.write(b,off,len);
+            firstStream.write(b, off, len);
+            secondStream.write(b, off, len);
         }
     }
 }

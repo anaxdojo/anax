@@ -15,7 +15,6 @@ import org.springframework.util.Assert;
 import java.util.function.Supplier;
 
 @AnaxTest(description = "myTest")
-
 @Component
 @Slf4j
 public class TestGoogle1 {

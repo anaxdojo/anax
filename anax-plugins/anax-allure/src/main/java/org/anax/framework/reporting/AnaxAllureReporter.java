@@ -198,20 +198,20 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     private Consumer<TestResult> setStatus(final Status status) {
 
         return result -> {
-            result.withStatus(status);
+            result.setStatus(status);
         };
 
     }
 
     private Consumer<TestResult> setStatus(final Status status, Throwable throwable, TestMethod method) {
         return result -> {
-            result.withStatus(status);
+            result.setStatus(status);
             StatusDetails det = new StatusDetails();
 
             StringBuilder html = new StringBuilder();
             if (throwable!=null) {
                 det.setMessage(throwable.getMessage()); //TODO find the correct message
-                result.withStatusDetails(det);
+                result.setStatusDetails(det);
                 StringWriter wr = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(wr));
 
@@ -220,7 +220,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
                 html.append("<h3>Exception Detail</h3>");
                 html.append("<pre>" + wr.toString() + "</pre>");
-                result.withDescriptionHtml(html.toString());
+                result.setDescriptionHtml(html.toString());
             }
         };
     }
@@ -236,14 +236,14 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
 //            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(), ":") + "</pre>");
 
-            result.withDescriptionHtml(html.toString());
+            result.setDescriptionHtml(html.toString());
         };
     }
 
     private Consumer<TestResult> setStatus(final Status status, String reason) {
         return result -> {
-            result.withStatus(status);
-            result.withDescription(reason);
+            result.setStatus(status);
+            result.setDescription(reason);
         };
     }
 
@@ -255,8 +255,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             Severity severityAnnotationLevel = (Severity) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(Severity.class)).findFirst().orElse(null);
             if(severityAnnotationLevel !=null) {
-                result.withLabels(
-                        new Label().withName("severity").withValue(severityAnnotationLevel.value().toString())
+                result.setLabels(Arrays.asList(
+                        new Label().setName("severity").setValue(severityAnnotationLevel.value().toString()))
                 );
             }
         };
@@ -269,8 +269,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Link issueAnnotationLink = (io.qameta.allure.Link) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Link.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.withLinks(
-                        new Link().withName(issueAnnotationLink.value().toString())
+                result.setLinks(Arrays.asList(
+                        new Link().setName(issueAnnotationLink.value().toString()))
                 );
             }
         };
@@ -284,16 +284,16 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         final String fullName = Objects.nonNull(methodName) ? String.format("%s.%s", className, methodName) : className;
         String fullName1;
         if(!test.getTestBeanDescription().equals("")){
-            if (testMethod.getDataproviderValue()!=null) {
-                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
-                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(s));
+            if (testMethod.getDataProvider()!=null) {
+                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName()+"_"+testMethod.getProvidersMethodName();
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).filter(str -> !str.isEmpty()).orElse(s));
             }
-            else if(testMethod.getDatasupplierValue()!=null){
-                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDatasupplierValue();
-                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(s));
+            else if(testMethod.getDataSupplier()!=null){
+                String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName()+"_"+testMethod.getProvidersMethodName();
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).filter(str -> !str.isEmpty()).orElse(s));
             }
             else {
-                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).orElse(testMethod.getTestMethod().getName()));
+                fullName1 = String.format("%s.%s", test.getTestBeanDescription(), Optional.ofNullable(testMethod.getDescription()).filter(str -> !str.isEmpty()).orElse(testMethod.getTestMethod().getName()));
             }
 
         }
@@ -302,27 +302,28 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
 
         final TestResult testResult = new TestResult()
-                .withUuid(getUniqueUuid(test,testMethod))
-                .withHistoryId(getUniqueUuid(test,testMethod))
-                .withName(fullName1)
-                .withFullName(fullName)
-                .withLabels(
-                        new Label().withName("package").withValue(test.getClass().getPackage().getName()),
-                        new Label().withName("testClass").withValue(className),
-                        new Label().withName("testMethod").withValue(name),
-                        new Label().withName("suite").withValue(suiteName),
-                        new Label().withName("host").withValue(getHostName()),
-                        new Label().withName("thread").withValue(getThreadName())
+                .setUuid(getUniqueUuid(test,testMethod))
+                .setHistoryId(getUniqueUuid(test,testMethod))
+                .setName(fullName1)
+                .setFullName(fullName)
+                .setLabels(Arrays.asList(
+                        new Label().setName("package").setValue(test.getClass().getPackage().getName()),
+                        new Label().setName("testClass").setValue(className),
+                        new Label().setName("testMethod").setValue(name),
+                        new Label().setName("suite").setValue(suiteName),
+                        new Label().setName("host").setValue(getHostName()),
+                        new Label().setName("thread").setValue(getThreadName()))
                 );
         return testResult;
     }
+
     private String getUniqueUuid(Test test, TestMethod testMethod) {
-        if (testMethod.getDataproviderValue()!=null) {
-            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDataproviderValue();
+        if (testMethod.getDataProvider()!=null) {
+            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" +testMethod.getProvidersMethodName();
             return s.substring(0, Math.min(s.length(), 100));
         }
-        else if(testMethod.getDatasupplierValue()!=null){
-            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" + testMethod.getDatasupplierValue();
+        else if(testMethod.getDataSupplier()!=null){
+            String s = test.getTestBeanName() + "." + testMethod.getTestMethod().getName() + "_" +testMethod.getProvidersMethodName();
             return s.substring(0, Math.min(s.length(), 100));
         }
         else {
@@ -346,12 +347,12 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     .filter(annotation -> annotation.annotationType().equals(AnaxTestStep.class)).findFirst().orElse(null);
             if (stepDescription != null) {
                 if (stepDescription.description().toString().isEmpty()) {
-                    result.withSteps(
-                            new StepResult().withName("No available description found.").withStatus(getStepStatus(testMethod))
+                    result.setSteps(Arrays.asList(
+                            new StepResult().setName("No available description found.").setStatus(getStepStatus(testMethod)))
                     );
                 } else {
-                    result.withSteps(
-                            new StepResult().withName(stepDescription.description().toString()).withStatus(getStepStatus(testMethod))
+                    result.setSteps(Arrays.asList(
+                            new StepResult().setName(stepDescription.description()).setStatus(getStepStatus(testMethod)))
                     );
                 }
 
@@ -406,16 +407,16 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
 
         try {
-            ReportGenerator generator = new ReportGenerator(new ConfigurationBuilder()
-                    .useDefault()
-                    .build());
-            generator.generate(reportDirectory, resultsDirectories);
+//            ReportGenerator generator = new ReportGenerator(new ConfigurationBuilder()
+//                    .useDefault()
+//                    .build());
+//            generator.generate(reportDirectory, resultsDirectories);
 
             if (videoEnable) {
                 FileUtils.deleteQuietly(new File(videoBaseDirectory));
             }
-        } catch (IOException e) {
-            log.error("Could not generate report: {}", e);
+        } finally {
+
         }
         log.info("Report successfully generated to {}", reportDirectory);
     }

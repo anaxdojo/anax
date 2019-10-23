@@ -19,8 +19,9 @@ public class TestMethod {
     String description;
     boolean skip;
     boolean passed;
-    Object dataproviderValue;
-    Object datasupplierValue;
+    DataProvider dataProvider;
+    DataSupplier dataSupplier;
+    String providersMethodName = "";
 
     @Builder.Default StringBuilder stdOut = new StringBuilder();
     @Builder.Default StringBuilder stdErr = new StringBuilder();
