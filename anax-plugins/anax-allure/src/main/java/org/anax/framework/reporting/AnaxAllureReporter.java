@@ -407,10 +407,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
 
         try {
-//            ReportGenerator generator = new ReportGenerator(new ConfigurationBuilder()
-//                    .useDefault()
-//                    .build());
-//            generator.generate(reportDirectory, resultsDirectories);
+            ReportGenerator generator = new ReportGenerator(new ConfigurationBuilder()
+                    .useDefault()
+                    .build());
+            generator.generate(reportDirectory, resultsDirectories);
 
             if (videoEnable) {
                 FileUtils.deleteQuietly(new File(videoBaseDirectory));
