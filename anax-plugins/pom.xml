@@ -24,5 +24,6 @@
     <modules>
         <module>anax-videorec</module>
         <module>anax-allure</module>
+        <module>anax-reportng</module>
     </modules>
 </project>

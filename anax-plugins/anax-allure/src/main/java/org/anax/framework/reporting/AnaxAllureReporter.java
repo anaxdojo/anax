@@ -400,7 +400,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     public void generate(final Path reportDirectory,
                              final List<Path> resultsDirectories,
-                             final boolean clean) {
+                             final boolean clean) throws IOException {
         final boolean directoryExists = Files.exists(reportDirectory);
         if (clean && directoryExists) {
             FileUtils.deleteQuietly(reportDirectory.toFile());
