@@ -1,11 +1,7 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.AnaxBeforeTest;
-import org.anax.framework.annotations.AnaxPostCondition;
-import org.anax.framework.annotations.AnaxPreCondition;
-import org.anax.framework.annotations.AnaxTest;
-import org.anax.framework.annotations.AnaxTestStep;
+import org.anax.framework.annotations.*;
 import org.anax.framework.examples.demotestapp.pageObjects.GooglePageObject;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +10,7 @@ import org.springframework.util.Assert;
 
 import java.util.function.Supplier;
 
-@AnaxTest(description = "myTest")
+@AnaxTest(value = "myTest")
 @Component
 @Slf4j
 public class TestGoogle1 {
@@ -38,6 +34,9 @@ public class TestGoogle1 {
     @AnaxTestStep(description = "Given then ")
     @AnaxPreCondition(methodNames = {"inputValuesToGoogle"})
     public void test_step1() throws Exception{
+        googlePageObject.closeBrowser();
+
+
         log.info("This is the test info passed to console");
         verify.text(GooglePageObject.GooglePageLocators.LABEL_CALCULATOR_RESULT.get(),"7");
         Thread.sleep(2000);

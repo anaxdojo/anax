@@ -34,6 +34,13 @@ public class GooglePageObject{
             return MessageFormat.format(myLocator, params);
         }
     }
+
+    public void closeBrowser(){
+        controller.close();
+        controller.navigate("www.contra.gr");
+    }
+
+
     /*
      * Input text to search for on Google home page
      */
