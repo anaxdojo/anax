@@ -22,6 +22,7 @@ public class TestMethod {
     DataProvider dataProvider;
     DataSupplier dataSupplier;
     String providersMethodName = "";
+    String group;
 
     @Builder.Default StringBuilder stdOut = new StringBuilder();
     @Builder.Default StringBuilder stdErr = new StringBuilder();

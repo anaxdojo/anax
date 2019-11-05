@@ -7,7 +7,7 @@ import org.anax.framework.controllers.WebController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-//@AnaxTest(priority = 1)
+@AnaxTest(value = "myTest",priority = 1)
 @Component
 @Slf4j
 public class TestGoogle2 {
@@ -27,14 +27,20 @@ public class TestGoogle2 {
         log.info("Class2: Test step1");
     }
 
+
     @AnaxPostCondition(methodNames = {"afterConditionOfTestStep1"})
-    @AnaxTestStep(ordering = 1)
+    @AnaxTestStep(ordering = 1,group = "MyTestGroup 1")
     public void test_step2(){
         log.info("Class2: Test step2");
     }
 
-    @AnaxAfterTest
+    @AnaxTestStep(ordering = 2,group = "MyTestGroup 1",skip = false)
     public void test_step3(){
+        log.info("Class2: Test step3");
+    }
+
+    @AnaxAfterTest
+    public void test_step4(){
         log.info("Class2: After Test");
     }
 

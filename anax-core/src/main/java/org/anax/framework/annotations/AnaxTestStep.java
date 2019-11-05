@@ -23,4 +23,6 @@ public @interface AnaxTestStep {
     String dataprovider() default "";
 
     String datasupplier() default "";
+
+    String group() default "";
 }

@@ -82,7 +82,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         if(providerBean instanceof DataProvider){
                             DataProvider dataProvider =(DataProvider) providerBean;
                             mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.description(),
-                                    testStep.ordering(), testStep.skip(),dataProvider,null));
+                                    testStep.ordering(), testStep.skip(),dataProvider,null,testStep.group()));
 
                         }
                     }
@@ -91,12 +91,12 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                         if(supplierBean instanceof DataSupplier){
                             DataSupplier dataSupplier =(DataSupplier) supplierBean;
                             mainTestMethod.set(suiteRunner.registerTestMethod(test, method, testStep.description(),
-                                    testStep.ordering(), testStep.skip(),null ,dataSupplier));
+                                    testStep.ordering(), testStep.skip(),null ,dataSupplier,testStep.group()));
                         }
                     }
                     else {
                         mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering()
-                                , testStep.skip(), null,null));
+                                , testStep.skip(), null,null,testStep.group()));
                     }
                 });
 //---------------------------------------------------------------------------------------------------------------------------------

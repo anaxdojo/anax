@@ -35,10 +35,13 @@ public class AnaxSuiteRunner {
 
     boolean shouldAlsoExecute = false;
 
+
     @Value("${anax.report.directory:reports/}")
     String reportDirectory;
     @Value("${anax.exec.suite:ALL}")
     String executeSuite;
+    @Value("${anax.exec.group:ALL}")
+    String executeTestStep;
     @Value("${enable.video:true}")
     Boolean videoOn;
     @Value("${enable.screenshot:true}")
@@ -435,15 +438,19 @@ public class AnaxSuiteRunner {
         return testMethod;
     }
 
-    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, DataProvider dataprovider, DataSupplier datasupplier) {
+    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, DataProvider dataprovider, DataSupplier datasupplier,String group) {
         TestMethod testMethod = TestMethod.builder()
                 .testMethod(method)
                 .description(description)
                 .ordering(ordering).skip(skip)
+                .group(group)
                 .dataProvider(dataprovider)
                 .dataSupplier(datasupplier)
                 .build();
-        test.getTestMethods().add(testMethod);
+        if(executeTestStep.equals("ALL") || executeTestStep.equals(group)){
+            test.getTestMethods().add(testMethod);
+        }
+//        test.getTestMethods().add(testMethod);
         return testMethod;
     }
 

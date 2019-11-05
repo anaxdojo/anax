@@ -31,10 +31,10 @@ public class TestGoogle1 {
         log.info("Second");
     }
 
-    @AnaxTestStep(description = "Given then ")
+    @AnaxTestStep(description = "Given then ",group = "MyTestGroup 1")
     @AnaxPreCondition(methodNames = {"inputValuesToGoogle"})
     public void test_step1() throws Exception{
-        googlePageObject.closeBrowser();
+//        googlePageObject.closeBrowser();
 
 
         log.info("This is the test info passed to console");
@@ -42,7 +42,7 @@ public class TestGoogle1 {
         Thread.sleep(2000);
     }
 
-    @AnaxTestStep(ordering = 1)
+    @AnaxTestStep(ordering = 1,group = "MyTestGroup 2")
     @AnaxPreCondition(methodNames = {"division"})
     public void test_step2() throws Exception{
         Thread.sleep(1000);
