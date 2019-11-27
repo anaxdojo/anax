@@ -20,7 +20,7 @@ public class Cycles {
         this.contents.remove("recordsCount");
     }
 
-    public String getCycleId(String cycleName) throws NoSuchFieldException {
+    public String getCycleId(String cycleName){
         for(Map.Entry<String, Object> entry : contents.entrySet()){
             Map<String,Object> value = (Map<String,Object>) entry.getValue();
             if(value.get("name").toString().equals(cycleName)){

@@ -45,7 +45,7 @@ public class ServiceImpl {
      * @param cycleName
      * @return
      */
-    public String getCycleId(String projectName,String versionName,String cycleName) throws NoSuchFieldException {
+    public String getCycleId(String projectName,String versionName,String cycleName){
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId,versionName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
@@ -101,7 +101,7 @@ public class ServiceImpl {
      * @param issueName
      * @return
      */
-    public String getExecutionId(String projectName,String versionName,String cycleName, String issueName) throws NoSuchFieldException {
+    public String getExecutionId(String projectName,String versionName,String cycleName, String issueName) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);
         String cycleId = getCycleId(projectName, versionName, cycleName);
