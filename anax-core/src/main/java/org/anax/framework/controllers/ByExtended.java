@@ -1,15 +1,7 @@
 package org.anax.framework.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.By;
-import org.openqa.selenium.InvalidElementStateException;
-import org.openqa.selenium.InvalidSelectorException;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.SearchContext;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.internal.FindsByCssSelector;
 import org.openqa.selenium.internal.FindsByXPath;
 import org.openqa.selenium.remote.RemoteWebElement;
@@ -21,6 +13,13 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public abstract class ByExtended extends By {
+
+    static boolean sizzleEnabled = true;
+
+    static {
+        boolean cmdOverride = Boolean.valueOf(System.getProperty("sizzleEnabled", Boolean.toString(sizzleEnabled)));
+        sizzleEnabled = cmdOverride;
+    }
 
     /**
      * Finds elements via the driver's underlying W3 Selector engine. If the
@@ -134,12 +133,18 @@ public abstract class ByExtended extends By {
          * @return the web element
          */
         public WebElement findElementBySizzleCss(SearchContext context, String cssLocator) {
-            List<WebElement> elements = findElementsBySizzleCss(context, cssLocator);
-            if (elements != null && elements.size() > 0 ) {
-                return elements.get(0);
+            try {
+                List<WebElement> elements = findElementsBySizzleCss(context, cssLocator);
+                if (elements != null && elements.size() > 0) {
+                    return elements.get(0);
+                }
+            } catch (RuntimeException rte) {
+                if (sizzleEnabled) {
+                    throw rte;
+                }
             }
             // if we get here, we cannot find the element via Sizzle.
-            throw new NoSuchElementException("selector '"+cssLocator+"' cannot be found in DOM");
+            throw new NoSuchElementException("selector '"+cssLocator+"' cannot be found in DOM [sizzle="+sizzleEnabled+"]");
         }
 
         private void fixLocator(SearchContext context, String cssLocator,

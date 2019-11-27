@@ -2,17 +2,22 @@ package org.anax.framework.integrations.service;
 
 import org.anax.framework.integrations.pojo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class ServiceImpl {
 
     @Autowired
+    @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
+
     @Value("${zapi.url:http://jira.ath.persado.com:8080/rest/zapi/1.0/}") private String zapiUrl;
     @Value("${jira.url:http://jira.ath.persado.com:8080/rest/api/2/}") private String jiraUrl;
     @Value("${jira.originalCycle:Unresolved_Unplanned}") private String originalCycle;
