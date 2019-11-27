@@ -5,11 +5,13 @@ import org.anax.framework.integrations.pojo.ExecutionStatus;
 import org.anax.framework.integrations.pojo.Results;
 import org.anax.framework.integrations.service.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
 public class ExecutionManager {
 
     @Autowired
