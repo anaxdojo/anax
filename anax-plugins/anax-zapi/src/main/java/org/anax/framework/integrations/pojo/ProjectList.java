@@ -1,14 +1,13 @@
 package org.anax.framework.integrations.pojo;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-@Slf4j
-@Data
-@Builder
+@Getter
+@Setter
 public class ProjectList {
     List<LabelValue> options;
 }

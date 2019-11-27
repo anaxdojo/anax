@@ -33,7 +33,7 @@ public class CycleCreator {
             return cycleName;
         }
         else{
-            if(zapiService.getCycleBuildNumber(projectName,versionName,zapiService.getLatestCycleName(projectName, versionName)).equals(cycleInfo.getBuild())){
+            if(zapiService.getCycleBuildNumber(projectName,versionName,zapiService.getLatestCycleName(projectName, versionName)).equals(cycleInfo.getJiraBuildNo())){
                 log.info("Test Cycle with name: " + zapiService.getLatestCycleName(projectName, versionName) + " at version: " + versionName+" already exist,continue!!");
                 return zapiService.getLatestCycleName(projectName, versionName);
             }

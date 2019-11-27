@@ -10,7 +10,7 @@ import lombok.Data;
 public class CycleClone {
     String clonedCycleId;
     String name;
-    String build;
+    String jiraBuildNo;
     String environment;
     String description;
     String startDate;

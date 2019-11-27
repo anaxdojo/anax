@@ -1,13 +1,15 @@
 package org.anax.framework.integrations.pojo;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class Cycles {
     Map<String,Object> contents;

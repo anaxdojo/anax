@@ -1,9 +1,8 @@
 package org.anax.framework.integrations.pojo;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
-@Builder
+@Getter
+@Setter
 public class VersionList extends ProjectList{
 }
