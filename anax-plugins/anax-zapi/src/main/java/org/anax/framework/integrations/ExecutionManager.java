@@ -3,7 +3,7 @@ package org.anax.framework.integrations;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.ExecutionStatus;
 import org.anax.framework.integrations.pojo.Results;
-import org.anax.framework.integrations.service.ServiceImpl;
+import org.anax.framework.integrations.service.ZapiServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class ExecutionManager {
 
     @Autowired
-    protected ServiceImpl zapiService;
+    protected ZapiServiceImpl zapiService;
 
     public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> issueIds, ExecutionStatus status) throws NoSuchFieldException {
         List<String> jiraIssueIds;

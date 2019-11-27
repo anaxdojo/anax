@@ -3,7 +3,7 @@ package org.anax.framework.integrations;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.CycleClone;
 import org.anax.framework.integrations.pojo.CycleInfo;
-import org.anax.framework.integrations.service.ServiceImpl;
+import org.anax.framework.integrations.service.ZapiServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class CycleCreator {
 
     @Autowired
-    protected ServiceImpl zapiService;
+    protected ZapiServiceImpl zapiService;
 
     /**
      * Create new cycle (clone existing one). If not exist create with given name, else append incremental number
