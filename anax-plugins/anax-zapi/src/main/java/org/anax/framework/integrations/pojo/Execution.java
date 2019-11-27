@@ -7,14 +7,15 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @Builder
-public class CycleInfo{
+public class Execution {
     String id;
-    String name;
-    String build;
-    String environment;
-    String description;
-    String startDate;
-    String endDate;
-    String projectId;
+    String orderId;
+    String cycleName;
+    String versionName;
+    String issueKey;
+    String issueId;
     String versionId;
+    String projectId;
+    String cycleId;
+
 }
