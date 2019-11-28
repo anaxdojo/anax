@@ -1,9 +1,14 @@
 package org.anax.framework.integrations.service;
 
+import com.jayway.jsonpath.JsonPath;
 import org.anax.framework.integrations.pojo.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,9 +23,36 @@ public class ZapiServiceImpl {
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
-    @Value("${zapi.url:http://jira.ath.persado.com:8080/rest/zapi/1.0/}") private String zapiUrl;
-    @Value("${jira.url:http://jira.ath.persado.com:8080/rest/api/2/}") private String jiraUrl;
+    @Value("${zapi.url:https://jira.persado.com/rest/zapi/1.0/}") private String zapiUrl;
+    @Value("${jira.url:https://jira.persado.com/rest/api/2/}") private String jiraUrl;
     @Value("${jira.originalCycle:Unresolved_Unplanned}") private String originalCycle;
+
+    /**
+     * Find the correct object in a jsonarray based on the value of an attribute
+     * @param jsonArray
+     * @param attribute
+     * @param attributeValue
+     * @return
+     * @throws JSONException
+     */
+    public static JSONObject filterJsonArray(JSONArray jsonArray, String attribute, String attributeValue) throws JSONException{
+        return new JSONObject(new JSONArray(JsonPath.read(jsonArray.toString(),"$[?(@."+attribute+" ==\""+attributeValue+"\")]").toString()).get(0).toString());
+    }
+
+    /**
+     * Get cycle id from cycle name at unschedule
+     * @param projectName
+     * @param cycleName
+     * @return
+     */
+    public String getCycleId(String projectName, String versionName , String cycleName){
+        String projectId = getProjectId(projectName);
+        String versionId = getVersionId(projectId,versionName);
+        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId+"&versionId="+versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
+        Map.Entry<String, Map<Object, Object>> result = new Cycles(entity.getBody()).getContents().entrySet().stream().filter(x->x.getValue().get("name").equals(cycleName)).findFirst().orElse(null);
+        return (result != null) ? result.getKey() : null;
+    }
+
 
     /**
      * Get project id from project name
@@ -33,30 +65,17 @@ public class ZapiServiceImpl {
     }
 
     /**
-     * Get version id from version name
-     * @param projectId
-     * @param versionName
-     * @return
-     */
-    public String getVersionId(String projectId, String versionName){
-        VersionList versionList = restTemplate.getForObject(zapiUrl +"util/versionBoard-list?projectId="+projectId, VersionList.class);
-        return versionList.getOptions().stream().filter(data->data.getLabel().equals(versionName)).findFirst().get().getValue();
-    }
-
-    /**
-     * Get cycle id from cycle name
+     * Get cycle id from cycle name at unschedule
      * @param projectName
-     * @param versionName
      * @param cycleName
      * @return
      */
-    public String getCycleId(String projectName,String versionName,String cycleName){
+    public String getCycleIdUnderUnschedule(String projectName, String cycleName){
         String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
-        Cycles cycle = new Cycles(entity.getBody());
-        return  cycle.getCycleId(cycleName);
-    }
+        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId+"&versionId=-1", HttpMethod.GET, HttpEntity.EMPTY, Map.class);
+        Map.Entry<String, Map<Object, Object>> result = new Cycles(entity.getBody()).getContents().entrySet().stream().filter(x->x.getValue().get("name").equals(cycleName)).findFirst().orElse(null);
+        return (result != null) ? result.getKey() : null;    }
+
 
     /**
      * Get issue id from issue name
@@ -68,34 +87,22 @@ public class ZapiServiceImpl {
     }
 
     /**
-     * Get cycle build number
-     * @param projectName
+     * Get version id from version name
+     * @param projectId
      * @param versionName
-     * @param cycleName
      * @return
-     * @throws NoSuchFieldException
      */
-    public String getCycleBuildNumber(String projectName,String versionName,String cycleName) throws NoSuchFieldException {
-        String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET,HttpEntity.EMPTY, Map.class);
-        Cycles cycle = new Cycles((Map<String, Object>) entity.getBody());
-        return  cycle.getCycleBuild(cycleName);
+    public String getVersionId(String projectId, String versionName){
+        ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl +"project/"+projectId+"/versions", HttpMethod.GET, new HttpEntity<>(getHeaders()),  new ParameterizedTypeReference<List<Version>>() {});
+        return versions.getBody().stream().filter(data->data.getName().equals(versionName)).findFirst().get().getId();
     }
 
     /**
-     * Get the name of the latest cycle
-     * @param projectName
-     * @param versionName
-     * @return
-     * @throws NoSuchFieldException
+     * Update execution results as bulk
+     * @param results
      */
-    public String getLatestCycleName(String projectName,String versionName) throws NoSuchFieldException {
-        String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET,HttpEntity.EMPTY, Map.class);
-        Cycles cycle = new Cycles((Map<String, Object>) entity.getBody());
-        return  cycle.getCycleNames().get(cycle.getCycleNames().size()-1);
+    public void updateResults(Results results){
+        restTemplate.exchange(zapiUrl+"execution/updateBulkStatus/",HttpMethod.PUT ,new HttpEntity(results, getHeaders()), Results.class);
     }
 
     /**
@@ -111,16 +118,9 @@ public class ZapiServiceImpl {
         String versionId = getVersionId(projectId, versionName);
         String cycleId = getCycleId(projectName, versionName, cycleName);
         String issueId = getIssueId(issueName);
+
         ExecutionList execution = restTemplate.getForObject(zapiUrl + "execution?issueId=" + issueId, ExecutionList.class);
         return execution.getExecutions().stream().filter(data -> data.getProjectId().equals(projectId) && data.getVersionId().equals(versionId) && data.getCycleId().equals(cycleId) && data.getIssueId().equals(issueId)).findFirst().get().getId();
-    }
-
-    /**
-     * Update execution results as bulk
-     * @param results
-     */
-    public void updateResults(Results results){
-        restTemplate.exchange(zapiUrl+"execution/updateBulkStatus/",HttpMethod.PUT ,new HttpEntity(results, getHeaders()), Results.class);
     }
 
     /**
@@ -130,7 +130,7 @@ public class ZapiServiceImpl {
      * @param cycleName
      * @param cycleInfo
      */
-    public void updateCycleInfo(String projectName,String versionName,String cycleName,CycleInfo cycleInfo) throws NoSuchFieldException {
+    public void updateCycleInfo(String projectName,String versionName,String cycleName,CycleInfo cycleInfo){
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId,versionName);
         String cycleId = getCycleId(projectName,versionName,cycleName);
@@ -142,37 +142,42 @@ public class ZapiServiceImpl {
     }
 
     /**
+     * Returns the test id from label
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param label
+     * @param cycleInfo
+     * @throws Exception
+     */
+    public void getCycleTCIdViaLabel(String projectName,String versionName,String cycleName,String label, CycleInfo cycleInfo) throws Exception{
+        String projectId = getProjectId(projectName);
+        String versionId = getVersionId(projectId,versionName);
+        String cycleId = getCycleId(projectName,versionName,cycleName);
+
+        cycleInfo.setProjectId(projectId);
+        cycleInfo.setVersionId(versionId);
+        cycleInfo.setId(cycleId);
+        filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl+"execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId,HttpMethod.GET, new HttpEntity<>(getHeaders()),String.class).getBody()).get("executions"),"label",label).get("id");
+    }
+
+    /**
      * Clone a cyle (including executions) from default cycle to specific cycle
      * @param projectName
      * @param versionName
      * @param cycleClone
      * @param originalCycleName
      */
-    public void cloneCycleToVersion(String projectName,String versionName,CycleClone cycleClone,String originalCycleName) throws NoSuchFieldException {
+    public void cloneCycleToVersion(String projectName,String versionName,CycleClone cycleClone,String originalCycleName){
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId,versionName);
-        String cycleId = getCycleId(projectName,originalCycle,originalCycleName);
+        String cycleId = getCycleIdUnderUnschedule(projectName,originalCycleName);
 
         cycleClone.setProjectId(projectId);
         cycleClone.setVersionId(versionId);
         cycleClone.setClonedCycleId(cycleId);
         restTemplate.exchange(zapiUrl+"cycle",HttpMethod.POST ,new HttpEntity(cycleClone, getHeaders()), CycleClone.class);
     }
-
-    /**
-     * Get all cycles name of a specific version
-     * @param projectName
-     * @param versionName
-     * @return
-     */
-    public List<String> getVersionCycleNames(String projectName, String versionName){
-        String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
-        Cycles cycle = new Cycles((Map<String, Object>) entity.getBody());
-        return  cycle.getCycleNames();
-    }
-
 
 
     private HttpHeaders getHeaders(){

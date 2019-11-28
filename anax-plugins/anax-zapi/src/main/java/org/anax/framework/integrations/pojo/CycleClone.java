@@ -1,16 +1,14 @@
 package org.anax.framework.integrations.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Builder;
 import lombok.Data;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@Builder
 public class CycleClone {
     String clonedCycleId;
     String name;
-    String jiraBuildNo;
+    String build;
     String environment;
     String description;
     String startDate;
@@ -18,4 +16,9 @@ public class CycleClone {
     String projectId;
     String versionId;
     String sprintId;
+
+
+    public CycleClone(String name) {
+        this.name = name;
+    }
 }

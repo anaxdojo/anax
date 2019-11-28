@@ -157,8 +157,7 @@ public class ZapiReporting implements AnaxTestReporter {
         errorTCs.add(test.getTestBeanName());
     }
 
-    public final void    initialiseCycles(String environment,String buildNo,
-                                                 String versionNumber, String suiteName, String testClassPref, String jiraProjectPref) {
+    public final void initialiseCycles(String environment,String buildNo, String versionNumber, String suiteName, String testClassPref, String jiraProjectPref) {
         testClassPrefix = testClassPref;
         jiraProjectPrefix = jiraProjectPref;
         try{
