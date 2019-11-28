@@ -1,12 +1,10 @@
 package org.anax.framework.integrations.pojo;
 
-/**
- * Created by gkogketsof on 3/21/14.
- */
 public enum ExecutionStatus {
 
     PASS("1"),
     FAIL("2"),
+    SKIPPED("3"),
     BLOCKED("4");
 
 

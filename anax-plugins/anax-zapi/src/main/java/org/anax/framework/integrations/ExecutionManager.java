@@ -17,19 +17,24 @@ public class ExecutionManager {
     @Autowired
     protected ZapiServiceImpl zapiService;
 
-    public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> issueIds, ExecutionStatus status) throws NoSuchFieldException {
-        List<String> jiraIssueIds;
+    public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> issueNames, ExecutionStatus status) throws Exception {
         List<String> executionIds;
 
-        if(issueIds.size()==0){
+        if(issueNames.size()==0){
             log.error("There are no test cases contained in update list");
             throw new NoSuchFieldException();
         }
 
-        jiraIssueIds = issueIds.stream().filter(data->!data.equals("UnknownTest")).collect(Collectors.toList());
-        executionIds = jiraIssueIds.stream().map(data->zapiService.getExecutionId(projectName,versionName,cycleName,data)).collect(Collectors.toList());
+        executionIds = issueNames.stream().map(data->zapiService.getIssueIdViaLabel(projectName,versionName,cycleName,convertLabel(data))).collect(Collectors.toList());
 
         Results results = Results.builder().executions(executionIds).status(status.getStatusId()).build();
         try{ zapiService.updateResults(results); }catch(Exception e){ log.error("Error during the update of TC: "+e.getMessage()); }
+    }
+
+
+
+    private String convertLabel(String issueName){
+        issueName = issueName.replace("__","-");
+        return issueName.substring(0,issueName.indexOf("ANX"));
     }
 }
