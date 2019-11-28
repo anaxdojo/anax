@@ -36,6 +36,20 @@
 			<version>${project.version}</version>
 		</dependency>
 
+<!--		<dependency>-->
+<!--			<groupId>org.anax.framework</groupId>-->
+<!--			<artifactId>anax-allure</artifactId>-->
+<!--			<version>${project.version}</version>-->
+<!--		</dependency>-->
+
+		<!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>3.13.2</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>

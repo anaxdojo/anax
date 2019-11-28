@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 @Component
 @Slf4j
-public class TestGoogle1 {
+public class Anax_JiraTC134_MytestCase {
 
     @Autowired
     protected  GooglePageObject        googlePageObject;
@@ -56,6 +56,7 @@ public class TestGoogle1 {
     @AnaxPreCondition(methodNames = {"failCondition"})
     public void test_step3(){
         log.info("Class1: Test step3");
+        verify.equals(1==2);
     }
 
 

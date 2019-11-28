@@ -39,6 +39,8 @@ public class ZapiReporting implements AnaxTestReporter {
     private Set<String> passedTCs = new HashSet<String>();
     private Set<String> failedTCs = new HashSet<String>();
     private Set<String> skippedTCs = new HashSet<String>();
+    private Set<String> errorTCs = new HashSet<String>();
+
 
 
     @Override
@@ -74,6 +76,12 @@ public class ZapiReporting implements AnaxTestReporter {
         log.info("onFinish: Cycle: "+cycleName+", version: "+version+", manager: "+updateTests+" - "+this.toString());
         log.info("********************************************\r\n\r\n");
 
+        log.info(passedTCs.toString());
+        log.info(failedTCs.toString());
+        log.info(skippedTCs.toString());
+        log.info(errorTCs.toString());
+
+        errorTCs.forEach(it-> passedTCs.remove(it));
 
         /**
          * Update Test Cases execution Status
@@ -105,6 +113,15 @@ public class ZapiReporting implements AnaxTestReporter {
             log.info("The update on SKIPPED jira did not happen due to: " + e2.getMessage());
         }
 
+        try{
+            if (errorTCs.size() != 0) {
+                log.info("Update as FAIL the following TCs: " + errorTCs.toString()+" at version: "+version.trim()+" on cycle: "+cycleName.trim());
+                updateTests.updateTestExecutions(jiraProjectPrefix, version.trim(), cycleName.trim(), new ArrayList<String>(errorTCs), ExecutionStatus.FAIL);
+            }
+        }catch (Exception e1) {
+            log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
+        }
+
         return false;
     }
 
@@ -115,37 +132,29 @@ public class ZapiReporting implements AnaxTestReporter {
 
     @Override
     public void endTest(Test test, TestMethod testMethod) {
-        String tc = parseTestCaseName(test.getTestBeanName());
         log.info("Identify if test has passed");
-        if(!(tc.trim().equals("UnknownTest"))){
-            if(!failedTCs.contains(tc) && !skippedTCs.contains(tc)){
-                passedTCs.add(tc);
-            }
+        if(!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())){
+            log.info("Added TC on the passedTCs is: "+test.getTestBeanName());
+            passedTCs.add(test.getTestBeanName());
         }
     }
 
     @Override
     public void addFailure(Test test, TestMethod method, Throwable t) {
-        String tc = parseTestCaseName(test.getTestBeanName());
-        log.info("Added TC on the failedTCs is: "+tc);
-        if(!(tc.trim().equals("UnknownTest"))){
-            failedTCs.add(tc);
-        }
+        log.info("Added TC on the failedTCs is: "+test.getTestBeanName());
+        failedTCs.add(test.getTestBeanName());
     }
 
     @Override
     public void addSkipped(Test test, TestMethod method, String skipReason) {
-        String tc = parseTestCaseName(test.getTestBeanName());
-        log.info("Added TC on the skippedTCs is: "+tc);
-        if(!(tc.trim().equals("UnknownTest"))){
-            skippedTCs.add(tc);
-        }
-
+        log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
+        skippedTCs.add(test.getTestBeanName());
     }
 
     @Override
     public void addError(Test test, TestMethod method, Throwable t) {
-
+        log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
+        errorTCs.add(test.getTestBeanName());
     }
 
     public final void    initialiseCycles(String environment,String buildNo,
@@ -177,28 +186,29 @@ public class ZapiReporting implements AnaxTestReporter {
 
 
 
-    /**
-     * Manipulate the class name in case of jira or rally name conversions
-     * @param testClassName
-     * @return TC number
-     */
-    private String parseTestCaseName(String testClassName) {
-        String jira = testClassPrefix + "_Jira";
-        String tcName;
-        try{
-            String testName = testClassName.substring(testClassName.lastIndexOf(".") + 1, testClassName.length());
-            if (testName.contains(jira)) {
-                tcName = testName.substring(testName.indexOf("_") + 1, testName.indexOf("_",testName.indexOf("_") + 1));
-                return tcName.replace("JiraTC", jiraProjectPrefix + "-");
-            }else{
-                log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
-                return "UnknownTest";
-            }
-        }catch(Exception e){
-            log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
-            return "UnknownTest";
-        }
-    }
+//    /**
+//     * Manipulate the class name in case of jira or rally name conversions
+//     * @param testClassName
+//     * @return TC number
+//     */
+//    private String parseTestCaseName(String testClassName) {
+//        String jira = testClassPrefix + "_Jira";
+//        String jira = "_Jira";
+//        String tcName;
+//        try{
+//            String testName = testClassName.substring(testClassName.lastIndexOf(".") + 1, testClassName.length());
+//            if (testName.contains(jira)) {
+//                tcName = testName.substring(testName.indexOf("_") + 1, testName.indexOf("_",testName.indexOf("_") + 1));
+//                return tcName.replace("JiraTC", jiraProjectPrefix + "-");
+//            }else{
+//                log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
+//                return "UnknownTest";
+//            }
+//        }catch(Exception e){
+//            log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
+//            return "UnknownTest";
+//        }
+//    }
 
 
 }
