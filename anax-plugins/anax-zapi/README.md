@@ -1,15 +1,16 @@
 # Anax - Zephyr (ZAPI) Plugin
 Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI)
+The plugin copy the jira cycle from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP)
 
 ## How to include Jira Connector
 ### Maven 
 Add the following dependency on your project pox.xml:
 ```xml
-      <dependency>
-            <groupId>org.anax.framework</groupId>
-            <artifactId>anax-zapi</artifactId>
-            <version>${anax.version}</version>
-        </dependency>
+     <dependency>
+         <groupId>org.anax.framework</groupId>
+         <artifactId>anax-zapi</artifactId>
+         <version>${anax.version}</version>
+     </dependency>
 ```
 
 ### Configure the following properties on your project application.properties file
@@ -19,7 +20,7 @@ Configure the suite name , keep the same name as the cycle on Jira:
 anax.exec.suite = JIRA_CYCLE_NAME
 ```
 
-Configure the zapi enabled variable, By default is enabled , so no need to include except if you want to disable it:
+Configure the zapi enabled variable, By default is enabled , so no need to include it except if you want to disable it:
 ```gradle
 zapi.enabled = true
 ```
