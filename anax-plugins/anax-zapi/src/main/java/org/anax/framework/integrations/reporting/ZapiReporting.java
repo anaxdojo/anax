@@ -62,7 +62,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
     @Autowired
     public ZapiReporting(AnaxZapiVersionResolver versionResolver){
-        version =  "Geno 19.9.hot1";
+        version = versionResolver.resolveAppVersion();
     }
 
 

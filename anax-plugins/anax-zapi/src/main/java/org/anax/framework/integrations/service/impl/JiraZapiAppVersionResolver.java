@@ -15,7 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 public class JiraZapiAppVersionResolver implements AnaxZapiVersionResolver {
 
     @Value("${jira.project:NOT_CONFIGURED}") private String webPage;
-    @Value("${anax.target.url:http://www.google.com}") private String url;
+    @Value("${anax.target.url:http://localhost:7001/simstat/}") private String url;
+    @Value("${jira.project.prefix:NOT_CONFIGURED}") private String projectPrefix;
 
 
     //base url
@@ -24,7 +25,9 @@ public class JiraZapiAppVersionResolver implements AnaxZapiVersionResolver {
     public String resolveAppVersion(){
 
         try {
-            return  Jsoup.connect(url).get().html();
+            StringBuffer strBuilder = new StringBuffer(Jsoup.connect(url).get().selectFirst("body div footer div div div div").text().replace("Version: ","").replace("-SNAPSHOT",""))
+                    .insert(0,projectPrefix+" ");
+            return  strBuilder.toString();
         }catch (Exception e) {
             return null;
         }
