@@ -118,23 +118,20 @@ public class ZapiService {
      * @throws Exception
      */
         public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
-        String projectId = getProjectId(projectName);
-        log.info("Project Id : "+projectId);
-        String versionId = getVersionId(projectId, versionName);
-        log.info("Version Id : "+versionId);
-        String cycleId = getCycleId(projectName, versionName, cycleName);
-        log.info("Cycle Id : "+cycleId);
+            String projectId = getProjectId(projectName);
+            String versionId = getVersionId(projectId, versionName);
+            String cycleId = getCycleId(projectName, versionName, cycleName);
 
-        try {
-            Thread.sleep(2 * 1000);
-            log.info("Issue Id: "+filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString());
-            return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
-        }catch (Exception e){
-            e.printStackTrace();
-            log.info("Check !! Issue with this label was not found");
-            return "";
+            try {
+                Thread.sleep(1000);
+                log.info("Issue Id: " + filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString());
+                return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.info("Check !! Issue with this label was not found");
+                return "";
 
-        }
+            }
     }
 
 
@@ -157,7 +154,7 @@ public class ZapiService {
 
 
     /**
-     * Clone a cyle (including executions) from default cycle to specific cycle
+     * Clone a cycle (including executions) from default cycle to specific cycle
      * @param projectName
      * @param versionName
      * @param cycleClone

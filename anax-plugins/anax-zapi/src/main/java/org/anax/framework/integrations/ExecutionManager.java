@@ -8,6 +8,7 @@ import org.anax.framework.integrations.service.ZapiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,15 @@ public class ExecutionManager {
         this.issueResolver = issueResolver;
     }
 
+    /**
+     * Update tc status
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param tcNames
+     * @param status
+     * @throws Exception
+     */
     public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> tcNames, ExecutionStatus status) throws Exception {
         List<String> executionIds;
 
@@ -38,6 +48,18 @@ public class ExecutionManager {
         try{ zapiService.updateResults(results); }catch(Exception e){ log.error("Error during the update of TC: "+e.getMessage()); }
     }
 
+
+    /**
+     * Add attachment on each execution
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param tcName
+     * @param file
+     */
+    public void addExecutionAttachement(String projectName, String versionName, String cycleName, String tcName, File file){
+        zapiService.addTcExecutionAttachements(projectName,versionName,cycleName,convertLabel(tcName),file);
+    }
 
 
     private String convertLabel(String testCaseName){
