@@ -2,6 +2,7 @@
 Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI).
 
 The plugin copy the jira cycle (which actually is the suite name) under the specified project from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP).
+By default automated TC are matched on Jira with the label of each TC.
 
 On fail / skip TC status sceenshot and video will be attached on the execution.
 
