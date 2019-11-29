@@ -2,7 +2,7 @@ package org.anax.framework.integrations;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.CycleClone;
-import org.anax.framework.integrations.service.ZapiServiceImpl;
+import org.anax.framework.integrations.service.ZapiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -17,7 +17,7 @@ public class CycleCreator {
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yy");
 
     @Autowired
-    protected ZapiServiceImpl zapiService;
+    protected ZapiService zapiService;
 
     /**
      * Create new cycle (clone existing one). If not exist create with given name, else append incremental number

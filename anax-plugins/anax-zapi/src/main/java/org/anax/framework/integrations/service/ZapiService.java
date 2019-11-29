@@ -19,15 +19,14 @@ import java.util.Map;
 
 @Service
 @Log
-public class ZapiServiceImpl {
+public class ZapiService {
 
     @Autowired
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
-    @Value("${zapi.url:https://jira.persado.com/rest/zapi/1.0/}") private String zapiUrl;
-    @Value("${jira.url:https://jira.persado.com/rest/api/2/}") private String jiraUrl;
-    @Value("${jira.originalCycle:Unresolved_Unplanned}") private String originalCycle;
+    @Value("${zapi.url:https:NOT_CONFIGURED}") private String zapiUrl;
+    @Value("${jira.url:https:NOT_CONFIGURED}") private String jiraUrl;
 
     /**
      * Find the correct object in a jsonarray based on the value of an attribute
@@ -118,12 +117,17 @@ public class ZapiServiceImpl {
      */
     public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
         String projectId = getProjectId(projectName);
+        log.info("Project Id : "+projectId);
         String versionId = getVersionId(projectId, versionName);
+        log.info("Version Id : "+versionId);
         String cycleId = getCycleId(projectName, versionName, cycleName);
+        log.info("Cycle Id : "+cycleId);
 
         try {
+            Thread.sleep(2 * 1000);
             return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
         }catch (Exception e){
+            e.printStackTrace();
             log.info("Check !! Issue with this label was not found");
             return "";
 

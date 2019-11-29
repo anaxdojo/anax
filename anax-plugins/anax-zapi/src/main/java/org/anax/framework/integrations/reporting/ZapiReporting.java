@@ -4,6 +4,7 @@ import lombok.extern.java.Log;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
 import org.anax.framework.integrations.pojo.ExecutionStatus;
+import org.anax.framework.integrations.service.AnaxZapiVersionResolver;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
@@ -21,7 +22,7 @@ import java.util.Set;
 public class ZapiReporting implements AnaxTestReporter {
 
     private String cycleName;
-    private String version = "Geno 19.9.hot1";
+    private String version ; //= "Geno 19.9.hot1";
 
     @Value("${jira.project:NOT_CONFIGURED}") private String project;
     @Value("${zapi.enabled:true}") private Boolean enabled;
@@ -37,6 +38,10 @@ public class ZapiReporting implements AnaxTestReporter {
     private Set<String> skippedTCs = new HashSet<String>();
     private Set<String> errorTCs = new HashSet<String>();
 
+    @Autowired
+    public ZapiReporting(AnaxZapiVersionResolver versionResolver){
+        version =  "Geno 19.9.hot1";
+    }
 
 
     @Override
@@ -65,7 +70,6 @@ public class ZapiReporting implements AnaxTestReporter {
 
             initialiseCycles(project, version, cycleName);
         }
-
     }
 
     @Override
@@ -76,10 +80,9 @@ public class ZapiReporting implements AnaxTestReporter {
             log.info("onFinish: Cycle: " + cycleName + ", version: " + version + ", manager: " + updateTests + " - " + this.toString());
             log.info("********************************************\r\n\r\n");
 
-            log.info(passedTCs.toString());
-            log.info(failedTCs.toString());
-            log.info(skippedTCs.toString());
-            log.info(errorTCs.toString());
+            log.info("Finally: List of Passed TCs: "+passedTCs.toString());
+            log.info("Finally: List of Skipped TCs: "+skippedTCs.toString());
+            log.info("Finally: List of Failed TCs: "+errorTCs.toString());
 
             errorTCs.forEach(it -> passedTCs.remove(it));
 

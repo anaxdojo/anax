@@ -11,8 +11,8 @@ import java.time.Duration;
 @Configuration
 public class RestTemplateConfig {
 
-    @Value("${zapi.user:ichitiris}") private String user;
-    @Value("${zapi.password:pass11..}") private String password;
+    @Value("${zapi.user:NOT_CONFIGURED}") private String user;
+    @Value("${zapi.password:NOT_CONFIGURED}") private String password;
     @Value("${time_out:120000}") Duration time_out;
 
     @Bean("zapiRestTemplate")
