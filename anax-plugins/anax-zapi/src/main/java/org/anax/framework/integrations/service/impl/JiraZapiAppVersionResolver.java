@@ -15,15 +15,19 @@ import org.springframework.beans.factory.annotation.Value;
 public class JiraZapiAppVersionResolver implements AnaxZapiVersionResolver {
 
     @Value("${jira.project:NOT_CONFIGURED}") private String webPage;
-    @Value("${anax.target.url:http://localhost:7001/simstat/}") private String url;
+    @Value("${anax.target.url:NOT_CONFIGURED}") private String url;
     @Value("${jira.project.prefix:NOT_CONFIGURED}") private String projectPrefix;
+    @Value("${project.version.selector:body div footer div div div div}") private String selector;
+    @Value("${project.version.prefix.replacement:Version: }") private String versionPrefix;
+    @Value("${project.version.suffix.replacement:-SNAPSHOT}") private String versionSuffix;
+
 
 
     @Override
     public String resolveAppVersion(){
 
         try {
-            StringBuffer strBuilder = new StringBuffer(Jsoup.connect(url).get().selectFirst("body div footer div div div div").text().replace("Version: ","").replace("-SNAPSHOT",""))
+            StringBuffer strBuilder = new StringBuffer(Jsoup.connect(url).get().selectFirst(selector).text().replace(versionPrefix,"").replace(versionSuffix,""))
                     .insert(0,projectPrefix+" ");
             return  strBuilder.toString();
         }catch (Exception e) {

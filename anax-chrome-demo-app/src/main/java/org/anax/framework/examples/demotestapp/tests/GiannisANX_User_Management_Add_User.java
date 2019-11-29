@@ -10,12 +10,13 @@ import org.anax.framework.integrations.service.ZapiService;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 
 @AnaxTest(value = "Results Analysis1")
 @Component
 @Slf4j
-public class Giannis_13__03__02ANX_User_Management_Add_User {
+public class GiannisANX_User_Management_Add_User {
 
     @Autowired
     protected CycleCreator      cycleCreator;
@@ -24,14 +25,14 @@ public class Giannis_13__03__02ANX_User_Management_Add_User {
     protected ExecutionManager  executionManager;
 
     @Autowired
-    protected ZapiService       zapiService;
+    protected ZapiService zapiService;
 
     @Autowired
     protected Verify            verify;
 
     @AnaxBeforeTest
     public void before() throws Exception{
-
+        Assert.isTrue(1==2);
     }
 
     @AnaxTestStep

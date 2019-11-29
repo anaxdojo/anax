@@ -181,12 +181,17 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
                 if (videoMaker != null) {
                     try {
                         videoMaker.completeVideo();
+                        if(!testMethod.isPassed()){
+                            attachVideo(test,testMethod);
+                        }
+
                     } catch (Exception e) {
                         log.info("Failed to complete video recording - recordings enabled? {}", e.getMessage(), e);
                     }
                 }
             }
         }
+
     }
 
     @Override
@@ -200,7 +205,6 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
         skippedTCs.add(test.getTestBeanName());
         takeScreenshotOnFailure(test,method);
-        attachVideo(test,method);
     }
 
     @Override
@@ -208,7 +212,6 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
         errorTCs.add(test.getTestBeanName());
         takeScreenshotOnFailure(test,method);
-        attachVideo(test,method);
     }
 
     public final void initialiseCycles(String projectName, String versionName, String cycleName) {

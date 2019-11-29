@@ -1,7 +1,7 @@
 package org.anax.framework.integrations.service;
 
 import com.jayway.jsonpath.JsonPath;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Log
+@Slf4j
 public class ZapiService {
 
     @Autowired
@@ -64,9 +64,12 @@ public class ZapiService {
      * @param projectName
      * @return
      */
-    public String getProjectId(String projectName){
-         ProjectList projectList = restTemplate.getForObject(zapiUrl +"util/project-list", ProjectList.class);
-         return projectList.getOptions().stream().filter(data->data.getLabel().equals(projectName)).findFirst().get().getValue();
+    public String getProjectId(String projectName) {
+        ProjectList projectList = restTemplate.getForObject(zapiUrl + "util/project-list", ProjectList.class);
+        LabelValue labelValue = projectList.getOptions().stream().filter(data -> data.getLabel().equals(projectName)).findFirst().orElse(null);
+        if(labelValue == null)
+            log.error("No Project found with this name: {}",projectName);
+        return (labelValue != null) ? labelValue.getValue() : "";
     }
 
     /**
@@ -79,17 +82,9 @@ public class ZapiService {
         String projectId = getProjectId(projectName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId+"&versionId=-1", HttpMethod.GET, HttpEntity.EMPTY, Map.class);
         Map.Entry<String, Map<Object, Object>> result = new Cycles(entity.getBody()).getContents().entrySet().stream().filter(x->x.getValue().get("name").equals(cycleName)).findFirst().orElse(null);
-        return (result != null) ? result.getKey() : null;    }
-
-
-    /**
-     * Get issue id from issue name
-     * @param issueName
-     * @return
-     */
-    public String getIssueId(String issueName){
-        return restTemplate.getForObject(jiraUrl+"issue/"+issueName, Issue.class).getId();
+        return (result != null) ? result.getKey() : null;
     }
+
 
     /**
      * Get version id from version name
@@ -99,7 +94,10 @@ public class ZapiService {
      */
     public String getVersionId(String projectId, String versionName){
         ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl +"project/"+projectId+"/versions", HttpMethod.GET, new HttpEntity<>(getHeaders()),  new ParameterizedTypeReference<List<Version>>() {});
-        return versions.getBody().stream().filter(data->data.getName().equals(versionName)).findFirst().get().getId();
+        Version version =  versions.getBody().stream().filter(data->data.getName().equals(versionName)).findFirst().orElse(null);
+        if(version == null)
+            log.error("No version found with this name: {}",versionName);
+        return (version != null) ? version.getId() : "";
     }
 
     /**
@@ -125,7 +123,6 @@ public class ZapiService {
 
             try {
                 Thread.sleep(1000);
-                log.info("Issue Id: " + filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString());
                 return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
             } catch (Exception e) {
                 e.printStackTrace();
