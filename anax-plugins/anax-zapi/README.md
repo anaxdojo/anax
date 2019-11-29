@@ -16,12 +16,12 @@ Add the following dependency on your project pox.xml:
 
 Configure the suite name , keep the same name as the cycle on Jira:
 ```gradle
- anax.exec.suite = JIRA_CYCLE_NAME
+anax.exec.suite = JIRA_CYCLE_NAME
 ```
 
 Configure the zapi enabled variable, By default is enabled , so no need to include except if you want to disable it:
 ```gradle
-#zapi.enabled = true
+zapi.enabled = true
 ```
 
 Configure the zapi url:
