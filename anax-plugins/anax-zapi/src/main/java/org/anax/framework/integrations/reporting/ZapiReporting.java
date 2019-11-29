@@ -1,6 +1,8 @@
 package org.anax.framework.integrations.reporting;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.capture.VideoMaker;
+import org.anax.framework.controllers.WebController;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
 import org.anax.framework.integrations.pojo.CycleInfo;
@@ -10,10 +12,15 @@ import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
+import org.anax.framework.reporting.ReporterSupportsScreenshot;
+import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -21,18 +28,30 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Component
-@Log
-public class ZapiReporting implements AnaxTestReporter {
+@Slf4j
+public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
+    /** do not change the FPS value over 15, due to h/w limitations */
+    @Value("${anax.allure.video.fps:10}") Integer videoFramesPerSec;
+    /** how many seconds to continue recording, after the "end recording" has been called */
+    @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
+
     @Autowired
     protected CycleCreator cycleCreator;
 
     @Autowired
     protected ExecutionManager updateTests;
 
+    @Autowired
+    WebController controller;
+
     private static String testClassPrefix;
     private static String jiraProjectPrefix;
     private static String cycleName;
     private static String version;
+    private VideoMaker videoMaker;
+    private boolean screenshotEnable;
+    private boolean videoEnable;
+    private String videoBaseDirectory;
 
 
 
@@ -127,7 +146,20 @@ public class ZapiReporting implements AnaxTestReporter {
 
     @Override
     public void startTest(Test test, TestMethod testMethod) {
+        if (videoEnable) {
+            try {
+                videoMaker = new VideoMaker();
+                File base = new File(videoBaseDirectory);
+                base.mkdirs();
+                videoMaker.createVideo(new File(videoBaseDirectory+"/"+test.getTestBeanName()+testMethod.getTestMethod().getName()+".mov").toPath(),
+                        videoFramesPerSec, videoWaitSeconds);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
+        } else {
+            log.warn("Video recording feature disabled");
+        }
     }
 
     @Override
@@ -136,6 +168,15 @@ public class ZapiReporting implements AnaxTestReporter {
         if(!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())){
             log.info("Added TC on the passedTCs is: "+test.getTestBeanName());
             passedTCs.add(test.getTestBeanName());
+        }
+        if (videoEnable) {
+            if (videoMaker != null) {
+                try {
+                    videoMaker.completeVideo();
+                } catch (Exception e) {
+                    ("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
+                }
+            }
         }
     }
 
@@ -152,9 +193,10 @@ public class ZapiReporting implements AnaxTestReporter {
     }
 
     @Override
-    public void addError(Test test, TestMethod method, Throwable t) {
+    public void addError(Test test, TestMethod method, Throwable t) throws IOException {
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
         errorTCs.add(test.getTestBeanName());
+        takeScreenshotOnFailure();
     }
 
     public final void initialiseCycles(String environment,String buildNo, String versionNumber, String suiteName, String testClassPref, String jiraProjectPref) {
@@ -183,31 +225,36 @@ public class ZapiReporting implements AnaxTestReporter {
                 .startDate(startTime).build();
     }
 
+    private void takeScreenshotOnFailure() throws IOException {
+        if (screenshotEnable) {
+            Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
+        } else {
+            log.warn("Screenshot feature disabled");
+        }
+    }
 
+    private void setRecording(String UUID) {
+        return result -> {
+            Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
+            if (recording.toFile().exists()) {
+                try (InputStream videoData = Files.newInputStream(recording)) {
+                    Allure.addAttachment("Recording." + UUID + ".mov", "video/quicktime", videoData, "mov");
+                } catch(Exception e){
+                    log.error("Exception when adding video to attachments {}",e.getMessage(),e);
+                }
+            }
+        };
+    }
 
-//    /**
-//     * Manipulate the class name in case of jira or rally name conversions
-//     * @param testClassName
-//     * @return TC number
-//     */
-//    private String parseTestCaseName(String testClassName) {
-//        String jira = testClassPrefix + "_Jira";
-//        String jira = "_Jira";
-//        String tcName;
-//        try{
-//            String testName = testClassName.substring(testClassName.lastIndexOf(".") + 1, testClassName.length());
-//            if (testName.contains(jira)) {
-//                tcName = testName.substring(testName.indexOf("_") + 1, testName.indexOf("_",testName.indexOf("_") + 1));
-//                return tcName.replace("JiraTC", jiraProjectPrefix + "-");
-//            }else{
-//                log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
-//                return "UnknownTest";
-//            }
-//        }catch(Exception e){
-//            log.info(testClassName + " does not follow the convention for naming classes either the rally or the Jira one");
-//            return "UnknownTest";
-//        }
-//    }
+    @Override
+    public void screenshotRecording(boolean enable) {
+        screenshotEnable = enable;
+    }
 
+    @Override
+    public void videoRecording(boolean enable, String videoBaseDirectory) {
+        this.videoEnable = enable;
+        this.videoBaseDirectory = videoBaseDirectory;
+    }
 
 }
