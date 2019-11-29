@@ -34,12 +34,12 @@ Configure the zapi enabled variable, by default is enabled , so no need to inclu
 zapi.enabled = true
 ```
 
-Configure the zapi url:
+Configure the zapi rest api url:
 ```gradle
 zapi.url = ZAPI_URL
 ```
 
-Configure the jira url:
+Configure the jira rest api url:
 ```gradle
 jira.url = ZIRA_URL
 ```
