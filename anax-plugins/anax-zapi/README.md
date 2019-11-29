@@ -12,23 +12,45 @@ Add the following dependency on your project pox.xml:
         </dependency>
 ```
 
-Then, add the dependency for Chrome to your project:
-```xml
-<dependency> 
-    <groupId>org.anax.framework</groupId> 
-    <artifactId>anax-chrome</artifactId> 
-    <version>LATEST</version>
-</dependency>
-```
-
 ### Configure the following properties on your project application.properties file
 
-Configure the following:
+Configure the suite name , keep the same name as the cycle on Jira:
 ```gradle
- anax.exec.suite= JIRA_CYCLE_NAME
+ anax.exec.suite = JIRA_CYCLE_NAME
 ```
 
-Add the following:
+Configure the zapi enabled variable, By default is enabled , so no need to include except if you want to disable it:
 ```gradle
-repositories { maven { url "https://dl.bintray.com/thanosa75/maven" } }
+#zapi.enabled = true
+```
+
+Configure the zapi url:
+```gradle
+zapi.url = ZAPI_URL
+```
+
+Configure the jira url:
+```gradle
+jira.url = ZIRA_URL
+```
+
+Configure the jira username in order to authenticate the api connection:
+```gradle
+api.user=USER
+```
+
+Configure the jira password in order to authenticate the api connection:
+```gradle
+zapi.password=PWD
+```
+
+Configure the jira project prefix:
+```gradle
+jira.project.prefix=PREFIX
+```
+
+
+Configure the jira project name:
+```gradle
+jira.project=JIRA_PROJECT
 ```
