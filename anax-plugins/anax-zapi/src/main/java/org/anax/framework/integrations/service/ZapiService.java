@@ -180,7 +180,7 @@ public class ZapiService {
 
     private HttpHeaders getMultiPartHeaders(){
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType( MediaType.MULTIPART_FORM_DATA );
+        headers.setContentType( MediaType.APPLICATION_XML );
         return headers;
     }
 }

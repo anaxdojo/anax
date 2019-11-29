@@ -15,14 +15,12 @@ import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReporterSupportsScreenshot;
 import org.anax.framework.reporting.ReporterSupportsVideo;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -133,7 +131,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
             try {
                 if (skippedTCs.size() != 0) {
-                    log.info("Update as BLOCK the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    log.info("Update as SKIPPED the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), ExecutionStatus.SKIPPED);
                 }
             } catch (Exception e2) {
@@ -155,20 +153,20 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
     @Override
     public void startTest(Test test, TestMethod testMethod) {
-        if (videoEnable) {
-            try {
-                videoMaker = new VideoMaker();
-                File base = new File(videoBaseDirectory);
-                base.mkdirs();
-                videoMaker.createVideo(new File(videoBaseDirectory+"/"+test.getTestBeanName()+testMethod.getTestMethod().getName()+".mov").toPath(),
-                        videoFramesPerSec, videoWaitSeconds);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        } else {
-            log.warn("Video recording feature disabled");
-        }
+//        if (videoEnable) {
+//            try {
+//                videoMaker = new VideoMaker();
+//                File base = new File(videoBaseDirectory);
+//                base.mkdirs();
+//                videoMaker.createVideo(new File(videoBaseDirectory+"/"+test.getTestBeanName()+testMethod.getTestMethod().getName()+".mov").toPath(),
+//                        videoFramesPerSec, videoWaitSeconds);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//
+//        } else {
+//            log.warn("Video recording feature disabled");
+//        }
     }
 
     @Override
@@ -180,15 +178,15 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
                 passedTCs.add(test.getTestBeanName());
             }
         }
-        if (videoEnable) {
-            if (videoMaker != null) {
-                try {
-                    videoMaker.completeVideo();
-                } catch (Exception e) {
-                    log.info("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
-                }
-            }
-        }
+//        if (videoEnable) {
+//            if (videoMaker != null) {
+//                try {
+//                    videoMaker.completeVideo();
+//                } catch (Exception e) {
+//                    log.info("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
+//                }
+//            }
+//        }
     }
 
     @Override
@@ -204,7 +202,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     }
 
     @Override
-    public void addError(Test test, TestMethod method, Throwable t) throws IOException {
+    public void addError(Test test, TestMethod method, Throwable t){
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
         errorTCs.add(test.getTestBeanName());
         takeScreenshotOnFailure(test,method);
@@ -231,12 +229,15 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
                 .startDate(startTime).build();
     }
 
-    private void takeScreenshotOnFailure(Test test,TestMethod method) throws IOException {
-        FileUtils.writeByteArrayToFile(new File(videoBaseDirectory + "/" + test.getTestBeanName()+ "/" + method.getTestMethod().getName()),controller.takeScreenShotAsBytes());
+    private void takeScreenshotOnFailure(Test test,TestMethod method){
         if (screenshotEnable) {
-            updateTests.addExecutionAttachement(project,version,cycleName,test.getTestBeanName(),new File(videoBaseDirectory + "/" + test.getTestBeanName()+ "/" + method.getTestMethod().getName()));
-        } else {
-            log.warn("Screenshot feature disabled");
+            try {
+                FileUtils.writeByteArrayToFile(new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"), controller.takeScreenShotAsBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            updateTests.addExecutionAttachement(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
         }
     }
 

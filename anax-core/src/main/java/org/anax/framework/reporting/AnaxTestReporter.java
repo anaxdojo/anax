@@ -5,8 +5,6 @@ import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
 
 public interface AnaxTestReporter {
 
@@ -28,5 +26,5 @@ public interface AnaxTestReporter {
 
     void addSkipped(Test test, TestMethod method, String skipReason);
 
-    void addError(Test test, TestMethod method, Throwable t) throws IOException;
+    void addError(Test test, TestMethod method, Throwable t);
 }

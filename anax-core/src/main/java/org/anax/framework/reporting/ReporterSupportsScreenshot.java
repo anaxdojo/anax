@@ -1,7 +1,5 @@
 package org.anax.framework.reporting;
 
-import java.io.IOException;
-
 public interface ReporterSupportsScreenshot {
 
     /**
@@ -9,6 +7,6 @@ public interface ReporterSupportsScreenshot {
      *
      * @param enable
      */
-    void screenshotRecording(boolean enable) throws IOException;
+    void screenshotRecording(boolean enable);
 
 }
