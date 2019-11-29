@@ -75,7 +75,7 @@ public class ZapiService {
      * @param cycleName
      * @return
      */
-    public String getCycleIdUnderUnschedule(String projectName, String cycleName){
+    public String getCycleIdUnderUnSchedule(String projectName, String cycleName){
         String projectId = getProjectId(projectName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId+"&versionId=-1", HttpMethod.GET, HttpEntity.EMPTY, Map.class);
         Map.Entry<String, Map<Object, Object>> result = new Cycles(entity.getBody()).getContents().entrySet().stream().filter(x->x.getValue().get("name").equals(cycleName)).findFirst().orElse(null);
@@ -164,7 +164,7 @@ public class ZapiService {
     public void cloneCycleToVersion(String projectName,String versionName,CycleClone cycleClone,String originalCycleName){
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId,versionName);
-        String cycleId = getCycleIdUnderUnschedule(projectName,originalCycleName);
+        String cycleId = getCycleIdUnderUnSchedule(projectName,originalCycleName);
 
         cycleClone.setProjectId(projectId);
         cycleClone.setVersionId(versionId);
