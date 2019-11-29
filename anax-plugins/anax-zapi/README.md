@@ -1,7 +1,7 @@
 # Anax - Zephyr (ZAPI) Plugin
 Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI).
 
-The plugin copy the jira cycle (which actually is the suite name) from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP).
+The plugin copy the jira cycle (which actually is the suite name) under the specified project from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP).
 
 On fail / skip TC status sceenshot and video will be attached on the execution.
 
@@ -18,10 +18,6 @@ Add the following dependency on your project pox.xml:
 
 ### Configure the following properties on your project application.properties file
 
-Configure the suite name that ANAX will execute, keep the same name as the cycle on Jira:
-```gradle
-anax.exec.suite = JIRA_CYCLE_NAME
-```
 
 Configure the zapi enabled variable, by default is enabled , so no need to include it except if you want to disable it:
 ```gradle
@@ -48,11 +44,15 @@ Configure the jira password in order to authenticate the api connection:
 zapi.password = PWD
 ```
 
+Configure the suite name that ANAX will execute, keep the same name as the cycle on Jira:
+```gradle
+anax.exec.suite = JIRA_CYCLE_NAME
+```
+
 Configure the jira project prefix:
 ```gradle
 jira.project.prefix = PREFIX
 ```
-
 
 Configure the jira project name:
 ```gradle
