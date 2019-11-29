@@ -69,5 +69,5 @@ Then, add the dependency for Anax-Chrome to your project:
 compile 'org.anax.framework:anax-chrome:LATEST'
 ```
 
-And off you go... You should be reading the Wiki first, though....
-
+## The 10m quick intro
+For the impatient and eager, we have created a 10m quick guide. Read on [Setting up an Anax project (10m guide)](https://github.com/thanosa75/anax/wiki/Anax-Setup-in-10m) to find out. For a more detailed and feature full explanation of what Anax is, you need to see the [Anax explained](https://github.com/thanosa75/anax/wiki/Anax-Explained) page.
