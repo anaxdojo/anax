@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -115,7 +117,7 @@ public class ZapiService {
      * @param label
      * @throws Exception
      */
-    public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
+        public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
         String projectId = getProjectId(projectName);
         log.info("Project Id : "+projectId);
         String versionId = getVersionId(projectId, versionName);
@@ -125,6 +127,7 @@ public class ZapiService {
 
         try {
             Thread.sleep(2 * 1000);
+            log.info("Issue Id: "+filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString());
             return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
         }catch (Exception e){
             e.printStackTrace();
@@ -133,6 +136,26 @@ public class ZapiService {
 
         }
     }
+
+
+    /**
+     * Add attachement on execution
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param label
+     * @param file
+     */
+    public void addTcExecutionAttachements(String projectName, String versionName, String cycleName, String label, File file){
+        String id = getIssueIdViaLabel(projectName,versionName,cycleName,label);
+        LinkedMultiValueMap postBody = new LinkedMultiValueMap();
+        postBody.add("file", file);
+
+        restTemplate.exchange(zapiUrl+"attachment?entityId="+id+"&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
+    }
+
+
+
     /**
      * Clone a cyle (including executions) from default cycle to specific cycle
      * @param projectName
@@ -155,6 +178,12 @@ public class ZapiService {
     private HttpHeaders getHeaders(){
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType( MediaType.APPLICATION_JSON );
+        return headers;
+    }
+
+    private HttpHeaders getMultiPartHeaders(){
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType( MediaType.MULTIPART_FORM_DATA );
         return headers;
     }
 }
