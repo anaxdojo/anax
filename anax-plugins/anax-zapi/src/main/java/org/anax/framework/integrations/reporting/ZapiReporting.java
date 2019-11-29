@@ -48,14 +48,14 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     private boolean videoEnable;
     private String videoBaseDirectory;
     private String cycleName;
-    private String version ; //= "Geno 19.9.hot1";
+    private String version ;
 
 
 
-    private Set<String> passedTCs = new HashSet<String>();
-    private Set<String> failedTCs = new HashSet<String>();
-    private Set<String> skippedTCs = new HashSet<String>();
-    private Set<String> errorTCs = new HashSet<String>();
+    private Set<String> passedTCs = new HashSet<>();
+    private Set<String> failedTCs = new HashSet<>();
+    private Set<String> skippedTCs = new HashSet<>();
+    private Set<String> errorTCs = new HashSet<>();
 
     @Autowired
     public ZapiReporting(AnaxZapiVersionResolver versionResolver){

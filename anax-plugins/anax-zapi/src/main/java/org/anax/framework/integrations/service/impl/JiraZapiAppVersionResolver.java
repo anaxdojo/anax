@@ -19,8 +19,6 @@ public class JiraZapiAppVersionResolver implements AnaxZapiVersionResolver {
     @Value("${jira.project.prefix:NOT_CONFIGURED}") private String projectPrefix;
 
 
-    //base url
-    //locator
     @Override
     public String resolveAppVersion(){
 
