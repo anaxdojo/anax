@@ -1,7 +1,9 @@
 # Anax - A next-gen Software Quality Assurance Framework
 Origin: ἄναξ (pronounced: /á.naks/ → /ˈa.naks/ → /ˈa.naks/) is a Greek word meaning 'the Leader' or 'the King'.  It is our intention to make Anax a leading software quality assurance framework.
 
-## Highly experimental
+## Status: Getting serious
+
+[ ![Download](https://api.bintray.com/packages/thanosa75/maven/Anax/images/download.svg?version=0.9.0) ](https://bintray.com/thanosa75/maven/Anax/0.9.0/link)
 
 We are using Travis-CI for our builds. Current status:
 
