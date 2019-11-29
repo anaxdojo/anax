@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -143,10 +144,10 @@ public class ZapiService {
      * @param label
      * @param file
      */
-    public void addTcExecutionAttachements(String projectName, String versionName, String cycleName, String label, File file){
+    public void addTcExecutionAttachments(String projectName, String versionName, String cycleName, String label, File file){
         String id = getIssueIdViaLabel(projectName,versionName,cycleName,label);
         LinkedMultiValueMap postBody = new LinkedMultiValueMap();
-        postBody.add("file", file);
+        postBody.add("file", new FileSystemResource(file));
 
         restTemplate.exchange(zapiUrl+"attachment?entityId="+id+"&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
     }
@@ -180,7 +181,8 @@ public class ZapiService {
 
     private HttpHeaders getMultiPartHeaders(){
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType( MediaType.APPLICATION_XML );
+        headers.add("X-Atlassian-Token", "nocheck");
+        headers.setContentType( MediaType.MULTIPART_FORM_DATA );
         return headers;
     }
 }
