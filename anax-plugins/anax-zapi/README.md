@@ -24,7 +24,8 @@ Then, add the dependency for Chrome to your project:
 ### Configure the following properties on your project application.properties file
 
 Configure the following:
-```anax.exec.suite= JIRA_CYCLE_NAME
+```gradle
+ anax.exec.suite= JIRA_CYCLE_NAME
 ```
 
 Add the following:
