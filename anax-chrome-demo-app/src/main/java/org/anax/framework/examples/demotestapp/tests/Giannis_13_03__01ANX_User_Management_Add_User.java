@@ -1,20 +1,22 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.annotations.AnaxBeforeTest;
 import org.anax.framework.annotations.AnaxTest;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
-import org.anax.framework.integrations.pojo.CycleInfo;
-import org.anax.framework.integrations.service.ZapiServiceImpl;
+import org.anax.framework.integrations.service.ZapiService;
+import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 
-@AnaxTest(value = "Debug")
+@AnaxTest(value = "Results Analysis")
 @Component
 @Slf4j
-public class PRO_JiraTC883_TestZapi {
+public class Giannis_13_03__01ANX_User_Management_Add_User {
 
     @Autowired
     protected CycleCreator      cycleCreator;
@@ -23,12 +25,21 @@ public class PRO_JiraTC883_TestZapi {
     protected ExecutionManager  executionManager;
 
     @Autowired
-    protected ZapiServiceImpl   zapiService;
+    protected ZapiService zapiService;
+
+    @Autowired
+    protected Verify            verify;
+
+    @AnaxBeforeTest
+    public void before() throws Exception{
+        Assert.isTrue(1==2);
+    }
 
     @AnaxTestStep
     public void test_step1() throws Exception{
-        CycleInfo cycleInfo  = CycleInfo.builder().build();//Geno 19.9.hot1
-        cycleCreator.createCycleInVersion("Genopedia","Geno 19.9.hot1","Results Analysis", cycleInfo);
-        zapiService.getCycleTCIdViaLabel("Genopedia","Geno 19.9.hot1","Results Analysis","giannis13",cycleInfo);
+    }
+
+    @AnaxTestStep(ordering = 1)
+    public void test_step2() throws Exception{
     }
 }

@@ -5,8 +5,8 @@ import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
-import org.anax.framework.integrations.pojo.CycleInfo;
 import org.anax.framework.integrations.pojo.ExecutionStatus;
+import org.anax.framework.integrations.service.AnaxZapiVersionResolver;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
@@ -35,6 +35,15 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     /** how many seconds to continue recording, after the "end recording" has been called */
     @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
 
+@Log
+public class ZapiReporting implements AnaxTestReporter {
+
+    private String cycleName;
+    private String version ; //= "Geno 19.9.hot1";
+
+    @Value("${jira.project:NOT_CONFIGURED}") private String project;
+    @Value("${zapi.enabled:true}") private Boolean enabled;
+
     @Autowired
     protected CycleCreator cycleCreator;
 
@@ -60,10 +69,14 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     private Set<String> skippedTCs = new HashSet<String>();
     private Set<String> errorTCs = new HashSet<String>();
 
+    @Autowired
+    public ZapiReporting(AnaxZapiVersionResolver versionResolver){
+        version =  "Geno 19.9.hot1";
+    }
 
 
     @Override
-    public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
+    public void startOutput(String reportDirectory, String suiteName){
 
     }
 
@@ -78,68 +91,70 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     }
 
     @Override
-    public void startTestSuite(Suite suite) throws ReportException {
+    public void startTestSuite(Suite suite) {
+        if(enabled) {
+            cycleName = suite.getName();
+            log.info("************* ZAPI Reporter Start() ***** " + this);
+            log.info("********************************************\r\n\r\n");
+            log.info("Create Cycle: " + suite.getName() + ", at project: " + project);
+            log.info("********************************************\r\n\r\n");
 
+            initialiseCycles(project, version, cycleName);
+        }
     }
 
     @Override
-    public boolean endTestSuite(Suite suite) throws ReportException {
-        log.info("************* ZAPI Reporter onFinish() ***** "+this);
+    public boolean endTestSuite(Suite suite){
+        if(enabled) {
+            log.info("************* ZAPI Reporter onFinish() ***** " + this);
+            log.info("********************************************\r\n\r\n");
+            log.info("onFinish: Cycle: " + cycleName + ", version: " + version + ", manager: " + updateTests + " - " + this.toString());
+            log.info("********************************************\r\n\r\n");
 
-        //Init it the first time and then set it as static
-//        if (updateTests == null) {
-//            updateTests = context.getBean(ExecutionManager.class);
-//        }
+            log.info("Finally: List of Passed TCs: "+passedTCs.toString());
+            log.info("Finally: List of Skipped TCs: "+skippedTCs.toString());
+            log.info("Finally: List of Failed TCs: "+errorTCs.toString());
 
-        log.info("********************************************\r\n\r\n");
-        log.info("onFinish: Cycle: "+cycleName+", version: "+version+", manager: "+updateTests+" - "+this.toString());
-        log.info("********************************************\r\n\r\n");
+            errorTCs.forEach(it -> passedTCs.remove(it));
 
-        log.info(passedTCs.toString());
-        log.info(failedTCs.toString());
-        log.info(skippedTCs.toString());
-        log.info(errorTCs.toString());
-
-        errorTCs.forEach(it-> passedTCs.remove(it));
-
-        /**
-         * Update Test Cases execution Status
-         */
-        try {
-            if (passedTCs.size() != 0) {
-                log.info("Update as PASS the following TCs: " + passedTCs.toString()+" at version: "+version.trim()+" on cycle: "+cycleName.trim());
-                updateTests.updateTestExecutions(jiraProjectPrefix, version.trim(), cycleName.trim(), new ArrayList<String>(passedTCs), ExecutionStatus.PASS);
+            /**
+             * Update Test Cases execution Status
+             */
+            try {
+                if (passedTCs.size() != 0) {
+                    log.info("Update as PASS the following TCs: " + passedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(passedTCs), ExecutionStatus.PASS);
+                }
+            } catch (Exception e) {
+                log.info("The update of PASSED TCs on jira did not happen due to: " + e.getMessage());
             }
-        }catch (Exception e) {
-            log.info("The update of PASSED TCs on jira did not happen due to: " + e.getMessage());
-        }
 
-        try{
-            if (failedTCs.size() != 0) {
-                log.info("Update as FAIL the following TCs: " + failedTCs.toString()+" at version: "+version.trim()+" on cycle: "+cycleName.trim());
-                updateTests.updateTestExecutions(jiraProjectPrefix, version.trim(), cycleName.trim(), new ArrayList<String>(failedTCs), ExecutionStatus.FAIL); //Arrays.asList("RallyTC503","MCS-6350")
+            try {
+                if (failedTCs.size() != 0) {
+                    log.info("Update as FAIL the following TCs: " + failedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), ExecutionStatus.FAIL);
+                }
+            } catch (Exception e1) {
+                log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
             }
-        }catch (Exception e1) {
-            log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
-        }
 
-        try{
-            if (skippedTCs.size() != 0) {
-                log.info("Update as BLOCK the following TCs: " + skippedTCs.toString()+" at version: "+version.trim()+" on cycle: "+cycleName.trim());
-                updateTests.updateTestExecutions(jiraProjectPrefix, version.trim(), cycleName.trim(), new ArrayList<String>(skippedTCs), ExecutionStatus.BLOCKED);
+            try {
+                if (skippedTCs.size() != 0) {
+                    log.info("Update as BLOCK the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), ExecutionStatus.SKIPPED);
+                }
+            } catch (Exception e2) {
+                log.info("The update on SKIPPED jira did not happen due to: " + e2.getMessage());
             }
-        } catch (Exception e2) {
-            log.info("The update on SKIPPED jira did not happen due to: " + e2.getMessage());
-        }
 
-        try{
-            if (errorTCs.size() != 0) {
-                log.info("Update as FAIL the following TCs: " + errorTCs.toString()+" at version: "+version.trim()+" on cycle: "+cycleName.trim());
-                updateTests.updateTestExecutions(jiraProjectPrefix, version.trim(), cycleName.trim(), new ArrayList<String>(errorTCs), ExecutionStatus.FAIL);
+            try {
+                if (errorTCs.size() != 0) {
+                    log.info("Update as FAIL the following TCs: " + errorTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(errorTCs), ExecutionStatus.FAIL);
+                }
+            } catch (Exception e1) {
+                log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
             }
-        }catch (Exception e1) {
-            log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
-        }
 
         return false;
     }
@@ -164,10 +179,12 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
     @Override
     public void endTest(Test test, TestMethod testMethod) {
-        log.info("Identify if test has passed");
-        if(!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())){
-            log.info("Added TC on the passedTCs is: "+test.getTestBeanName());
-            passedTCs.add(test.getTestBeanName());
+        if(enabled) {
+            log.info("Identify if test has passed");
+            if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
+                log.info("Added TC on the passedTCs is: " + test.getTestBeanName());
+                passedTCs.add(test.getTestBeanName());
+            }
         }
         if (videoEnable) {
             if (videoMaker != null) {
@@ -199,14 +216,9 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         takeScreenshotOnFailure();
     }
 
-    public final void initialiseCycles(String environment,String buildNo, String versionNumber, String suiteName, String testClassPref, String jiraProjectPref) {
-        testClassPrefix = testClassPref;
-        jiraProjectPrefix = jiraProjectPref;
+    public final void initialiseCycles(String projectName, String versionName, String cycleName) {
         try{
-            CycleInfo cycleInfo = getCycleInfo(environment, buildNo);
-            cycleName = cycleCreator.createCycleInVersion(jiraProjectPrefix,versionNumber.trim(), suiteName.trim(),cycleInfo);
-            version = versionNumber.trim();
-
+            cycleCreator.createCycleInVersion(projectName,versionName.trim(), cycleName.trim());
         }catch (Exception e){
             log.info("Cycle on Jira was not created due to: "+e.getMessage());
         }

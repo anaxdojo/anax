@@ -18,7 +18,8 @@ public class CycleClone {
     String sprintId;
 
 
-    public CycleClone(String name) {
+    public CycleClone(String name,String startDate) {
         this.name = name;
+        this.startDate = startDate;
     }
 }

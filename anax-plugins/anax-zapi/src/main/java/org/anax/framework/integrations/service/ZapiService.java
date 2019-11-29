@@ -1,6 +1,7 @@
 package org.anax.framework.integrations.service;
 
 import com.jayway.jsonpath.JsonPath;
+import lombok.extern.java.Log;
 import org.anax.framework.integrations.pojo.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,21 +12,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 @Service
-public class ZapiServiceImpl {
+@Log
+public class ZapiService {
 
     @Autowired
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
-    @Value("${zapi.url:https://jira.persado.com/rest/zapi/1.0/}") private String zapiUrl;
-    @Value("${jira.url:https://jira.persado.com/rest/api/2/}") private String jiraUrl;
-    @Value("${jira.originalCycle:Unresolved_Unplanned}") private String originalCycle;
+    @Value("${zapi.url:https:NOT_CONFIGURED}") private String zapiUrl;
+    @Value("${jira.url:https:NOT_CONFIGURED}") private String jiraUrl;
 
     /**
      * Find the correct object in a jsonarray based on the value of an attribute
@@ -36,7 +39,8 @@ public class ZapiServiceImpl {
      * @throws JSONException
      */
     public static JSONObject filterJsonArray(JSONArray jsonArray, String attribute, String attributeValue) throws JSONException{
-        return new JSONObject(new JSONArray(JsonPath.read(jsonArray.toString(),"$[?(@."+attribute+" ==\""+attributeValue+"\")]").toString()).get(0).toString());
+        JSONArray jsonArray1 = new JSONArray(jsonArray.toString().toLowerCase());
+        return new JSONObject(new JSONArray(JsonPath.read(jsonArray1.toString(),"$[?(@."+attribute.toLowerCase()+" ==\""+attributeValue.toLowerCase()+"\")]").toString()).get(0).toString());
     }
 
     /**
@@ -106,60 +110,51 @@ public class ZapiServiceImpl {
     }
 
     /**
-     * Get execution id from issue name
-     * @param projectName
-     * @param versionName
-     * @param cycleName
-     * @param issueName
-     * @return
-     */
-    public String getExecutionId(String projectName,String versionName,String cycleName, String issueName) {
-        String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId, versionName);
-        String cycleId = getCycleId(projectName, versionName, cycleName);
-        String issueId = getIssueId(issueName);
-
-        ExecutionList execution = restTemplate.getForObject(zapiUrl + "execution?issueId=" + issueId, ExecutionList.class);
-        return execution.getExecutions().stream().filter(data -> data.getProjectId().equals(projectId) && data.getVersionId().equals(versionId) && data.getCycleId().equals(cycleId) && data.getIssueId().equals(issueId)).findFirst().get().getId();
-    }
-
-    /**
-     * Update cycle info
-     * @param projectName
-     * @param versionName
-     * @param cycleName
-     * @param cycleInfo
-     */
-    public void updateCycleInfo(String projectName,String versionName,String cycleName,CycleInfo cycleInfo){
-        String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        String cycleId = getCycleId(projectName,versionName,cycleName);
-
-        cycleInfo.setProjectId(projectId);
-        cycleInfo.setVersionId(versionId);
-        cycleInfo.setId(cycleId);
-        restTemplate.exchange(zapiUrl+"cycle",HttpMethod.PUT ,new HttpEntity(cycleInfo, getHeaders()), CycleInfo.class);
-    }
-
-    /**
      * Returns the test id from label
      * @param projectName
      * @param versionName
      * @param cycleName
      * @param label
-     * @param cycleInfo
      * @throws Exception
      */
-    public void getCycleTCIdViaLabel(String projectName,String versionName,String cycleName,String label, CycleInfo cycleInfo) throws Exception{
+        public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
         String projectId = getProjectId(projectName);
-        String versionId = getVersionId(projectId,versionName);
-        String cycleId = getCycleId(projectName,versionName,cycleName);
+        log.info("Project Id : "+projectId);
+        String versionId = getVersionId(projectId, versionName);
+        log.info("Version Id : "+versionId);
+        String cycleId = getCycleId(projectName, versionName, cycleName);
+        log.info("Cycle Id : "+cycleId);
 
-        cycleInfo.setProjectId(projectId);
-        cycleInfo.setVersionId(versionId);
-        cycleInfo.setId(cycleId);
-        filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl+"execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId,HttpMethod.GET, new HttpEntity<>(getHeaders()),String.class).getBody()).get("executions"),"label",label).get("id");
+        try {
+            Thread.sleep(2 * 1000);
+            log.info("Issue Id: "+filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString());
+            return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
+        }catch (Exception e){
+            e.printStackTrace();
+            log.info("Check !! Issue with this label was not found");
+            return "";
+
+        }
     }
+
+
+    /**
+     * Add attachement on execution
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param label
+     * @param file
+     */
+    public void addTcExecutionAttachements(String projectName, String versionName, String cycleName, String label, File file){
+        String id = getIssueIdViaLabel(projectName,versionName,cycleName,label);
+        LinkedMultiValueMap postBody = new LinkedMultiValueMap();
+        postBody.add("file", file);
+
+        restTemplate.exchange(zapiUrl+"attachment?entityId="+id+"&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
+    }
+
+
 
     /**
      * Clone a cyle (including executions) from default cycle to specific cycle
@@ -183,6 +178,12 @@ public class ZapiServiceImpl {
     private HttpHeaders getHeaders(){
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType( MediaType.APPLICATION_JSON );
+        return headers;
+    }
+
+    private HttpHeaders getMultiPartHeaders(){
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType( MediaType.MULTIPART_FORM_DATA );
         return headers;
     }
 }
