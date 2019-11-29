@@ -42,4 +42,8 @@ public class Giannis_13_03__01ANX_User_Management_Add_User {
     @AnaxTestStep(ordering = 1)
     public void test_step2() throws Exception{
     }
+
+    @AnaxTestStep(ordering = 2)
+    public void test_step3() throws Exception{
+    }
 }
