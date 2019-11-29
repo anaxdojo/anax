@@ -1,7 +1,7 @@
 # Anax - Zephyr (ZAPI) Plugin
-Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI).
+Include this plugin in order to programmatically update the status of your TCs on Jira via Zephyr api (ZAPI).
 
-The plugin copy the jira cycle (which actually is the suite name) under the specified project from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP).
+The plugin copy the jira cycle (which actually is the suite name) under the specified project from 'Unscheduled' folder to the specified version and then on execution finish update its TC status (PASS-FAIL-SKIP).
 By default automated TC are matched on Jira with the label of each TC.
 
 On fail / skip TC status sceenshot and video will be attached on the execution.
@@ -36,12 +36,12 @@ zapi.enabled = true
 
 Configure the zapi rest api url:
 ```gradle
-zapi.url = ZAPI_URL
+zapi.url = https://HOST_REQUIRED/rest/zapi/latest/
 ```
 
 Configure the jira rest api url:
 ```gradle
-jira.url = ZIRA_URL
+jira.url = https://HOST_REQUIRED/rest/api/latest
 ```
 
 Configure the jira username in order to authenticate the api connection:
