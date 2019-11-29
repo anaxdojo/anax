@@ -13,8 +13,17 @@ Add the following dependency on your project pox.xml:
      <dependency>
          <groupId>org.anax.framework</groupId>
          <artifactId>anax-zapi</artifactId>
-         <version>${anax.version}</version>
+         <version>LATEST</version>
      </dependency>
+```
+
+### Gradle
+
+Add the following dependency:
+
+Then, add the dependency for Anax-Chrome to your project:
+```gradle
+compile 'org.anax.framework:anax-zapi:LATEST'
 ```
 
 ### Configure the following properties on your project application.properties file
