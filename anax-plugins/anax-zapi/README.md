@@ -40,21 +40,21 @@ jira.url = ZIRA_URL
 
 Configure the jira username in order to authenticate the api connection:
 ```gradle
-api.user=USER
+api.user = USER
 ```
 
 Configure the jira password in order to authenticate the api connection:
 ```gradle
-zapi.password=PWD
+zapi.password = PWD
 ```
 
 Configure the jira project prefix:
 ```gradle
-jira.project.prefix=PREFIX
+jira.project.prefix = PREFIX
 ```
 
 
 Configure the jira project name:
 ```gradle
-jira.project=JIRA_PROJECT
+jira.project = JIRA_PROJECT
 ```
