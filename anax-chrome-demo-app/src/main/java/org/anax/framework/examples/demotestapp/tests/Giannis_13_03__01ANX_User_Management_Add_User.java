@@ -32,7 +32,7 @@ public class Giannis_13_03__01ANX_User_Management_Add_User {
 
     @AnaxBeforeTest
     public void before() throws Exception{
-        Assert.isTrue(1==2);
+
     }
 
     @AnaxTestStep
@@ -41,6 +41,7 @@ public class Giannis_13_03__01ANX_User_Management_Add_User {
 
     @AnaxTestStep(ordering = 1)
     public void test_step2() throws Exception{
+        Assert.isTrue(1==2);
     }
 
     @AnaxTestStep(ordering = 2)

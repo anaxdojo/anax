@@ -61,25 +61,20 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public AllureLifecycle getLifecycle() {
         return lifecycle;
     }
-
-
     @Override
     public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
         this.reportDirectory = reportDirectory.contentEquals("reports/")?reportAllureDirectory:reportDirectory;
         this.suiteName = suiteName;
         log.info("Allure output directory {} suite name {}",this.reportDirectory,suiteName);
     }
-
     @Override
     public void setSystemOutput(String s) {
 
     }
-
     @Override
     public void setSystemError(String s) {
 
     }
-
     @Override
     public void startTestSuite(Suite suite) throws ReportException {
         suiteName = suite.getName();
@@ -92,7 +87,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         }
     }
-
     @Override
     public boolean endTestSuite(Suite suite) throws ReportException {
         try{
@@ -102,7 +96,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
         return failed;
     }
-
     @Override
     public void startTest(Test test, TestMethod testMethod) {
         String testUniqueID = getUniqueUuid(test,testMethod);
@@ -125,7 +118,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             log.warn("Video recording feature disabled");
         }
     }
-
     @Override
     public void endTest(Test test, TestMethod testMethod) {
         String testUniqueID = getUniqueUuid(test,testMethod);
@@ -161,7 +153,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         getLifecycle().stopTestCase(testUniqueID);
         getLifecycle().writeTestCase(testUniqueID);
     }
-
     @Override
     public void addFailure(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable, testMethod));
@@ -172,7 +163,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
-
     @Override
     public void addSkipped(Test test, TestMethod testMethod, String skipReason) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.SKIPPED,skipReason));
@@ -183,7 +173,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
-
     @Override
     public void addError(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable,testMethod));
@@ -194,7 +183,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
-
     private Consumer<TestResult> setStatus(final Status status) {
 
         return result -> {
@@ -202,7 +190,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         };
 
     }
-
     private Consumer<TestResult> setStatus(final Status status, Throwable throwable, TestMethod method) {
         return result -> {
             result.withStatus(status);
@@ -224,7 +211,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         };
     }
-
     private Consumer<TestResult> setPassStdOut(TestMethod method) {
         return result -> {
             StringBuilder html = new StringBuilder();
@@ -239,17 +225,12 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             result.withDescriptionHtml(html.toString());
         };
     }
-
     private Consumer<TestResult> setStatus(final Status status, String reason) {
         return result -> {
             result.withStatus(status);
             result.withDescription(reason);
         };
     }
-
-
-
-
     private Consumer<TestResult> setSeverity(final TestMethod testMethod) {
         return result -> {
             Severity severityAnnotationLevel = (Severity) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
@@ -261,7 +242,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         };
     }
-
     private Consumer<TestResult> setIssue(final TestMethod testMethod) {
 
         testMethod.getTestMethod().getDeclaredAnnotations();
@@ -275,8 +255,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         };
     }
-
-
     private TestResult createTestResult(Test test, TestMethod testMethod) {
         final String className = test.getTestBean().getClass().getName();
         final String methodName = testMethod.getTestMethod().getName();
@@ -329,7 +307,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             return test.getTestBeanName() + "." + testMethod.getTestMethod().getName();
         }
     }
-
     private void takeScreenshotOnFailure() throws IOException {
         if (screenshotEnable) {
             Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));

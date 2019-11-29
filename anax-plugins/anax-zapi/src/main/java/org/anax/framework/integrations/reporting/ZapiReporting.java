@@ -5,15 +5,17 @@ import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
+import org.anax.framework.integrations.pojo.CycleInfo;
 import org.anax.framework.integrations.pojo.ExecutionStatus;
 import org.anax.framework.integrations.service.AnaxZapiVersionResolver;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.anax.framework.reporting.AnaxTestReporter;
-import org.anax.framework.reporting.ReportException;
 import org.anax.framework.reporting.ReporterSupportsScreenshot;
 import org.anax.framework.reporting.ReporterSupportsVideo;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -34,13 +36,6 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     @Value("${anax.allure.video.fps:10}") Integer videoFramesPerSec;
     /** how many seconds to continue recording, after the "end recording" has been called */
     @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
-
-@Log
-public class ZapiReporting implements AnaxTestReporter {
-
-    private String cycleName;
-    private String version ; //= "Geno 19.9.hot1";
-
     @Value("${jira.project:NOT_CONFIGURED}") private String project;
     @Value("${zapi.enabled:true}") private Boolean enabled;
 
@@ -53,14 +48,12 @@ public class ZapiReporting implements AnaxTestReporter {
     @Autowired
     WebController controller;
 
-    private static String testClassPrefix;
-    private static String jiraProjectPrefix;
-    private static String cycleName;
-    private static String version;
     private VideoMaker videoMaker;
     private boolean screenshotEnable;
     private boolean videoEnable;
     private String videoBaseDirectory;
+    private String cycleName;
+    private String version ; //= "Geno 19.9.hot1";
 
 
 
@@ -111,9 +104,9 @@ public class ZapiReporting implements AnaxTestReporter {
             log.info("onFinish: Cycle: " + cycleName + ", version: " + version + ", manager: " + updateTests + " - " + this.toString());
             log.info("********************************************\r\n\r\n");
 
-            log.info("Finally: List of Passed TCs: "+passedTCs.toString());
-            log.info("Finally: List of Skipped TCs: "+skippedTCs.toString());
-            log.info("Finally: List of Failed TCs: "+errorTCs.toString());
+            log.info("Finally: List of Passed TCs: " + passedTCs.toString());
+            log.info("Finally: List of Skipped TCs: " + skippedTCs.toString());
+            log.info("Finally: List of Failed TCs: " + errorTCs.toString());
 
             errorTCs.forEach(it -> passedTCs.remove(it));
 
@@ -155,6 +148,7 @@ public class ZapiReporting implements AnaxTestReporter {
             } catch (Exception e1) {
                 log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
             }
+        }
 
         return false;
     }
@@ -191,7 +185,7 @@ public class ZapiReporting implements AnaxTestReporter {
                 try {
                     videoMaker.completeVideo();
                 } catch (Exception e) {
-                    ("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
+                    log.info("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
                 }
             }
         }
@@ -213,7 +207,7 @@ public class ZapiReporting implements AnaxTestReporter {
     public void addError(Test test, TestMethod method, Throwable t) throws IOException {
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
         errorTCs.add(test.getTestBeanName());
-        takeScreenshotOnFailure();
+        takeScreenshotOnFailure(test,method);
     }
 
     public final void initialiseCycles(String projectName, String versionName, String cycleName) {
@@ -237,26 +231,27 @@ public class ZapiReporting implements AnaxTestReporter {
                 .startDate(startTime).build();
     }
 
-    private void takeScreenshotOnFailure() throws IOException {
+    private void takeScreenshotOnFailure(Test test,TestMethod method) throws IOException {
+        FileUtils.writeByteArrayToFile(new File(videoBaseDirectory + "/" + test.getTestBeanName()+ "/" + method.getTestMethod().getName()),controller.takeScreenShotAsBytes());
         if (screenshotEnable) {
-            Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
+            updateTests.addExecutionAttachement(project,version,cycleName,test.getTestBeanName(),new File(videoBaseDirectory + "/" + test.getTestBeanName()+ "/" + method.getTestMethod().getName()));
         } else {
             log.warn("Screenshot feature disabled");
         }
     }
 
-    private void setRecording(String UUID) {
-        return result -> {
-            Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
-            if (recording.toFile().exists()) {
-                try (InputStream videoData = Files.newInputStream(recording)) {
-                    Allure.addAttachment("Recording." + UUID + ".mov", "video/quicktime", videoData, "mov");
-                } catch(Exception e){
-                    log.error("Exception when adding video to attachments {}",e.getMessage(),e);
-                }
-            }
-        };
-    }
+//    private void setRecording(String UUID) {
+//        return result -> {
+//            Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
+//            if (recording.toFile().exists()) {
+//                try (InputStream videoData = Files.newInputStream(recording)) {
+//                    updateTests.addExecutionAttachement("Recording." + UUID + ".mov", "video/quicktime", videoData, "mov");
+//                } catch(Exception e){
+//                    log.error("Exception when adding video to attachments {}",e.getMessage(),e);
+//                }
+//            }
+//        };
+//    }
 
     @Override
     public void screenshotRecording(boolean enable) {
