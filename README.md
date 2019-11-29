@@ -3,7 +3,8 @@ Origin: ἄναξ (pronounced: /á.naks/ → /ˈa.naks/ → /ˈa.naks/) is a Gre
 
 ## Status: Getting serious
 
-[ ![Download](https://api.bintray.com/packages/thanosa75/maven/Anax/images/download.svg?version=0.9.0) ](https://bintray.com/thanosa75/maven/Anax/0.9.0/link)
+We release almost regularly on bintray. Get the latest version from the link below:
+- [ ![Download](https://api.bintray.com/packages/thanosa75/maven/Anax/images/download.svg) ](https://bintray.com/thanosa75/maven/Anax/_latestVersion)
 
 We are using Travis-CI for our builds. Current status:
 
@@ -12,7 +13,7 @@ We are using Travis-CI for our builds. Current status:
 
 We are currently experimenting with the major directions that Anax is going to take in the future. The 'develop' branch is considered _highly_ volatile, and the master branch is not stable either. However, we've already done *some* effort to decide on publishing and the first artefacts are now available in Bintray.
 
-## How to experiment with our new release
+## How to work with our new release
 ### Maven 
 Using the bintray repo is simple - create a new settings.xml file or add the "profiles" tag (usually in your MAVEN_HOME):
 ```xml
