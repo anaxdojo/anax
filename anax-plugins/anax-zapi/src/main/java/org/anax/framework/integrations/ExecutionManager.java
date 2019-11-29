@@ -58,7 +58,7 @@ public class ExecutionManager {
      * @param file
      */
     public void addExecutionAttachement(String projectName, String versionName, String cycleName, String tcName, File file){
-        zapiService.addTcExecutionAttachements(projectName,versionName,cycleName,convertLabel(tcName),file);
+        zapiService.addTcExecutionAttachments(projectName,versionName,cycleName,convertLabel(tcName),file);
     }
 
 

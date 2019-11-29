@@ -5,7 +5,6 @@ import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
-import org.anax.framework.integrations.pojo.CycleInfo;
 import org.anax.framework.integrations.pojo.ExecutionStatus;
 import org.anax.framework.integrations.service.AnaxZapiVersionResolver;
 import org.anax.framework.model.Suite;
@@ -21,8 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -102,11 +99,11 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             log.info("onFinish: Cycle: " + cycleName + ", version: " + version + ", manager: " + updateTests + " - " + this.toString());
             log.info("********************************************\r\n\r\n");
 
+            errorTCs.forEach(it -> passedTCs.remove(it));
+
             log.info("Finally: List of Passed TCs: " + passedTCs.toString());
             log.info("Finally: List of Skipped TCs: " + skippedTCs.toString());
             log.info("Finally: List of Failed TCs: " + errorTCs.toString());
-
-            errorTCs.forEach(it -> passedTCs.remove(it));
 
             /**
              * Update Test Cases execution Status
@@ -153,40 +150,43 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
     @Override
     public void startTest(Test test, TestMethod testMethod) {
-//        if (videoEnable) {
-//            try {
-//                videoMaker = new VideoMaker();
-//                File base = new File(videoBaseDirectory);
-//                base.mkdirs();
-//                videoMaker.createVideo(new File(videoBaseDirectory+"/"+test.getTestBeanName()+testMethod.getTestMethod().getName()+".mov").toPath(),
-//                        videoFramesPerSec, videoWaitSeconds);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//
-//        } else {
-//            log.warn("Video recording feature disabled");
-//        }
+        if(enabled) {
+
+            if (videoEnable) {
+                try {
+                    videoMaker = new VideoMaker();
+                    File base = new File(videoBaseDirectory);
+                    base.mkdirs();
+                    videoMaker.createVideo(new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" +testMethod.getTestMethod().getName() + ".mov").toPath(),
+                            videoFramesPerSec, videoWaitSeconds);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            } else {
+                log.warn("Video recording feature disabled");
+            }
+        }
     }
 
     @Override
     public void endTest(Test test, TestMethod testMethod) {
-        if(enabled) {
+        if (enabled) {
             log.info("Identify if test has passed");
             if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
-                log.info("Added TC on the passedTCs is: " + test.getTestBeanName());
                 passedTCs.add(test.getTestBeanName());
             }
+
+            if (videoEnable) {
+                if (videoMaker != null) {
+                    try {
+                        videoMaker.completeVideo();
+                    } catch (Exception e) {
+                        log.info("Failed to complete video recording - recordings enabled? {}", e.getMessage(), e);
+                    }
+                }
+            }
         }
-//        if (videoEnable) {
-//            if (videoMaker != null) {
-//                try {
-//                    videoMaker.completeVideo();
-//                } catch (Exception e) {
-//                    log.info("Failed to complete video recording - recordings enabled? {}",e.getMessage(), e);
-//                }
-//            }
-//        }
     }
 
     @Override
@@ -199,6 +199,8 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     public void addSkipped(Test test, TestMethod method, String skipReason) {
         log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
         skippedTCs.add(test.getTestBeanName());
+        takeScreenshotOnFailure(test,method);
+        attachVideo(test,method);
     }
 
     @Override
@@ -206,6 +208,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
         errorTCs.add(test.getTestBeanName());
         takeScreenshotOnFailure(test,method);
+        attachVideo(test,method);
     }
 
     public final void initialiseCycles(String projectName, String versionName, String cycleName) {
@@ -216,18 +219,6 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         }
     }
 
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yy");
-
-    /**
-     * Set the revision and start date for the cycle creation
-     */
-    private static CycleInfo getCycleInfo(String environment, String buildNo) {
-        LocalDateTime ldtStart = LocalDateTime.now();
-        String startTime = dateTimeFormatter.format(ldtStart);
-        return CycleInfo.builder().jiraBuildNo(buildNo)
-                .environment(environment)
-                .startDate(startTime).build();
-    }
 
     private void takeScreenshotOnFailure(Test test,TestMethod method){
         if (screenshotEnable) {
@@ -238,21 +229,21 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             }
 
             updateTests.addExecutionAttachement(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
+            log.info("Attached screenshot..");
         }
     }
 
-//    private void setRecording(String UUID) {
-//        return result -> {
-//            Path recording = new File(videoBaseDirectory + "/" + UUID + ".mov").toPath();
-//            if (recording.toFile().exists()) {
-//                try (InputStream videoData = Files.newInputStream(recording)) {
-//                    updateTests.addExecutionAttachement("Recording." + UUID + ".mov", "video/quicktime", videoData, "mov");
-//                } catch(Exception e){
-//                    log.error("Exception when adding video to attachments {}",e.getMessage(),e);
-//                }
-//            }
-//        };
-//    }
+    private void attachVideo(Test test, TestMethod method) {
+        File recording = new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov");
+        if (recording.exists()) {
+            try {
+                updateTests.addExecutionAttachement(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov"));
+                log.info("Attached video..");
+            } catch (Exception e) {
+                log.error("Exception when adding video to attachments {}", e.getMessage(), e);
+            }
+        }
+    }
 
     @Override
     public void screenshotRecording(boolean enable) {
