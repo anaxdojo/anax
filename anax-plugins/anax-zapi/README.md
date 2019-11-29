@@ -1,6 +1,7 @@
 # Anax - Zephyr (ZAPI) Plugin
-Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI)
-The plugin copy the jira cycle from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP)
+Include this plugin in order to programmatically update the status of your TCs on Jira via Jephyr api (ZAPI).
+
+The plugin copy the Jira cycle (which actually is the suite name) from 'Unscheduled' folder to the current version and then on execution finish update its TC status (PASS-FAIL-SKIP)
 
 ## How to include Jira Connector
 ### Maven 
