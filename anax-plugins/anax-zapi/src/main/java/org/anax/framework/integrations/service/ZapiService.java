@@ -40,17 +40,17 @@ public class ZapiService {
      * @return
      * @throws JSONException
      */
-    public static JSONObject filterLabel(JSONArray jsonArray, String labelValue) throws JSONException{
+    public static JSONObject filterLabel(JSONArray jsonArray, String labelValue) throws JSONException {
         int index;
         ArrayList<String> labels = new ArrayList<>();
 
-        for(int i=0; i<jsonArray.length(); i++){
+        for (int i = 0; i < jsonArray.length(); i++) {
             labels.add(jsonArray.getJSONObject(i).getString("label").toLowerCase());
         }
         index = IntStream.range(0, labels.size()).filter(i -> labels.get(i).contains(labelValue.toLowerCase()))
                 .findFirst().getAsInt();
 
-        return  jsonArray.getJSONObject(index);
+        return jsonArray.getJSONObject(index);
     }
 
     /**
@@ -125,20 +125,23 @@ public class ZapiService {
      * @param label
      * @throws Exception
      */
-        public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
-            String projectId = getProjectId(projectName);
-            String versionId = getVersionId(projectId, versionName);
-            String cycleId = getCycleId(projectName, versionName, cycleName);
+    public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
+        String projectId = getProjectId(projectName);
+        String versionId = getVersionId(projectId, versionName);
+        String cycleId = getCycleId(projectName, versionName, cycleName);
 
+        try {
             try {
-                try{Thread.sleep(1000);}catch(Exception e){}
-                return filterLabel((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), label).get("id").toString();
+                Thread.sleep(1000);
             } catch (Exception e) {
-                e.printStackTrace();
-                log.info("Check !! Issue with this label was not found");
-                return "";
-
             }
+            return filterLabel((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), label).get("id").toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Check !! Issue with this label was not found");
+            return "";
+
+        }
     }
 
 
