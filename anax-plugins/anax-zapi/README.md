@@ -46,7 +46,7 @@ jira.url = https://HOST_REQUIRED/rest/api/latest
 
 Configure the jira username in order to authenticate the api connection:
 ```gradle
-api.user = USER
+zapi.user = USER
 ```
 
 Configure the jira password in order to authenticate the api connection:
