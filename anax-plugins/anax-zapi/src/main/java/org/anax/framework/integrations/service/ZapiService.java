@@ -1,6 +1,5 @@
 package org.anax.framework.integrations.service;
 
-import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.*;
 import org.json.JSONArray;
@@ -17,8 +16,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -33,15 +34,23 @@ public class ZapiService {
 
     /**
      * Find the correct object in a jsonarray based on the value of an attribute
+     * Create a list of label and then get the index of the JsonObject with this label
      * @param jsonArray
-     * @param attribute
-     * @param attributeValue
+     * @param labelValue
      * @return
      * @throws JSONException
      */
-    public static JSONObject filterJsonArray(JSONArray jsonArray, String attribute, String attributeValue) throws JSONException{
-        JSONArray jsonArray1 = new JSONArray(jsonArray.toString().toLowerCase());
-        return new JSONObject(new JSONArray(JsonPath.read(jsonArray1.toString(),"$[?(@."+attribute.toLowerCase()+" ==\""+attributeValue.toLowerCase()+"\")]").toString()).get(0).toString());
+    public static JSONObject filterLabel(JSONArray jsonArray, String labelValue) throws JSONException{
+        int index;
+        ArrayList<String> labels = new ArrayList<>();
+
+        for(int i=0; i<jsonArray.length(); i++){
+            labels.add(jsonArray.getJSONObject(i).getString("label").toLowerCase());
+        }
+        index = IntStream.range(0, labels.size()).filter(i -> labels.get(i).contains(labelValue.toLowerCase()))
+                .findFirst().getAsInt();
+
+        return  jsonArray.getJSONObject(index);
     }
 
     /**
@@ -122,8 +131,8 @@ public class ZapiService {
             String cycleId = getCycleId(projectName, versionName, cycleName);
 
             try {
-                Thread.sleep(1000);
-                return filterJsonArray((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), "label", label).get("id").toString();
+                try{Thread.sleep(1000);}catch(Exception e){}
+                return filterLabel((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), label).get("id").toString();
             } catch (Exception e) {
                 e.printStackTrace();
                 log.info("Check !! Issue with this label was not found");
