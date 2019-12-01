@@ -124,21 +124,21 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             }
 
             try {
-                if (failedTCs.size() != 0) {
-                    log.info("Update as FAIL the following TCs: " + failedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
-                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), fail);
-                }
-            } catch (Exception e1) {
-                log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
-            }
-
-            try {
                 if (skippedTCs.size() != 0) {
                     log.info("Update as SKIPPED the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), skip);
                 }
             } catch (Exception e2) {
                 log.info("The update on SKIPPED jira did not happen due to: " + e2.getMessage());
+            }
+
+            try {
+                if (failedTCs.size() != 0) {
+                    log.info("Update as FAIL the following TCs: " + failedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), fail);
+                }
+            } catch (Exception e1) {
+                log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
             }
 
             try {
