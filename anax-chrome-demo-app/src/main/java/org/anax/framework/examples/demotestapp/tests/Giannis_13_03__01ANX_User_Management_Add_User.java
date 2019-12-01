@@ -25,22 +25,32 @@ public class Giannis_13_03__01ANX_User_Management_Add_User {
 
     }
 
+    @AnaxPreCondition(methodNames = "pre")
     @AnaxTestStep
     public void test_step1() throws Exception{
+        Assert.isTrue(1==1);
+    }
+
+
+    @AnaxPreCondition(methodNames = "pre1")
+    @AnaxTestStep
+    public void test_step2() throws Exception{
+        Assert.isTrue(1==1);
     }
 
     @AnaxPreCondition(methodNames = "pre")
     @AnaxTestStep(ordering = 1)
-    public void test_step2() throws Exception{
-    }
-
-    @AnaxTestStep(ordering = 2)
     public void test_step3() throws Exception{
-        log.info("step 3");
+        Assert.isTrue(1==1);
     }
 
 
     public void pre(){
+        log.info("Precondition");
+    }
+
+    public void pre1(){
+        log.info("Failed Precondition");
         Assert.isTrue(1==2);
     }
 }

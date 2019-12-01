@@ -183,10 +183,10 @@ public class AnaxSuiteRunner {
                     });
 
                     //execute method!
-                    TestResult result = executeRecordingResult(suite, test, testMethod, true);
-                    testMethod.getStdErr().append(result.getStdError());
-                    testMethod.getStdOut().append(result.getStdOutput());
                     if (localSkip.get() == false) {
+                        TestResult result = executeRecordingResult(suite, test, testMethod, true);
+                        testMethod.getStdErr().append(result.getStdError());
+                        testMethod.getStdOut().append(result.getStdOutput());
                         if (result.notPassed()) {
                             localSkip.set(true);
                             if (result.isInError()) {
@@ -200,7 +200,7 @@ public class AnaxSuiteRunner {
                         }
                     } else {
                         testMethod.setSkip(true);
-                        reporter.addError(test,testMethod, result.getThrowable());
+                        reporter.addError(test,testMethod, new Throwable());
                     }
                     //postcondition:
                     testMethod.getPostconditions().forEach(tp -> {

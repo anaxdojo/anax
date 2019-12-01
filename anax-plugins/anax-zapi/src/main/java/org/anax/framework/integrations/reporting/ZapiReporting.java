@@ -103,6 +103,9 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             log.info("********************************************\r\n\r\n");
 
             errorTCs.forEach(it -> passedTCs.remove(it));
+            failedTCs.forEach(it -> passedTCs.remove(it));
+            skippedTCs.forEach(it -> passedTCs.remove(it));
+
 
             log.info("Finally: List of Passed TCs: " + passedTCs.toString());
             log.info("Finally: List of Skipped TCs: " + skippedTCs.toString());
@@ -175,7 +178,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     @Override
     public void endTest(Test test, TestMethod testMethod) {
         if (enabled) {
-            log.info("Identify if test has passed");
+            log.info("Identify if test status");
             if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
                 passedTCs.add(test.getTestBeanName());
             }
