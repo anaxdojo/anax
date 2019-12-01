@@ -6,6 +6,7 @@ import org.anax.framework.integrations.service.ZapiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,8 +15,11 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class CycleCreator {
 
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yy");
+    //private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yy");
 
+    @Value("${zapi.dateformatter.pattern:dd/MM/yy}")
+    String formatterPattern;
+    
     @Autowired
     protected ZapiService zapiService;
 
@@ -26,8 +30,10 @@ public class CycleCreator {
      * @param cycleName
      */
     public String createCycleInVersion(String projectName, String versionName, String cycleName){
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatterPattern);
+        
         if (StringUtils.isEmpty(zapiService.getCycleId(projectName, versionName, cycleName))) {//Cycle not exist
-            CycleClone cycleClone = new CycleClone(cycleName,dateTimeFormatter.format(LocalDateTime.now()));
+            CycleClone cycleClone = new CycleClone(cycleName,dtf.format(LocalDateTime.now()));
             zapiService.cloneCycleToVersion(projectName, versionName, cycleClone, cycleName);
             log.info("Test Cycle created with name: " + cycleName + " at version: " + versionName);
         } else {
