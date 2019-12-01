@@ -5,7 +5,6 @@ import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.integrations.CycleCreator;
 import org.anax.framework.integrations.ExecutionManager;
-import org.anax.framework.integrations.pojo.ExecutionStatus;
 import org.anax.framework.integrations.service.AnaxZapiVersionResolver;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
@@ -33,6 +32,10 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
     @Value("${jira.project:NOT_CONFIGURED}") private String project;
     @Value("${zapi.enabled:true}") private Boolean enabled;
+
+    @Value("${zapi.status.pass.code:1}") private String pass;
+    @Value("${zapi.status.fail.code:2}") private String fail;
+    @Value("${zapi.status.skip.code:3}") private String skip;
 
     @Autowired
     protected CycleCreator cycleCreator;
@@ -111,7 +114,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             try {
                 if (passedTCs.size() != 0) {
                     log.info("Update as PASS the following TCs: " + passedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
-                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(passedTCs), ExecutionStatus.PASS);
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(passedTCs), pass);
                 }
             } catch (Exception e) {
                 log.info("The update of PASSED TCs on jira did not happen due to: " + e.getMessage());
@@ -120,7 +123,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             try {
                 if (failedTCs.size() != 0) {
                     log.info("Update as FAIL the following TCs: " + failedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
-                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), ExecutionStatus.FAIL);
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), fail);
                 }
             } catch (Exception e1) {
                 log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
@@ -129,7 +132,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             try {
                 if (skippedTCs.size() != 0) {
                     log.info("Update as SKIPPED the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
-                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), ExecutionStatus.SKIPPED);
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), skip);
                 }
             } catch (Exception e2) {
                 log.info("The update on SKIPPED jira did not happen due to: " + e2.getMessage());
@@ -138,7 +141,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
             try {
                 if (errorTCs.size() != 0) {
                     log.info("Update as FAIL the following TCs: " + errorTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
-                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(errorTCs), ExecutionStatus.FAIL);
+                    updateTests.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(errorTCs), fail);
                 }
             } catch (Exception e1) {
                 log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
@@ -231,7 +234,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
                 e.printStackTrace();
             }
 
-            updateTests.addExecutionAttachement(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
+            updateTests.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
             log.info("Attached screenshot..");
         }
     }
@@ -240,7 +243,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
         File recording = new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov");
         if (recording.exists()) {
             try {
-                updateTests.addExecutionAttachement(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov"));
+                updateTests.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov"));
                 log.info("Attached video..");
             } catch (Exception e) {
                 log.error("Exception when adding video to attachments {}", e.getMessage(), e);

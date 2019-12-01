@@ -4,28 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxBeforeTest;
 import org.anax.framework.annotations.AnaxTest;
 import org.anax.framework.annotations.AnaxTestStep;
-import org.anax.framework.integrations.CycleCreator;
-import org.anax.framework.integrations.ExecutionManager;
-import org.anax.framework.integrations.service.ZapiService;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 
-@AnaxTest(value = "Results Analysis1")
+@AnaxTest(value = "Results Analysis")
 @Component
 @Slf4j
 public class GiannisANX_User_Management_Add_User {
-
-    @Autowired
-    protected CycleCreator      cycleCreator;
-
-    @Autowired
-    protected ExecutionManager  executionManager;
-
-    @Autowired
-    protected ZapiService zapiService;
 
     @Autowired
     protected Verify            verify;
