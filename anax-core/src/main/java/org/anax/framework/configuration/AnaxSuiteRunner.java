@@ -147,34 +147,29 @@ public class AnaxSuiteRunner {
 
 
         testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
-	boolean globalSkipSetLater = false;
+
         //before testmethod:
         test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
             log.info("---- BEFORE START: {}", tm.getTestMethod());
             TestResult result = executeRecordingResult(suite, test, tm, false);
             if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
-                //globalSkip.set(true);
-		localSkip.set(true); //before has failed
-		globalSkipSetLater = true;
+                globalSkip.set(true);
                 tm.getStdOut().append(result.getStdOutput());
                 reporter.startTest(test,tm);
-                reporter.addFailure(test,tm, result.getThrowable());
+                reporter.addSkipped(test, tm, "Skipped due to @AnaxBefore failure");
                 reporter.endTest(test, tm);
             }
             log.info("---- BEFORE END: {}", tm.getTestMethod());
         });
 
-        testsToRun.forEach(testMethod -> {
-            AtomicBoolean localSkip = new AtomicBoolean(false);
-            reporter.startTest(test, testMethod);
+        if(!globalSkip.get()) {
+            testsToRun.forEach(testMethod -> {
+                AtomicBoolean localSkip = new AtomicBoolean(false);
+                reporter.startTest(test, testMethod);
 
 
-            try {
-                if (globalSkip.get()) {
-                    reporter.addSkipped(test, testMethod, "Skipped due to @AnaxBefore failure");
-                    testMethod.setSkip(true);
-                } else {
+                try {
                     log.info("---- STEP START: {} ---", testMethod.getTestMethod());
 
                     //precondition:
@@ -194,7 +189,7 @@ public class AnaxSuiteRunner {
                             if (result.isInError()) {
                                 reporter.addError(test, testMethod, result.getThrowable());
                             } else if (result.isFailed()) {
-                                reporter.addFailure(test,testMethod, result.getThrowable());
+                                reporter.addFailure(test, testMethod, result.getThrowable());
                             }
                             testMethod.setPassed(false);
                         } else {
@@ -202,26 +197,24 @@ public class AnaxSuiteRunner {
                         }
                     } else {
                         testMethod.setSkip(true);
-                        reporter.addError(test,testMethod, new Throwable());
+                        reporter.addError(test, testMethod, new Throwable());
                     }
                     //postcondition:
                     testMethod.getPostconditions().forEach(tp -> {
                         log.info("---- POSTCON START: {}", tp.getTestMethod());
-                        executePrePost(suite, test, testMethod, localSkip,  tp);
+                        executePrePost(suite, test, testMethod, localSkip, tp);
                         log.info("---- POSTCON END: {}", tp.getTestMethod());
                     });
 
+                } finally {
+                    reporter.endTest(test, testMethod);
+
+                    log.info("---- STEP END: {} ---", testMethod.getTestMethod());
 
                 }
-            } finally {
-                reporter.endTest(test, testMethod);
+            });
 
-                log.info("---- STEP END: {} ---", testMethod.getTestMethod());
-
-            }
-        });
-
-	if (globalSkipSetLater) globalSkip.set(true); // set global skip now that before has failed    
+        }
         //after testmethod:
         test.getTestAfterMethods().forEach(tm -> {
             log.info("AFTER START: {}", tm.getTestMethod());
