@@ -147,14 +147,16 @@ public class AnaxSuiteRunner {
 
 
         testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
-
+	boolean globalSkipSetLater = false;
         //before testmethod:
         test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
             log.info("---- BEFORE START: {}", tm.getTestMethod());
             TestResult result = executeRecordingResult(suite, test, tm, false);
             if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
-                globalSkip.set(true);
+                //globalSkip.set(true);
+		localSkip.set(true); //before has failed
+		globalSkipSetLater = true;
                 tm.getStdOut().append(result.getStdOutput());
                 reporter.startTest(test,tm);
                 reporter.addFailure(test,tm, result.getThrowable());
@@ -219,6 +221,7 @@ public class AnaxSuiteRunner {
             }
         });
 
+	if (globalSkipSetLater) globalSkip.set(true); // set global skip now that before has failed    
         //after testmethod:
         test.getTestAfterMethods().forEach(tm -> {
             log.info("AFTER START: {}", tm.getTestMethod());
