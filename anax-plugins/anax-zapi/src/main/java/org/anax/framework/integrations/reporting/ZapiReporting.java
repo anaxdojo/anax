@@ -32,7 +32,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
     @Value("${jira.project:NOT_CONFIGURED}") private String project;
     @Value("${zapi.enabled:true}") private Boolean enabled;
-    @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
+    @Value("${anax.allure.results.directory:zapi-results/}") String resultsZapiDirectory;
 
     @Value("${zapi.status.pass.code:1}") private String pass;
     @Value("${zapi.status.fail.code:2}") private String fail;
@@ -233,7 +233,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     private void takeScreenshotOnFailure(Test test,TestMethod method){
         if (screenshotEnable) {
             try {
-                FileUtils.writeByteArrayToFile(new File(resultsAllureDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"), controller.takeScreenShotAsBytes());
+                FileUtils.writeByteArrayToFile(new File(resultsZapiDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"), controller.takeScreenShotAsBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
