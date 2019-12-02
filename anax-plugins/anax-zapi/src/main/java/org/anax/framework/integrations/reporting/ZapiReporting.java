@@ -23,13 +23,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-@Component
+@Component("zapiAnaxTestReporter")
 @Slf4j
 public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
     /** do not change the FPS value over 15, due to h/w limitations */
     @Value("${anax.allure.video.fps:10}") Integer videoFramesPerSec;
     /** how many seconds to continue recording, after the "end recording" has been called */
     @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
+    @Value("${anax.zapi.report.directory:zapi-report/}") String reportZapiDirectory;
     @Value("${jira.project:NOT_CONFIGURED}") private String project;
     @Value("${zapi.enabled:true}") private Boolean enabled;
 
@@ -52,7 +53,8 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
     private String videoBaseDirectory;
     private String cycleName;
     private String version ;
-
+    private String reportDirectory;
+    private String suiteName;
 
 
     private Set<String> passedTCs = new HashSet<>();
@@ -62,7 +64,8 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
 
     @Autowired
     public ZapiReporting(AnaxZapiVersionResolver versionResolver){
-        version = versionResolver.resolveAppVersion();
+        version =  "Geno 19.9.hot1";
+//        version = versionResolver.resolveAppVersion();
     }
 
 

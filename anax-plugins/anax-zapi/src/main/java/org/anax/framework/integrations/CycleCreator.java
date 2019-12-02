@@ -17,7 +17,7 @@ public class CycleCreator {
 
     //private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MMM/yy");
 
-    @Value("${zapi.dateformatter.pattern:dd/MM/yy}")
+    @Value("${zapi.dateformatter.pattern:dd/MMM/yy}")
     String formatterPattern;
     
     @Autowired

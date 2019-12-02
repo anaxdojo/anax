@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import static io.qameta.allure.util.ResultsUtils.getHostName;
 import static io.qameta.allure.util.ResultsUtils.getThreadName;
 
-@Service("anaxTestReporter")
+@Service("allureAnaxTestReporter")
 @Slf4j
 public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
 
@@ -307,14 +307,18 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             return test.getTestBeanName() + "." + testMethod.getTestMethod().getName();
         }
     }
+
     private void takeScreenshotOnFailure() throws IOException {
         if (screenshotEnable) {
-            Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
+            AllureAddAttachment();
         } else {
             log.warn("Screenshot feature disabled");
         }
     }
 
+    private void AllureAddAttachment() throws IOException {
+        Allure.addAttachment("Screenshot", new ByteArrayInputStream(controller.takeScreenShotAsBytes()));
+    }
 
     private Consumer<TestResult> setStep(final TestMethod testMethod) {
         testMethod.getTestMethod().getDeclaredAnnotations();

@@ -32,7 +32,7 @@
 
 		<dependency>
 			<groupId>org.anax.framework</groupId>
-			<artifactId>anax-zapi</artifactId>
+			<artifactId>anax-combined-reporter</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

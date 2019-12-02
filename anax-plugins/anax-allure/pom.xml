@@ -47,7 +47,6 @@
             <artifactId>allure-generator</artifactId>
             <version>${allure.version}</version>
         </dependency>
-
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-plugin-api</artifactId>
@@ -56,12 +55,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -73,9 +66,6 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.9</version>
         </dependency>
-
-
-
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-core</artifactId>

@@ -61,7 +61,6 @@
 
         <!-- demo app should be the last -->
         <module>anax-chrome-demo-app</module>
-
     </modules>
 </project>
 

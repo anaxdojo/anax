@@ -25,5 +25,6 @@
         <module>anax-videorec</module>
         <module>anax-allure</module>
         <module>anax-zapi</module>
+        <module>anax-combined-reporter</module>
     </modules>
 </project>
