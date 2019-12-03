@@ -238,7 +238,7 @@ public class ZapiReporting implements AnaxTestReporter, ReporterSupportsScreensh
                 e.printStackTrace();
             }
 
-            updateTests.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
+            updateTests.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), new File(resultsZapiDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png"));
             log.info("Attached screenshot..");
         }
     }
