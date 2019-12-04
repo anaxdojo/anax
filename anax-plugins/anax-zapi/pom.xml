@@ -8,7 +8,7 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.6</version>
+        <version>0.9.7-SNAPSHOT</version>
     </parent>
 
     <name>Anax :: Plugins :: Zephyr (ZAPI)</name>
