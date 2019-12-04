@@ -5,12 +5,12 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.6-SNAPSHOT</version>
+        <version>0.9.6</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-videorec</artifactId>
-    <version>0.9.6-SNAPSHOT</version>
+    <version>0.9.6</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Plugins :: Video Recording</name>
