@@ -116,7 +116,9 @@ public class AnaxSuiteRunner {
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
         copy.forEach(test -> {
+            reporter.startAnaxTest(test);
             executeTest(suite, test);
+            reporter.endAnaxTest(test);
         });
 
         log.trace("Setting stderr and stdout to suite");

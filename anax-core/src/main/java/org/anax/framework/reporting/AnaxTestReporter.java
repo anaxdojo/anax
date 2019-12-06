@@ -18,6 +18,10 @@ public interface AnaxTestReporter {
 
     boolean endTestSuite(Suite suite) throws ReportException;
 
+    void startAnaxTest(Test test);
+
+    void endAnaxTest(Test test);
+
     void startTest(Test test, TestMethod testMethod);
 
     void endTest(Test test, TestMethod testMethod);

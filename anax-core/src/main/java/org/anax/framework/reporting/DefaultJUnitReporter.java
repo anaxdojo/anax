@@ -34,7 +34,10 @@ import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
@@ -261,6 +264,15 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, Rep
         return suite.getFailedTests()+suite.getSkippedTests()+suite.getErroredTests() > 0 ? true : false;
     }
 
+    @Override
+    public void startAnaxTest(Test test) {
+
+    }
+
+    @Override
+    public void endAnaxTest(Test test) {
+
+    }
 
 
     @Override
