@@ -5,7 +5,7 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.6-SNAPSHOT</version>
+        <version>0.9.8</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,20 +14,17 @@
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-core</artifactId>
-            <version>0.9.6-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-allure</artifactId>
-            <version>0.9.6-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-zapi</artifactId>
-            <version>0.9.6-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
