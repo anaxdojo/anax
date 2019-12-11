@@ -23,8 +23,8 @@
 
     <modules>
         <module>anax-videorec</module>
-        <module>anax-allure</module>
-        <module>anax-zapi</module>
-        <module>anax-combined-reporter</module>
+        <module>anax-allure-reporter</module>
+        <module>anax-zapi-reporter</module>
+        <module>anax-allurezapi-reporter</module>
     </modules>
 </project>
