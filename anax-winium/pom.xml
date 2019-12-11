@@ -5,12 +5,12 @@
     <parent>
         <artifactId>anax-parent</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.8</version>
+        <version>0.9.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-winium</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Winium</name>

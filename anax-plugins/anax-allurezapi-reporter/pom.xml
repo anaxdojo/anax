@@ -5,7 +5,7 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.8</version>
+        <version>0.9.9-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,13 +33,13 @@
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-core</artifactId>
-            <version>0.9.8</version>
+            <version>0.9.9-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.anax.framework</groupId>
             <artifactId>anax-zapi-reporter</artifactId>
-            <version>0.9.8</version>
+            <version>0.9.9-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
