@@ -6,6 +6,11 @@ import org.anax.framework.model.TestMethod;
 
 import java.io.FileNotFoundException;
 
+/**
+ * AnaxTest reporter standard interface for callbacks for plugins that generate reports. Default automatically enabled
+ * reporter is a JUnit reporter that produces XML in Junit 4 format.
+ *
+ */
 public interface AnaxTestReporter {
 
     void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException;
@@ -17,6 +22,10 @@ public interface AnaxTestReporter {
     void startTestSuite(Suite suite) throws ReportException;
 
     boolean endTestSuite(Suite suite) throws ReportException;
+
+    void startAnaxTest(Test test);
+
+    void endAnaxTest(Test test);
 
     void startTest(Test test, TestMethod testMethod);
 

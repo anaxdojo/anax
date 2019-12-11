@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-
+//Skipped - Fail Before
 @AnaxTest(value = "Results Analysis")
 @Component
 @Slf4j
@@ -23,15 +23,16 @@ public class GiannisANX_User_Management_Add_User {
         Assert.isTrue(1==2);
     }
 
-    @AnaxTestStep
+    @AnaxTestStep(description = "Verify account creation")
     public void test_step1() throws Exception{
+        Assert.isTrue(1==1);
     }
 
-    @AnaxTestStep(ordering = 1)
+    @AnaxTestStep(description = "Verify account update", ordering = 1)
     public void test_step2() throws Exception{
     }
 
-    @AnaxTestStep(ordering = 2)
+    @AnaxTestStep(description = "Verify account deletion" ,ordering = 2)
     public void test_step3() throws Exception{
     }
 }

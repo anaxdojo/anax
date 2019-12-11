@@ -9,7 +9,7 @@
 
         <groupId>org.anax.framework</groupId>
         <artifactId>anax-parent</artifactId>
-        <version>0.9.6</version>
+        <version>0.9.8</version>
     </parent>
 
     <properties>
@@ -46,15 +46,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-	<!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api -->
-	<dependency>
-    		<groupId>javax.annotation</groupId>
-    		<artifactId>javax.annotation-api</artifactId>
-    		<version>1.2</version>
-	</dependency>
-
-
-
+        <!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -63,7 +60,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.5</version>
+            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

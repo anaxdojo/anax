@@ -5,12 +5,12 @@
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework</groupId>
-        <version>0.9.6</version>
+        <version>0.9.8</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-videorec</artifactId>
-    <version>0.9.6</version>
+    <version>0.9.8</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Plugins :: Video Recording</name>
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.5</version>
+            <version>2.6</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

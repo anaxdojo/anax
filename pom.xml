@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.anax.framework</groupId>
     <artifactId>anax-parent</artifactId>
-    <version>0.9.6</version>
+    <version>0.9.8</version>
     <packaging>pom</packaging>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -59,7 +59,6 @@
 
         <!-- demo app should be the last -->
         <module>anax-chrome-demo-app</module>
-
     </modules>
 </project>
 

@@ -11,4 +11,5 @@ public interface ReporterSupportsVideo {
      */
     void videoRecording(boolean enable, String videoBaseDirectory);
 
+
 }
