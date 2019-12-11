@@ -1,8 +1,8 @@
 package org.anax.framework.reporting;
 
 import io.qameta.allure.*;
-import io.qameta.allure.model.Link;
 import io.qameta.allure.model.*;
+import io.qameta.allure.model.Link;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
@@ -36,9 +36,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Value("${anax.allure.report.directory:allure-report/}") String reportAllureDirectory;
     @Value("${anax.allure.results.directory:allure-results/}") String resultsAllureDirectory;
     /** do not change the FPS value over 15, due to h/w limitations */
-    @Value("${anax.allure.video.fps:10}") Integer videoFramesPerSec;
+    @Value("${anax.video.fps:10}") Integer videoFramesPerSec;
     /** how many seconds to continue recording, after the "end recording" has been called */
-    @Value("${anax.allure.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
+    @Value("${anax.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
 
 
     private final AllureLifecycle lifecycle;
@@ -96,6 +96,17 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
         return failed;
     }
+
+    @Override
+    public void startAnaxTest(Test test){
+
+    }
+
+    @Override
+    public void endAnaxTest(Test test){
+
+    }
+
     @Override
     public void startTest(Test test, TestMethod testMethod) {
         String testUniqueID = getUniqueUuid(test,testMethod);

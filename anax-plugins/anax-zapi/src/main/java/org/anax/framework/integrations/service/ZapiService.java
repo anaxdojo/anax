@@ -2,6 +2,7 @@ package org.anax.framework.integrations.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.integrations.pojo.*;
+import org.anax.framework.model.TestMethod;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,10 +14,12 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -29,32 +32,13 @@ public class ZapiService {
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
-    @Value("${zapi.url:https:NOT_CONFIGURED}") private String zapiUrl;
-    @Value("${jira.url:https:NOT_CONFIGURED}") private String jiraUrl;
+    @Value("${zapi.url:https:NOT_CONFIGURED}")  private String zapiUrl;
+    @Value("${jira.url:https:NOT_CONFIGURED}")  private String jiraUrl;
+    @Value("${jira.search.tc.attribute:label}") private String attribute;
+    @Value("${zapi.status.pass.code:1}")        private String pass;
 
     /**
-     * Find the correct object in a jsonarray based on the value of an attribute
-     * Create a list of label and then get the index of the JsonObject with this label
-     * @param jsonArray
-     * @param labelValue
-     * @return
-     * @throws JSONException
-     */
-    public static JSONObject filterLabel(JSONArray jsonArray, String labelValue) throws JSONException {
-        int index;
-        ArrayList<String> labels = new ArrayList<>();
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            labels.add(jsonArray.getJSONObject(i).getString("label").toLowerCase());
-        }
-        index = IntStream.range(0, labels.size()).filter(i -> labels.get(i).contains(labelValue.toLowerCase()))
-                .findFirst().getAsInt();
-
-        return jsonArray.getJSONObject(index);
-    }
-
-    /**
-     * Get cycle id from cycle name at unschedule
+     * Get cycle id from cycle name at UnSchedule
      * @param projectName
      * @param cycleName
      * @return
@@ -64,6 +48,8 @@ public class ZapiService {
         String versionId = getVersionId(projectId,versionName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId+"&versionId="+versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
         Map.Entry<String, Map<Object, Object>> result = new Cycles(entity.getBody()).getContents().entrySet().stream().filter(x->x.getValue().get("name").equals(cycleName)).findFirst().orElse(null);
+        if(result == null)
+            log.error("No Cycle found on project: {} with this name: {}",projectName,cycleName);
         return (result != null) ? result.getKey() : null;
     }
 
@@ -113,37 +99,87 @@ public class ZapiService {
      * Update execution results as bulk
      * @param results
      */
-    public void updateResults(Results results){
+    public void updateBulkResults(Results results){
         restTemplate.exchange(zapiUrl+"execution/updateBulkStatus/",HttpMethod.PUT ,new HttpEntity(results, getHeaders()), Results.class);
     }
 
     /**
-     * Returns the test id from label
+     * Update test step status
+     * @param tcExecutionID
+     * @param comment
+     */
+    public void updateTestExecutionComment(String tcExecutionID, String comment){
+        Map postBody = new HashMap();
+        postBody.put("comment",comment);
+
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionID+"/execute", HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
+    }
+
+
+    /**
+     * Returns the test id from label or either the name
      * @param projectName
      * @param versionName
      * @param cycleName
-     * @param label
+     * @param attributeValue
      * @throws Exception
      */
-    public String getIssueIdViaLabel(String projectName, String versionName, String cycleName, String label) {
+    public String getIssueExecutionIdViaAttributeValue(String projectName, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);
         String cycleId = getCycleId(projectName, versionName, cycleName);
 
         try {
-            try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
-            }
-            return filterLabel((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"), label).get("id").toString();
+            try { Thread.sleep(1000); } catch (Exception e) {}
+            return filterDataByAttributeValue((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"),attribute, attributeValue).get("id").toString();
         } catch (Exception e) {
             e.printStackTrace();
-            log.info("Check !! Issue with this label was not found");
+            log.error("Check !! Issue with this label:{} was not found",attributeValue);
             return "";
-
         }
     }
 
+
+    /**
+     * Returns test step execution Id
+     * @param tcExecutionId
+     * @param ordering
+     * @return
+     */
+    public String getTestStepExecutionId(String tcExecutionId, int ordering) {
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionId + "?expand=checksteps", HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class);
+        try {
+            return getTestStepIdViaOrder(restTemplate.exchange(zapiUrl + "stepResult?executionId=" + tcExecutionId, HttpMethod.GET, new HttpEntity<>(getHeaders()), new ParameterizedTypeReference<List<TestStepExecution>>() {}).getBody(),ordering);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Test Step execution id do not found");
+            return "";
+        }
+    }
+
+    /**
+     * Get test steps executions
+     * @param tcExecutionId
+     * @return
+     */
+    public List getTestSteps(String tcExecutionId){
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionId + "?expand=checksteps", HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class);
+        return restTemplate.exchange(zapiUrl + "stepResult?executionId=" + tcExecutionId, HttpMethod.GET, new HttpEntity<>(getHeaders()), new ParameterizedTypeReference<List<TestStepExecution>>() {}).getBody();
+    }
+
+    /**
+     * Update test step status
+     * @param testStepExecutionId
+     * @param status
+     */
+    public void updateTestStepStatus(String testStepExecutionId, String status, TestMethod testMethod){
+        Map postBody = new HashMap();
+        postBody.put("status",status);
+        if(!status.equals(pass) && !StringUtils.isEmpty(testMethod.getDescription()))//not pass and has description
+            postBody.put("comment",testMethod.getDescription());
+
+        restTemplate.exchange(zapiUrl + "stepResult/" + testStepExecutionId, HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
+    }
 
     /**
      * Add attachement on execution
@@ -154,14 +190,24 @@ public class ZapiService {
      * @param file
      */
     public void addTcExecutionAttachments(String projectName, String versionName, String cycleName, String label, File file){
-        String id = getIssueIdViaLabel(projectName,versionName,cycleName,label);
+        String id = getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName,label);
         LinkedMultiValueMap postBody = new LinkedMultiValueMap();
         postBody.add("file", new FileSystemResource(file));
 
         restTemplate.exchange(zapiUrl+"attachment?entityId="+id+"&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
     }
 
+    /**
+     * Add attachement on execution step
+     * @param executionStepId
+     * @param file
+     */
+    public void addStepExecutionAttachments(String executionStepId, File file){
+        LinkedMultiValueMap postBody = new LinkedMultiValueMap();
+        postBody.add("file", new FileSystemResource(file));
 
+        restTemplate.exchange(zapiUrl+"attachment?entityId="+executionStepId+"&entityType=stepResult", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
+    }
 
     /**
      * Clone a cycle (including executions) from default cycle to specific cycle
@@ -181,6 +227,25 @@ public class ZapiService {
         restTemplate.exchange(zapiUrl+"cycle",HttpMethod.POST ,new HttpEntity(cycleClone, getHeaders()), CycleClone.class);
     }
 
+
+    //Find the correct object in a jsonArray based on the value of an attribute,Create a list of label and then get the index of the JsonObject with this label
+    private JSONObject filterDataByAttributeValue(JSONArray jsonArray, String attribute, String labelValue) throws JSONException {
+        int index;
+        ArrayList<String> values = new ArrayList<>();
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            values.add(jsonArray.getJSONObject(i).getString(attribute).toLowerCase());
+        }
+        index = IntStream.range(0, values.size()).filter(i -> values.get(i).contains(labelValue.toLowerCase())).findFirst().getAsInt();
+        return jsonArray.getJSONObject(index);
+    }
+
+    //Search all the steps of tc executionId , returns the testStepId according the orderId
+    private String getTestStepIdViaOrder(List<TestStepExecution> testStepExecutions, int ordering){
+
+        TestStepExecution result = testStepExecutions.stream().filter(it->it.getOrderId().equals(ordering+1)).findFirst().orElse(null);
+        return (result != null) ? String.valueOf(result.getId()) : "";
+    }
 
     private HttpHeaders getHeaders(){
         HttpHeaders headers = new HttpHeaders();
