@@ -4,10 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>anax-zapi-reporter</artifactId>
+    <version>0.9.9-SNAPSHOT</version>
 
     <parent>
         <artifactId>anax-plugins</artifactId>
-        <groupId>org.anax.framework</groupId>
+        <groupId>org.anax.framework.plugins</groupId>
         <version>0.9.9-SNAPSHOT</version>
     </parent>
 
@@ -39,7 +40,7 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.anax.framework</groupId>
+            <groupId>org.anax.framework.plugins</groupId>
             <artifactId>anax-videorec</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.anax.framework</groupId>
 		<artifactId>anax-parent</artifactId>
-		<version>0.9.9-SNAPSHOT</version>
+        	<version>0.9.9-SNAPSHOT</version>
 	</parent>
 
 	<properties>
@@ -27,13 +27,13 @@
 		<dependency>
 			<groupId>org.anax.framework</groupId>
 			<artifactId>anax-chrome</artifactId>
-			<version>${project.version}</version>
+			<version>${project.parent.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>org.anax.framework</groupId>
-			<artifactId>anax-combined-reporter</artifactId>
-			<version>${project.version}</version>
+			<groupId>org.anax.framework.plugins</groupId>
+			<artifactId>anax-allurezapi-reporter</artifactId>
+			<version>${project.parent.version}</version>
 		</dependency>
 
 

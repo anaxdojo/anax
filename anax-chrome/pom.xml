@@ -11,7 +11,8 @@
     </parent>
 
 	<artifactId>anax-chrome</artifactId>
-	<version>0.9.9-SNAPSHOT</version>
+        <version>0.9.9-SNAPSHOT</version>
+	
 	<packaging>jar</packaging>
 
 	<name>Anax :: Chrome Browser</name>
