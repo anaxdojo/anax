@@ -19,10 +19,7 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static io.qameta.allure.util.ResultsUtils.getHostName;
@@ -197,28 +194,28 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     private Consumer<TestResult> setStatus(final Status status) {
 
         return result -> {
-            result.withStatus(status);
+            result.setStatus(status);
         };
 
     }
     private Consumer<TestResult> setStatus(final Status status, Throwable throwable, TestMethod method) {
         return result -> {
-            result.withStatus(status);
+            result.setStatus(status);
             StatusDetails det = new StatusDetails();
 
             StringBuilder html = new StringBuilder();
             if (throwable!=null) {
                 det.setMessage(throwable.getMessage()); //TODO find the correct message
-                result.withStatusDetails(det);
+                result.setStatusDetails(det);
                 StringWriter wr = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(wr));
 
                 html.append("<h3>Console Logs</h3>");
-                html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(),"Caused by:") + "</pre>");
+                html.append("<pre>").append(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:")).append("</pre>");
 
                 html.append("<h3>Exception Detail</h3>");
-                html.append("<pre>" + wr.toString() + "</pre>");
-                result.withDescriptionHtml(html.toString());
+                html.append("<pre>").append(wr.toString()).append("</pre>");
+                result.setDescriptionHtml(html.toString());
             }
         };
     }
@@ -227,19 +224,19 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             StringBuilder html = new StringBuilder();
 
             html.append("<h3>Console Logs</h3>");
-            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(),"Caused by:") + "</pre>");
+            html.append("<pre>").append(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:")).append("</pre>");
 
             html.append("<h3>Special Info</h3>");
 
 //            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(), ":") + "</pre>");
 
-            result.withDescriptionHtml(html.toString());
+            result.setDescriptionHtml(html.toString());
         };
     }
     private Consumer<TestResult> setStatus(final Status status, String reason) {
         return result -> {
-            result.withStatus(status);
-            result.withDescription(reason);
+            result.setStatus(status);
+            result.setDescription(reason);
         };
     }
     private Consumer<TestResult> setSeverity(final TestMethod testMethod) {
@@ -247,8 +244,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             Severity severityAnnotationLevel = (Severity) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(Severity.class)).findFirst().orElse(null);
             if(severityAnnotationLevel !=null) {
-                result.withLabels(
-                        new Label().withName("severity").withValue(severityAnnotationLevel.value().toString())
+                result.setLabels(
+                        new Label().setName("severity").setValue(severityAnnotationLevel.value().toString())
                 );
             }
         };
@@ -260,8 +257,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Link issueAnnotationLink = (io.qameta.allure.Link) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Link.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.withLinks(
-                        new Link().withName(issueAnnotationLink.value())
+                result.setLinks(Collections.singletonList(
+                        new Link().setName(issueAnnotationLink.value()))
                 );
             }
         };
@@ -291,17 +288,17 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
 
         final TestResult testResult = new TestResult()
-                .withUuid(getUniqueUuid(test,testMethod))
-                .withHistoryId(getUniqueUuid(test,testMethod))
-                .withName(fullName1)
-                .withFullName(fullName)
-                .withLabels(
-                        new Label().withName("package").withValue(test.getClass().getPackage().getName()),
-                        new Label().withName("testClass").withValue(className),
-                        new Label().withName("testMethod").withValue(name),
-                        new Label().withName("suite").withValue(suiteName),
-                        new Label().withName("host").withValue(getHostName()),
-                        new Label().withName("thread").withValue(getThreadName())
+                .setUuid(getUniqueUuid(test, testMethod))
+                .setHistoryId(getUniqueUuid(test, testMethod))
+                .setName(fullName1)
+                .setFullName(fullName)
+                .setLabels(Arrays.asList(
+                        new Label().setName("package").setValue(test.getClass().getPackage().getName()),
+                        new Label().setName("testClass").setValue(className),
+                        new Label().setName("testMethod").setValue(name),
+                        new Label().setName("suite").setValue(suiteName),
+                        new Label().setName("host").setValue(getHostName()),
+                        new Label().setName("thread").setValue(getThreadName()))
                 );
         return testResult;
     }
