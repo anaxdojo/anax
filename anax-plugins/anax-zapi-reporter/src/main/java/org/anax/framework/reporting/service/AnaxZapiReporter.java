@@ -162,10 +162,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if (videoEnable) {
                 try {
-                    videoMaker = new VideoMaker();
                     File base = new File(videoBaseDirectory);
                     base.mkdirs();
-                    videoMaker.createVideo(new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" +testMethod.getTestMethod().getName() + ".mov").toPath(),
+                    videoMaker = new VideoMaker(new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + testMethod.getTestMethod().getName() + ".mov").toPath(),
                             videoFramesPerSec, videoWaitSeconds);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -187,7 +186,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if(CollectionUtils.isEmpty(tcSteps)){
                 if(!testMethod.isPassed() && testMethod.getDescription() != null) {
-                    tcComment.put("Step"+String.valueOf(testMethod.getOrdering()+1), testMethod.getDescription());
+                    tcComment.put("Step" + (testMethod.getOrdering() + 1), testMethod.getDescription());
                 }
             }
 

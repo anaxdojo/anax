@@ -1,8 +1,8 @@
 package org.anax.framework.reporting;
 
 import io.qameta.allure.*;
-import io.qameta.allure.model.*;
 import io.qameta.allure.model.Link;
+import io.qameta.allure.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
@@ -90,7 +90,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Override
     public boolean endTestSuite(Suite suite) throws ReportException {
         try{
-            generate(new File(reportDirectory).toPath(), Arrays.asList(new Path[] { new File(resultsAllureDirectory).toPath()}), true);
+            generate(new File(reportDirectory).toPath(), Arrays.asList(new File(resultsAllureDirectory).toPath()), true);
         }catch(Exception e){
             log.info("Report not generated: "+e.getMessage());
         }
@@ -116,10 +116,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
         if (videoEnable) {
             try {
-                videoMaker = new VideoMaker();
+
                 File base = new File(videoBaseDirectory);
                 base.mkdirs();
-                videoMaker.createVideo(new File(videoBaseDirectory+"/"+testUniqueID+".mov").toPath(),
+                videoMaker = new VideoMaker(new File(videoBaseDirectory + "/" + testUniqueID + ".mov").toPath(),
                         videoFramesPerSec, videoWaitSeconds);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -261,7 +261,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Link.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
                 result.withLinks(
-                        new Link().withName(issueAnnotationLink.value().toString())
+                        new Link().withName(issueAnnotationLink.value())
                 );
             }
         };
@@ -337,13 +337,13 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             AnaxTestStep stepDescription = (AnaxTestStep) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(AnaxTestStep.class)).findFirst().orElse(null);
             if (stepDescription != null) {
-                if (stepDescription.description().toString().isEmpty()) {
+                if (stepDescription.description().isEmpty()) {
                     result.withSteps(
                             new StepResult().withName("No available description found.").withStatus(getStepStatus(testMethod))
                     );
                 } else {
                     result.withSteps(
-                            new StepResult().withName(stepDescription.description().toString()).withStatus(getStepStatus(testMethod))
+                            new StepResult().withName(stepDescription.description()).withStatus(getStepStatus(testMethod))
                     );
                 }
 
