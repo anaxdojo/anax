@@ -32,6 +32,9 @@ public class ZephyrZAPIService {
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
+    @Autowired
+    AnaxZapiVersionResolver versionResolver;
+
     @Value("${zapi.url:https:NOT_CONFIGURED}")  private String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")  private String jiraUrl;
     @Value("${jira.search.tc.attribute:label}") private String attribute;
@@ -89,11 +92,9 @@ public class ZephyrZAPIService {
      */
     public String getVersionId(String projectId, String versionName){
         ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl +"project/"+projectId+"/versions", HttpMethod.GET, new HttpEntity<>(getHeaders()),  new ParameterizedTypeReference<List<Version>>() {});
-        Version version =  versions.getBody().stream().filter(data->data.getName().equals(versionName)).findFirst().orElse(null);
-        if(version == null)
-            log.error("No version found with this name: {}",versionName);
-        return (version != null) ? version.getId() : "";
+        return versionResolver.getVersionFromJIRA(versionName, versions);
     }
+
 
     /**
      * Update execution results as bulk
