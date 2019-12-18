@@ -216,7 +216,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                     File video = null;
 
                     if(!testMethod.isPassed()) {
-                        screenshot = takeScreenshotReturnPath(test, testMethod);
+                        screenshot = (screenshotEnable) ? takeScreenshotReturnPath(test, testMethod) : null;
                         video = (videoEnable) ? getVideoPath(test,testMethod) : null;
                     }
                     executionManager.updateTestStepStatusAddAttachments(project, version.trim(), cycleName.trim(), test.getTestBeanName(), getTestStepStatusCode(testMethod), testMethod, screenshot, video);
@@ -255,9 +255,11 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         failed = true;
 
         skippedTCs.add(test.getTestBeanName());
-        if(CollectionUtils.isEmpty(tcSteps)) {
-            File file = takeScreenshotReturnPath(test, method);
-            executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(),file);
+        if(CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+            if(screenshotEnable) {
+                File file = takeScreenshotReturnPath(test, method);
+                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+            }
         }
     }
 
@@ -267,9 +269,11 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         failed = true;
 
         errorTCs.add(test.getTestBeanName());
-        if(CollectionUtils.isEmpty(tcSteps)) {
-            File file = takeScreenshotReturnPath(test, method);
-            executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(),file);
+        if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+            if (screenshotEnable) {
+                File file = takeScreenshotReturnPath(test, method);
+                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+            }
         }
     }
 
