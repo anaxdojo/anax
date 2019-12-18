@@ -50,7 +50,7 @@ public class AnaxCombinedReporter implements AnaxTestReporter, ReporterSupportsS
 
     @Override
     public boolean endTestSuite(Suite suite) throws ReportException {
-        return (reporterA.endTestSuite(suite) && reporterB.endTestSuite(suite));
+        return (reporterA.endTestSuite(suite) || reporterB.endTestSuite(suite));
     }
 
     @Override
