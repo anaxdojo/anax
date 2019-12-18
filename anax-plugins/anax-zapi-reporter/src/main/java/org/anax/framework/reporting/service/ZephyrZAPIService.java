@@ -66,7 +66,7 @@ public class ZephyrZAPIService {
         ProjectList projectList = restTemplate.getForObject(zapiUrl + "util/project-list", ProjectList.class);
         LabelValue labelValue = projectList.getOptions().stream().filter(data -> data.getLabel().equals(projectName)).findFirst().orElse(null);
         if(labelValue == null)
-            log.error("No Project found with this name: {}",projectName);
+            log.error("Check: No Project found with this name: {} , program will exit!!!",projectName);
         return (labelValue != null) ? labelValue.getValue() : "";
     }
 
