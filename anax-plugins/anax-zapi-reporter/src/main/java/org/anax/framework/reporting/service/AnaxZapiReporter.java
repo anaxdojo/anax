@@ -47,6 +47,8 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     private String              cycleName;
     private String              version;
     private Map<String,String>  tcComment;
+    private Boolean failed   =  false;
+
 
     private Set<String>  passedTCs   = new HashSet<>();
     private Set<String>  failedTCs   = new HashSet<>();
@@ -141,7 +143,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             }
         }
 
-        return false;
+        return failed;
     }
 
 
@@ -238,12 +240,15 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void addFailure(Test test, TestMethod method, Throwable t) {
         log.info("Added TC on the failedTCs is: "+test.getTestBeanName());
+        failed = true;
         failedTCs.add(test.getTestBeanName());
     }
 
     @Override
     public void addSkipped(Test test, TestMethod method, String skipReason) {
         log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
+        failed = true;
+
         skippedTCs.add(test.getTestBeanName());
         if(CollectionUtils.isEmpty(tcSteps)) {
             File file = takeScreenshotReturnPath(test, method);
@@ -254,6 +259,8 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void addError(Test test, TestMethod method, Throwable t){
         log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
+        failed = true;
+
         errorTCs.add(test.getTestBeanName());
         if(CollectionUtils.isEmpty(tcSteps)) {
             File file = takeScreenshotReturnPath(test, method);
