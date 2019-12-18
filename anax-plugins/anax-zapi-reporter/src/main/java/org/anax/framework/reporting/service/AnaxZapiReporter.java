@@ -148,11 +148,13 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
 
     @Override
-    public void startAnaxTest(Test test){
-        if(testStepStatusUpdateEnabled) {
-            tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
-            if (CollectionUtils.isEmpty(tcSteps)) {
-                tcComment = new HashMap<>();
+    public void startAnaxTest(Test test) {
+        if (enabled) {
+            if (testStepStatusUpdateEnabled) {
+                tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
+                if (CollectionUtils.isEmpty(tcSteps)) {
+                    tcComment = new HashMap<>();
+                }
             }
         }
     }
@@ -224,15 +226,18 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
     @Override
-    public void endAnaxTest(Test test){
-        errorTCs.forEach(it -> passedTCs.remove(it));
-        failedTCs.forEach(it -> passedTCs.remove(it));
-        skippedTCs.forEach(it -> passedTCs.remove(it));
+    public void endAnaxTest(Test test) {
+        if (enabled) {
+
+            errorTCs.forEach(it -> passedTCs.remove(it));
+            failedTCs.forEach(it -> passedTCs.remove(it));
+            skippedTCs.forEach(it -> passedTCs.remove(it));
 
 
-        if(testStepStatusUpdateEnabled) {
-            if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
-                executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:"+tcComment.toString());
+            if (testStepStatusUpdateEnabled) {
+                if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
+                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:" + tcComment.toString());
+                }
             }
         }
     }
