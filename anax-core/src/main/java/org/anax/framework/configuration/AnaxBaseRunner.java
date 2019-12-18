@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.regex.Pattern;
+
 @Component
 @Slf4j
 public class AnaxBaseRunner implements CommandLineRunner{
@@ -25,20 +27,33 @@ public class AnaxBaseRunner implements CommandLineRunner{
     }
 
     public void run(String... strings) throws Exception {
-
+        int parallel = 0;
         log.info("Anax {} ({}) built at {}", buildVersion, buildCommitId, buildTime);
         for (String option : strings) {
             log.debug("Option: {}", option);
+            if (option.startsWith("-Dparallel=")) {
+                // get parallelism
+                String parallels = option.split(Pattern.quote("="))[1];
+                try {
+                    parallel = Integer.parseInt(parallels);
+                    log.info("Parallel mode detected, parallel spawn set to {}", parallel);
+                } catch (Exception e) {
+                }
+            }
         }
 
-        final boolean planFailed = suiteRunner.createExecutionPlan(true);
-
-        if (planFailed) {
-            log.info("Plan failed, exit will make CI unstable/fail [100]");
-            System.exit(100);
+        if (parallel > 0) {
+            //do parallel
+            suiteRunner.createParallelPlan(parallel);
         } else {
-            log.info("Plan passed [0]");
-            System.exit(0);
+            final boolean planFailed = suiteRunner.createExecutionPlan(true);
+            if (planFailed) {
+                log.info("Plan failed, exit will make CI unstable/fail [100]");
+                System.exit(100);
+            } else {
+                log.info("Plan passed [0]");
+                System.exit(0);
+            }
         }
     }
 }

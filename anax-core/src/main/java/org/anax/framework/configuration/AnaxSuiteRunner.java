@@ -22,6 +22,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -57,6 +59,35 @@ public class AnaxSuiteRunner {
         }
     }
 
+    public void createParallelPlan(int threadPoolSize) {
+
+        final ExecutorService pool = Executors.newFixedThreadPool(threadPoolSize);
+
+        suitesMap.keySet().stream().forEach((String name) -> {
+            try {
+                if (!executeSuite.contentEquals("ALL") &&
+                        !executeSuite.contentEquals(name)) {
+                    log.warn("Suite {} not selected for execution (selected: {})", name, executeSuite);
+                } else {
+                    final Suite suite = suitesMap.get(name);
+
+                    suite.getTests().forEach(test -> {
+                        pool.submit(() -> {
+                            ParallelPlanRunner runner =
+                                    new ParallelPlanRunner(suite, test);
+                            runner.executeAndWait();
+                        });
+                    });
+
+
+                }
+            } catch (Exception rpe) {
+                log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(), rpe);
+            }
+        });
+
+
+    }
 
     public boolean createExecutionPlan(boolean executePlan) {
         shouldAlsoExecute = executePlan;
@@ -384,6 +415,7 @@ public class AnaxSuiteRunner {
         return testMethod;
     }
 
+
     private class DuplicatingOutputStream extends OutputStream {
         private final OutputStream firstStream;
         private final OutputStream secondStream;
@@ -400,11 +432,12 @@ public class AnaxSuiteRunner {
         }
 
         @Override
-        public void write(byte b[]) throws IOException {
+        public void write(byte[] b) throws IOException {
             firstStream.write(b);
             secondStream.write(b);
         }
-        public void write(byte b[], int off, int len) throws IOException {
+
+        public void write(byte[] b, int off, int len) throws IOException {
             firstStream.write(b,off,len);
             secondStream.write(b,off,len);
         }

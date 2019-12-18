@@ -1,67 +1,80 @@
 package org.anax.framework.capture;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.capture.direct.DirectRobot;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.anax.framework.capture.MouseCapture.*;
-
-@Builder
 @Getter @Setter
 @Slf4j
 public class ScreenCapture implements Capture {
 
-    @Builder.Default
-    private int captureDelayMs = 1000/10; //10 fps
+    private int fps = 15; //15 fps
 
-    @Builder.Default
     private int bufferSeconds = 360; // 6minutes
 
-    ThreadLocal<int[]> localScreenPixels;
+    private ThreadLocal<int[]> localScreenPixels;
 
 
     private ArrayBlockingQueue<Screenshot> trackedScreens;
 
-    @Builder.Default
-    private ScheduledExecutorService threadpool = Executors.newScheduledThreadPool(16);
+    private ScheduledExecutorService pool;
 
     private MouseCapture mouseCapture;
 
-    @Builder.Default
+    private DirectRobot[] robots;
+
     private int depth = 24;
     private Rectangle rect;
-    //private Robot robot;
-    private DirectRobot robot;
+
+
+    private int fpsPerThread; //calculated later
+    private int threads;
 
     private Cursor cursor;
     private BufferedImage cursorImg;
 
     private long time;
-
     private GraphicsEnvironment env;
+
+    public ScreenCapture(int fps, MouseCapture mouseCapture, int depth) {
+        this.fps = fps;
+        this.mouseCapture = mouseCapture;
+        this.depth = depth;
+    }
+
+    public ScreenCapture(int fps, int depth) {
+        this.fps = fps;
+        this.depth = depth;
+    }
 
     private void init() {
         Window window = new Window(null);
         GraphicsConfiguration cfg = window.getGraphicsConfiguration();
         env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-
+        //lets calculate the threads needed: 6 FPS per thread is a good value
+        threads = (int) Math.ceil(fps / 6.0);
+        fpsPerThread = (int) ((double) fps / (double) threads);
+        pool = Executors.newScheduledThreadPool(threads);
+        log.info("Capture at {} FPS, {} per thread, {} threads", fps, fpsPerThread, threads);
+        robots = new DirectRobot[threads];
+        capturing = true; // enable capturing
         try {
-            robot = new DirectRobot(cfg.getDevice());
+            for (int i = 0; i < threads; i++) {
+                robots[i] = (new DirectRobot(cfg.getDevice()));
+            }
             rect = cfg.getBounds();
             ClassPathResource resource = new ClassPathResource("Cursor.white.png");
             cursorImg = ImageIO.read(resource.getInputStream());
@@ -75,42 +88,74 @@ public class ScreenCapture implements Capture {
         }
         // setup a buffer for us
         if (trackedScreens == null) {
-            trackedScreens = new ArrayBlockingQueue<>( (1000/captureDelayMs) * bufferSeconds );
+            trackedScreens = new ArrayBlockingQueue<>(fps * bufferSeconds);
             log.info("Allocating buffer for {} seconds [{} frames]", bufferSeconds, trackedScreens.remainingCapacity());
         }
 
         if (localScreenPixels == null) {
             localScreenPixels = ThreadLocal.withInitial(() -> new int[rect.width*rect.height]);
         }
+
+        switch (depth) {
+            case 16: {
+                throw new IllegalArgumentException("Cannot process 16 bit images at the moment. Sorry");
+//model = new DirectColorModel(16, 0x7C00, 0x3E0, 0x1F);
+            }
+            case 24: {
+                model = new DirectColorModel(24, 0xff00, 0xff00, 0xff, 0xff0000);
+                break;
+            }
+            case 32: {
+                throw new IllegalArgumentException("Cannot process 32 bit images at the moment. Sorry");
+//model = new DirectColorModel(32, 0xFF0000, 0xFF00, 0xFF, 0xff000000);
+            }
+        }
+
     }
 
+    ColorModel model;
 
+    boolean capturing;
 
     public void captureStart() {
         init();
-        log.info("Capturing video at size {}x{} and {} fps ({}ms.)",
-                rect.width, rect.height, 1000/captureDelayMs, captureDelayMs);
-        threadpool.scheduleAtFixedRate(() -> {
-            long t0 = System.currentTimeMillis();
-            BufferedImage screenCapture = grabSnapshotDirect();
-            long now = System.currentTimeMillis();
-            drawMousePointer(now, screenCapture);
-            trackedScreens.offer(new Screenshot(screenCapture, now));
-            long t1 = System.currentTimeMillis();
-            if (t1-t0 > captureDelayMs) {
-                log.debug("Slow capture speed ({}ms > {}ms)", t1 - t0,captureDelayMs);
-            }
-        }, 0, captureDelayMs, TimeUnit.MILLISECONDS);
+        log.info("Capturing video at size {}x{} and {} fps ({}ms, {} fps/thread)",
+                rect.width, rect.height, fps, (1000.0 / fps), fpsPerThread);
 
+        for (int i = 0; i < threads; i++) {
+            final DirectRobot robot = robots[i];
+            pool.scheduleAtFixedRate(() -> {
+                if (!capturing) return;
+                long t0 = System.currentTimeMillis();
+                try {
+                    BufferedImage screenCapture = grabSnapshotDirect(robot);
+                    if (mouseCapture != null)
+                        drawMousePointer(t0, screenCapture);
+                    trackedScreens.offer(new Screenshot(screenCapture, System.currentTimeMillis()));//add time of capture
+                } catch (Exception e) {
+                    log.error("Exception {}", e.getMessage());
+                }
+                long t1 = System.currentTimeMillis();
+
+            }, fractionToNanos(i, threads), fractionToNanos(1, fpsPerThread), TimeUnit.NANOSECONDS);
+        }
     }
 
-    private BufferedImage grabSnapshotDirect() {
-        robot.getRGBPixels(0,0,rect.width,rect.height, localScreenPixels.get());
+    final static long toNanos = 1000_000_000L;
 
-        ColorModel model = new DirectColorModel(32, 0xff0000, 0xff00, 0xff, 0xff000000);
-        return new BufferedImage(model, Raster.createWritableRaster(
-                model.createCompatibleSampleModel(rect.width, rect.height),
-                new DataBufferInt(localScreenPixels.get(), rect.width * rect.height), null), false, new Hashtable<Object, Object>());
+    private static long fractionToNanos(long a, long b) {
+        return a * toNanos / b;
+    }
+
+    private BufferedImage grabSnapshotDirect(DirectRobot robot) {
+        robot.getRGBPixels(0,0,rect.width,rect.height, localScreenPixels.get());
+        if (depth >= 24) {
+            return new BufferedImage(model, Raster.createWritableRaster(
+                    model.createCompatibleSampleModel(rect.width, rect.height),
+                    new DataBufferInt(localScreenPixels.get(), rect.width * rect.height), null), false, new Hashtable<Object, Object>());
+        } else {
+            throw new IllegalArgumentException("Cannot process 16 bit images at the moment. Sorry");
+        }
     }
 
     private void drawMousePointer(long now, BufferedImage captured) {
@@ -123,22 +168,31 @@ public class ScreenCapture implements Capture {
         videoGraphics.setRenderingHint(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_SPEED);
 
-        while ((mouseCapture.getTrackedMovements().peek() != null) && (mouseCapture.getTrackedMovements().peek().getTime() < now)) {
+        MouseCapture.MouseMovement mv = mouseCapture.getTrackedMovements().peek();
+        while (mv != null) {
             MouseCapture.MouseMovement pc = mouseCapture.getTrackedMovements().remove();
             Point p = pc.getLocation();
-            videoGraphics.drawImage(cursorImg, p.x, p.y, null);
+            if ((lastLocation != null) && (lastLocation.distance(p) > 2)) { // more than 2px
+                videoGraphics.drawImage(cursorImg, p.x, p.y, null);
+            }
+            lastLocation = p;
+            mv = mouseCapture.getTrackedMovements().peek();
         }
     }
 
+    private Point lastLocation = null;
 
     public void captureEnd() {
-        mouseCapture.captureEnd();
-        threadpool.shutdownNow();
+        if (mouseCapture != null)
+            mouseCapture.captureEnd();
+        capturing = false;
+        // pool.shutdownNow();
     }
 
 
     @AllArgsConstructor
     @Getter
+    static
     class Screenshot {
         private BufferedImage screenshot;
         private long time;

@@ -1,21 +1,17 @@
 package org.anax.framework.capture;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.capture.qt.QuickTimeWriter;
+import org.springframework.util.Assert;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-//import tdl.record.screen.image.input.InputFromScreen;
-//import tdl.record.screen.image.input.ScaleToOptimalSizeImage;
-//import tdl.record.screen.utils.ImageQualityHint;
-//import tdl.record.screen.video.VideoRecorder;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class VideoMaker {
@@ -25,110 +21,88 @@ public class VideoMaker {
     private QuickTimeWriter wr = null;
     private ScreenCapture sc;
 
-    private boolean started = false;
+
     private int finalVideoWait;
 
-    public void createVideo(final Path movieFile,final int framesPerSec, final int videoWaitAfterEndSeconds) throws Exception {
+    public VideoMaker(final Path movieFile, final int framesPerSec, final int videoWaitAfterEndSeconds) throws Exception {
+        this(movieFile, framesPerSec, videoWaitAfterEndSeconds, false, 24);
+    }
+
+    public VideoMaker(final Path movieFile, final int framesPerSec, final int videoWaitAfterEndSeconds, final boolean captureMouse, final int depth) throws Exception {
+        Assert.state(videoWaitAfterEndSeconds > 0 && videoWaitAfterEndSeconds < 20, "Cannot capture more than 20 seconds after end");
+        Assert.state(framesPerSec > 6 && framesPerSec <= 30, "Cannot capture less than 7 and more than 30 FPS");
+        Assert.state(depth == 16 || depth == 24 || depth == 32, "Cannot capture depth other than 16, 24, 32 bit");
         finalVideoWait = videoWaitAfterEndSeconds*1000;
-        if (started) {
-            throw new IllegalStateException("Cannot start again, already started");
-        }
+
 
         System.setProperty("java.awt.headless", Boolean.toString(false));
+        if (captureMouse) {
+            MouseCapture mc = MouseCapture.builder()
+                    .captureDelayMs(1000 / framesPerSec)
+                    .build();
+            sc = new ScreenCapture(framesPerSec, mc, depth); //rle is 24bit anyway
+            mc.captureStart();
+        } else {
+            sc = new ScreenCapture(framesPerSec, depth);
 
+        }
 
-        MouseCapture mc = MouseCapture.builder()
-                .captureDelayMs(1000/framesPerSec)
-                .build();
-        sc = ScreenCapture.builder()
-                .captureDelayMs(1000/framesPerSec)
-                .depth(24)
-                .mouseCapture(mc)
-                .build();
-
-        started = true;
-        mc.captureStart();
         sc.captureStart();
 
         wr = new QuickTimeWriter(movieFile.toFile());
-        wr.addVideoTrack(QuickTimeWriter.VideoFormat.RLE, 1000L, sc.getRect().width, sc.getRect().height);
-        //wr.setVideoColorTable(0, (IndexColorModel)sc.getVideoImg().getColorModel());
+        wr.addVideoTrack("rle ", "Animation", 1000L, sc.getRect().width, sc.getRect().height, depth, 30);
 
+        AtomicLong totalFrames = new AtomicLong(0);
         pool.scheduleWithFixedDelay(() -> {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
             final ArrayBlockingQueue<ScreenCapture.Screenshot> screens = sc.getTrackedScreens();
 
             ArrayList<ScreenCapture.Screenshot> list = new ArrayList<>(100);
             screens.drainTo(list);
+            list.sort(Comparator.comparingLong(ScreenCapture.Screenshot::getTime)); //sort in case frames arrived later
             long t0 = System.currentTimeMillis();
-            long prev = 0;
             try {
+                log.info("WR: processing {} frames...", list.size());
                 for (ScreenCapture.Screenshot screenshot : list) {
-                    long duration = (prev == 0) ? (1000 / framesPerSec) : (screenshot.getTime() - prev);
-                    wr.writeFrame(0, screenshot.getScreenshot(), duration);
-                    prev = screenshot.getTime();
-                    log.trace("Frame ts: {} duration {}", screenshot.getTime(),duration);
-                    if (1000/duration < framesPerSec-1) {
-                        log.trace("Requested {} frames/sec, actual {} frames/sec",
-                                framesPerSec, 1000/duration);
-                    }
+                    double duration = (1000.0 / framesPerSec);
+                    wr.writeFrame(0, screenshot.getScreenshot(), (long) duration);
                 }
-            } catch (IOException e) {
+                final long l = totalFrames.addAndGet(list.size());
+                log.info("WR: total frames {}, seconds {}", l, (l / framesPerSec));
+            } catch (Exception e) {
                 log.error("Exception {} while writing captured video - {} frames lost", e.getMessage(), list.size());
             }
-            //log.debug("Writing {} frames to video - time: {}ms", list.size(), System.currentTimeMillis()-t0);
-
-
-        },5,1, TimeUnit.SECONDS);
+        }, 20, 10, TimeUnit.SECONDS);
 
     }
 
     public void completeVideo() throws Exception {
-        if (started) {
-            // wait for 2 more seconds
-            Thread.sleep(finalVideoWait);
-            started = false;
-            sc.captureEnd();
-            log.info("closing .... frames left {}/{} ...", sc.getTrackedScreens().size(),sc.getTrackedScreens().remainingCapacity());
-            Thread.sleep(1000);
-            while (sc.getTrackedScreens().size() > 0) {
-                log.info("waiting .... frames left {}/{} ...", sc.getTrackedScreens().size(),sc.getTrackedScreens().remainingCapacity());
-                Thread.sleep(1000);
-            }
-            pool.shutdownNow();
-            while (!pool.isTerminated()) {
-                log.info("waiting for writer to finish");
-                Thread.sleep(1000);
-            }
+        // wait for 2 more seconds
+        Thread.sleep(finalVideoWait);
+        sc.captureEnd();
+        log.info("closing .... frames left {} (max {}) ...", sc.getTrackedScreens().size(), sc.getTrackedScreens().remainingCapacity());
 
-            if (wr != null) {
-                wr.close();
-            }
-        } else {
-            throw new IllegalStateException("Not started, cannot complete!");
+        while (sc.getTrackedScreens().size() > 0) { //waiting for writer to finish
+            log.info("waiting .... frames left {} (max {}) ...", sc.getTrackedScreens().size(), sc.getTrackedScreens().remainingCapacity());
+            Thread.sleep(5000);
         }
+        pool.shutdown();
+        while (!pool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            log.info("waiting for writer to finish");
+        }
+
+        if (wr != null) {
+            wr.close();
+            log.info("Video complete.");
+        }
+
     }
 
-
-
-
-    public static void main(String[] args) throws Exception {
-//        VideoMaker maker = new VideoMaker();
-//        maker.createVideo( new File("movie.mov").toPath(), 12, 5);
-//        Thread.sleep(120000);
+//    public static void main(String[] args) throws Exception {
+//        VideoMaker maker = new VideoMaker( new java.io.File("movie.mov").toPath(), 30, 5);
+//        Thread.sleep(60000);
 //        maker.completeVideo();
-
-/*        String destinationPath = "./screen.mp4";
-        VideoRecorder videoRecorder = new VideoRecorder
-                .Builder(new ScaleToOptimalSizeImage(ImageQualityHint.MEDIUM, new InputFromScreen()))
-                .build();
-
-
-        int snapsPerSecond = 25;
-        int timeSpeedUpFactor = 4;
-        videoRecorder.open(destinationPath, snapsPerSecond, timeSpeedUpFactor);
-        videoRecorder.start(Duration.of(1, ChronoUnit.MINUTES)); //Will block
-        videoRecorder.close();*/
-    }
+//        System.exit(0);
+//    }
 
 }

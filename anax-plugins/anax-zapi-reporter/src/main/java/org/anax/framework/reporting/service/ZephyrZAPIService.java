@@ -32,6 +32,9 @@ public class ZephyrZAPIService {
     @Qualifier("zapiRestTemplate")
     protected RestTemplate restTemplate;
 
+    @Autowired
+    AnaxZapiVersionResolver versionResolver;
+
     @Value("${zapi.url:https:NOT_CONFIGURED}")  private String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")  private String jiraUrl;
     @Value("${jira.search.tc.attribute:label}") private String attribute;
@@ -63,7 +66,7 @@ public class ZephyrZAPIService {
         ProjectList projectList = restTemplate.getForObject(zapiUrl + "util/project-list", ProjectList.class);
         LabelValue labelValue = projectList.getOptions().stream().filter(data -> data.getLabel().equals(projectName)).findFirst().orElse(null);
         if(labelValue == null)
-            log.error("No Project found with this name: {}",projectName);
+            log.error("Check: No Project found with this name: {} , program will exit!!!",projectName);
         return (labelValue != null) ? labelValue.getValue() : "";
     }
 
@@ -89,11 +92,9 @@ public class ZephyrZAPIService {
      */
     public String getVersionId(String projectId, String versionName){
         ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl +"project/"+projectId+"/versions", HttpMethod.GET, new HttpEntity<>(getHeaders()),  new ParameterizedTypeReference<List<Version>>() {});
-        Version version =  versions.getBody().stream().filter(data->data.getName().equals(versionName)).findFirst().orElse(null);
-        if(version == null)
-            log.error("No version found with this name: {}",versionName);
-        return (version != null) ? version.getId() : "";
+        return versionResolver.getVersionFromJIRA(versionName, versions);
     }
+
 
     /**
      * Update execution results as bulk

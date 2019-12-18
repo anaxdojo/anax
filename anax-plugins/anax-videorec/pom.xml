@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>anax-plugins</artifactId>
-        <groupId>org.anax.framework</groupId>
-        <version>0.9.8</version>
+        <groupId>org.anax.framework.plugins</groupId>
+        <version>0.9.9</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>anax-videorec</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
     <packaging>jar</packaging>
 
     <name>Anax :: Plugins :: Video Recording</name>
@@ -51,25 +51,8 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>ro.ghionoiu</groupId>-->
-            <!--<artifactId>dev-screen-record</artifactId>-->
-            <!--<version>0.0.5</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>io.humble</groupId>-->
-            <!--<artifactId>humble-video-all</artifactId>-->
-            <!--<version>0.2.1</version>-->
-        <!--</dependency>-->
+
     </dependencies>
-    <!--<repositories>-->
-        <!--<repository>-->
-            <!--<snapshots>-->
-                <!--<enabled>false</enabled>-->
-            <!--</snapshots>-->
-            <!--<id>bintray-julianghionoiu-maven</id>-->
-            <!--<name>bintray</name>-->
-            <!--<url>https://dl.bintray.com/julianghionoiu/maven</url>-->
-        <!--</repository>-->
-    <!--</repositories>-->
+
+
 </project>

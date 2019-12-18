@@ -7,11 +7,12 @@
     <parent>
         <groupId>org.anax.framework</groupId>
         <artifactId>anax-parent</artifactId>
-        <version>0.9.8</version>
+        <version>0.9.9</version>
     </parent>
 
 	<artifactId>anax-chrome</artifactId>
-	<version>0.9.8</version>
+        <version>0.9.9</version>
+	
 	<packaging>jar</packaging>
 
 	<name>Anax :: Chrome Browser</name>
