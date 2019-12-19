@@ -237,7 +237,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if (testStepStatusUpdateEnabled) {
                 if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
-                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:\n" + tcCommentPrettyPrint(tcComment)));
+                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:\n" + tcCommentPrettyPrint(tcComment));
                 }
             }
         }
