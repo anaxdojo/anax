@@ -18,6 +18,7 @@ import org.springframework.util.CollectionUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component("zapiAnaxTestReporter")
 @Slf4j
@@ -236,7 +237,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if (testStepStatusUpdateEnabled) {
                 if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
-                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:" + tcComment.toString());
+                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:\n" + tcCommentPrettyPrint(tcComment)));
                 }
             }
         }
@@ -334,6 +335,14 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         }else{
             return fail;
         }
+    }
+    
+    private String tcCommentPrettyPrint(Map map){
+        Map<String, String> treeMap = new TreeMap<>(map);
+        String mapAsString = treeMap.keySet().stream()
+                .map(key -> key + "=" + map.get(key))
+                .collect(Collectors.joining("\n", "{", "}"));
+        return mapAsString;
     }
 
 }
