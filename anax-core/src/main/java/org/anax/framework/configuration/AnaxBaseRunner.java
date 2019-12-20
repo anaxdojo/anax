@@ -28,7 +28,7 @@ public class AnaxBaseRunner implements CommandLineRunner{
 
     public void run(String... strings) throws Exception {
         int parallel = 0;
-        String suite, test;
+        String suite = null, test = null;
 
         log.info("Anax {} ({}) built at {}", buildVersion, buildCommitId, buildTime);
         for (String option : strings) {
@@ -49,12 +49,13 @@ public class AnaxBaseRunner implements CommandLineRunner{
         }
 
         if (parallel > 0) {
-            //do parallel
+            log.info("PARALLEL MODE selected - Server Side");
             suiteRunner.createParallelPlan(parallel);
-        } else if (suite != null) {//we are worker!
+        } else if (suite != null && test != null) {//we are worker!
+            log.info("PARALLEL MODE selected - Worker Side");
             log.info("Executing Suite {} -> Test -> {}", suite, test);
             final boolean noop = suiteRunner.createExecutionPlan(false);
-            suiteRunner.exec
+            //TODO figure out what to return back in case of plan failures
         } else {
             final boolean planFailed = suiteRunner.createExecutionPlan(true);
             if (planFailed) {
