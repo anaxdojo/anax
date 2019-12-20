@@ -18,10 +18,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.Method;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,9 +70,13 @@ public class AnaxSuiteRunner {
 
                     suite.getTests().forEach(test -> {
                         pool.submit(() -> {
-                            ParallelPlanRunner runner =
-                                    new ParallelPlanRunner(suite, test);
-                            runner.executeAndWait();
+                            ParallelTestRunner runner =
+                                    new ParallelTestRunner(suite, test);
+                            try {
+                                runner.executeAndWait();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         });
                     });
 
@@ -108,8 +109,12 @@ public class AnaxSuiteRunner {
             ((ReporterSupportsScreenshot) reporter).screenshotRecording(screenshotOn);
             log.info("Enabled Screenshots feature");
         }
-
         AtomicBoolean globalFailures = new AtomicBoolean(false);
+
+        if (!shouldAlsoExecute) {
+            return globalFailures.get();
+        }
+
 
         suitesMap.keySet().stream().forEach( (String name) -> {
             try {
@@ -138,19 +143,33 @@ public class AnaxSuiteRunner {
     }
 
     public boolean executeTestSuite(Suite suite) throws ReportException {
+        return  executeTestSuite(suite, null);
+    }
+
+    public boolean executeTestSuite(Suite suite, String testName) throws ReportException {
         log.info("--------------");
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
         reporter.startTestSuite(suite);
         log.trace("About to execute suite tests: {}",suite.getTests().size());
-
         List<Test> copy = Lists.newArrayList(suite.getTests());
         copy.sort(Comparator.comparingInt(Test::getPriority));
-        copy.forEach(test -> {
-            reporter.startAnaxTest(test);
-            executeTest(suite, test);
-            reporter.endAnaxTest(test);
-        });
+        if (testName == null) {
+            log.trace("About to execute suite tests: {}",copy.size());
+            copy.forEach(test -> {
+                reporter.startAnaxTest(test);
+                executeTest(suite, test);
+                reporter.endAnaxTest(test);
+            });
+        } else {
+            final Optional<Test> test = copy.stream().filter(t -> t.getTestBeanName().contentEquals(testName)).findFirst();
+            if (test.isPresent()) {
+                log.debug("About to execute suite {} test {}", suite, test.get());
+                reporter.startAnaxTest(test.get());
+                executeTest(suite, test.get());
+                reporter.endAnaxTest(test.get());
+            }
+        }
 
         log.trace("Setting stderr and stdout to suite");
         reporter.setSystemError(suite.getErr().toString());

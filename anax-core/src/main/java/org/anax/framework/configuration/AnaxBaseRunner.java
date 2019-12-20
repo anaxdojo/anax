@@ -28,6 +28,8 @@ public class AnaxBaseRunner implements CommandLineRunner{
 
     public void run(String... strings) throws Exception {
         int parallel = 0;
+        String suite, test;
+
         log.info("Anax {} ({}) built at {}", buildVersion, buildCommitId, buildTime);
         for (String option : strings) {
             log.debug("Option: {}", option);
@@ -39,12 +41,20 @@ public class AnaxBaseRunner implements CommandLineRunner{
                     log.info("Parallel mode detected, parallel spawn set to {}", parallel);
                 } catch (Exception e) {
                 }
+            } else if (option.startsWith("-Dsuite=")) {
+                suite = option.split(Pattern.quote("="))[1];
+            }  else if (option.startsWith("-Dtest=")) {
+                test = option.split(Pattern.quote("="))[1];
             }
         }
 
         if (parallel > 0) {
             //do parallel
             suiteRunner.createParallelPlan(parallel);
+        } else if (suite != null) {//we are worker!
+            log.info("Executing Suite {} -> Test -> {}", suite, test);
+            final boolean noop = suiteRunner.createExecutionPlan(false);
+            suiteRunner.exec
         } else {
             final boolean planFailed = suiteRunner.createExecutionPlan(true);
             if (planFailed) {
