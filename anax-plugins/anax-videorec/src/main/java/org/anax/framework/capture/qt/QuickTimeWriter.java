@@ -11,21 +11,21 @@ package org.anax.framework.capture.qt;
  */
 
 
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DataBufferUShort;
-import java.awt.image.IndexColorModel;
-import java.awt.image.WritableRaster;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
+import javax.sound.sampled.AudioFormat;
+import java.awt.*;
+import java.awt.image.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.zip.DeflaterOutputStream;
-import javax.imageio.*;
-import javax.imageio.stream.*;
-import javax.sound.sampled.AudioFormat;
 
 /**
  * Supports writing of time-based video and audio data into a QuickTime movie

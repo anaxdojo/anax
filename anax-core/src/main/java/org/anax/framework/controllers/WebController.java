@@ -17,6 +17,7 @@ import java.util.Map;
  * Web Controllers are the interfaces to testing web applications. Other controllers like a mobile or desktop controller
  * may build upon this contract.
  */
+
 public interface WebController {
 
 
@@ -922,22 +923,6 @@ public interface WebController {
      */
     void waitForAjaxComplete(long milliseconds);
 
-
-    /**
-     * Causes the current thread to sleep for a specific number of milliseconds.
-     *
-     * @param milliseconds the time in milliseconds for sleeping
-     */
-    static void sleep(long milliseconds) {
-        try {
-            //TODO log sleep period in logging system
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            //TODO log sleep period in logging system
-            //log.error(e.getMessage());
-        }
-
-    }
 
     /**
      * Gets the absolute url of the current page.

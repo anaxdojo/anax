@@ -22,9 +22,8 @@ public class ParallelTestRunner {
     }
 
     public void executeAndWait() throws IOException {
-        //TODO spawn new process, and pass suite and test as arguments.
+        // spawn new process, and pass suite and test as arguments.
         // has to be done on TOP level, not on the suite level - new spring context is required
-
         ForkClient client = new ForkClient(this.getClass().getClassLoader(), this,
                 Arrays.asList("java"), TimeoutLimits.DEFAULTS);
         client.call("workerMain", "-Dsuite="+suite.getName(), "-Dtest="+test.getTestBeanName());

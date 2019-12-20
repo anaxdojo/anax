@@ -15,7 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
-import static java.lang.Math.*;
+
+import static java.lang.Math.max;
 /**
  * {@code SeekableByteArrayOutputStream}.
  *

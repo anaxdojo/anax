@@ -4,7 +4,6 @@ package org.anax.framework.controllers;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.util.HttpCookie;
 import org.openqa.selenium.*;
-
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;

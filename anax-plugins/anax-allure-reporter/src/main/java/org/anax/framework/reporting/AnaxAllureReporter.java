@@ -205,7 +205,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
             StringBuilder html = new StringBuilder();
             if (throwable!=null) {
-                det.setMessage(throwable.getMessage()); //TODO find the correct message
+                det.setMessage(throwable.getMessage()); //FIXME find the correct message
                 result.setStatusDetails(det);
                 StringWriter wr = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(wr));

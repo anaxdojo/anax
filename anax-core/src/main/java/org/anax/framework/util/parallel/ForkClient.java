@@ -16,16 +16,10 @@
  */
 package org.anax.framework.util.parallel;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.NotSerializableException;
-import java.nio.file.Path;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,9 +27,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Slf4j
 public class ForkClient {

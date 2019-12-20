@@ -1,6 +1,7 @@
 package org.anax.framework.reporting.model;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 

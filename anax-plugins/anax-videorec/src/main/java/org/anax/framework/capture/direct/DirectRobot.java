@@ -1,12 +1,12 @@
 package org.anax.framework.capture.direct;
 
+import sun.awt.ComponentFactory;
+
 import java.awt.*;
-import java.awt.peer.*;
-import sun.awt.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.awt.peer.MouseInfoPeer;
+import java.awt.peer.RobotPeer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public final class DirectRobot
 {

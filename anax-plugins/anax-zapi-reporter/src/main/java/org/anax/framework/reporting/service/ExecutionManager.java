@@ -1,10 +1,8 @@
 package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.reporting.model.Results;
-import org.anax.framework.reporting.service.TestCaseToIssueResolver;
-import org.anax.framework.reporting.service.ZephyrZAPIService;
 import org.anax.framework.model.TestMethod;
+import org.anax.framework.reporting.model.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

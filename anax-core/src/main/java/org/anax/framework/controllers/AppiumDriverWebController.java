@@ -2,14 +2,7 @@ package org.anax.framework.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.util.HttpCookie;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Point;
-import org.openqa.selenium.Rotatable;
-import org.openqa.selenium.ScreenOrientation;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.touch.TouchActions;
 import org.openqa.selenium.remote.RemoteWebElement;
@@ -195,15 +188,12 @@ public class AppiumDriverWebController implements WebController{
     @Override
     public File takeScreenShot() throws IOException {
         log.info("Take Screenshot");
-        // TODO
-//        File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-//        FileUtils.copyFile(scrFile, new File("build/reports/tests/html/screenshots/TestError.jpg"),true);
-        return null;
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override
     public byte[] takeScreenShotAsBytes() throws IOException {
-        return new byte[0];
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override

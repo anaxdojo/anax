@@ -18,7 +18,6 @@ package org.anax.framework.util.parallel;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-
 import java.io.IOException;
 
 public interface ForkResource {

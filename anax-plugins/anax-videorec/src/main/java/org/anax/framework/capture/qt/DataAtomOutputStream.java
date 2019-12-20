@@ -10,10 +10,13 @@ package org.anax.framework.capture.qt;
  * For details see accompanying license terms.
  */
 
-import java.io.*;
+import javax.imageio.stream.ImageOutputStreamImpl;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import javax.imageio.stream.ImageOutputStreamImpl;
 
 /**
  * This output stream filter supports common data types used inside

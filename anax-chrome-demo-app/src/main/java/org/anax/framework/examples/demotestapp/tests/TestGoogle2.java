@@ -1,8 +1,10 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.*;
-import org.anax.framework.configuration.AnaxDriver;
+import org.anax.framework.annotations.AnaxAfterTest;
+import org.anax.framework.annotations.AnaxBeforeTest;
+import org.anax.framework.annotations.AnaxPostCondition;
+import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.controllers.WebController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

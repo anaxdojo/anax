@@ -14,7 +14,9 @@
 
     <properties>
         <selenium.version>3.8.1</selenium.version>
-	<lombok.version>1.16.22</lombok.version>
+	    <lombok.version>1.16.22</lombok.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <name>Anax Framework</name>

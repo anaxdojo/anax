@@ -1,13 +1,11 @@
 package org.anax.framework.config;
 
 import org.anax.framework.configuration.AnaxDriver;
+import org.anax.framework.controllers.VoidController;
 import org.anax.framework.controllers.WebController;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.anax.framework.controllers.VoidController;
-import org.springframework.core.env.Environment;
 
 
 @Configuration

@@ -93,7 +93,7 @@ public class AnaxSuiteRunner {
     public boolean createExecutionPlan(boolean executePlan) {
         shouldAlsoExecute = executePlan;
 
-        if (shouldAlsoExecute) { //TODO handle the boolean for execution or display
+        if (shouldAlsoExecute) {
             log.info("Executing test Suites: {}", suitesMap.keySet());
         } else {
             log.info("Planning for execution of Suites: {}", suitesMap.keySet());
