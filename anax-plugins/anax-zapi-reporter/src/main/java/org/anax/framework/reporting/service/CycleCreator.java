@@ -2,11 +2,10 @@ package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.reporting.model.CycleClone;
-import org.anax.framework.reporting.service.ZephyrZAPIService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
