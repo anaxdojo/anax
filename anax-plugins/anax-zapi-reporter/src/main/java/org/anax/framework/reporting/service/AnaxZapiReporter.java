@@ -29,6 +29,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     protected ExecutionManager executionManager;
     @Autowired
     protected WebController     controller;
+
     @Value("${zapi.enabled:true}") private Boolean enabled;
     /** do not change the FPS value over 15, due to h/w limitations */
     @Value("${anax.video.fps:10}") Integer videoFramesPerSec;
@@ -59,10 +60,13 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
 
     @Autowired
+    private AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
+
+
+    @Autowired
     public AnaxZapiReporter(AnaxZapiVersionResolver versionResolver){
         version = versionResolver.resolveAppVersion();
     }
-
 
     @Override
     public void startOutput(String reportDirectory, String suiteName){
@@ -241,43 +245,54 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                     executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed Steps:\n" + tcCommentPrettyPrint(tcComment));
                 }
             }
+            executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(),anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
         }
     }
 
     @Override
     public void addFailure(Test test, TestMethod method, Throwable t) {
-        log.info("Added TC on the failedTCs is: "+test.getTestBeanName());
-        failed = true;
-        failedTCs.add(test.getTestBeanName());
+        if (enabled) {
+
+            log.info("Added TC on the failedTCs is: " + test.getTestBeanName());
+            failed = true;
+            failedTCs.add(test.getTestBeanName());
+        }
     }
 
     @Override
     public void addSkipped(Test test, TestMethod method, String skipReason) {
-        log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
-        failed = true;
+        if (enabled) {
 
-        skippedTCs.add(test.getTestBeanName());
-        if(CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
-            if(screenshotEnable) {
-                File file = takeScreenshotReturnPath(test, method);
-                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+            log.info("Added TC on the skippedTCs is: " + test.getTestBeanName());
+            failed = true;
+
+            skippedTCs.add(test.getTestBeanName());
+            if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+                if (screenshotEnable) {
+                    File file = takeScreenshotReturnPath(test, method);
+                    executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+                }
             }
         }
     }
 
     @Override
     public void addError(Test test, TestMethod method, Throwable t){
-        log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
-        failed = true;
+        if (enabled) {
 
-        errorTCs.add(test.getTestBeanName());
-        if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
-            if (screenshotEnable) {
-                File file = takeScreenshotReturnPath(test, method);
-                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+            log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
+            failed = true;
+
+            errorTCs.add(test.getTestBeanName());
+            if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+                if (screenshotEnable) {
+                    File file = takeScreenshotReturnPath(test, method);
+                    executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+                }
             }
         }
     }
+
 
     @Override
     public void screenshotRecording(boolean enable) {
@@ -358,5 +373,4 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 .collect(Collectors.joining("\n", "{", "}"));
         return mapAsString;
     }
-
 }

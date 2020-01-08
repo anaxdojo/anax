@@ -5,6 +5,7 @@ import org.anax.framework.model.TestMethod;
 import org.anax.framework.reporting.model.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -64,6 +65,25 @@ public class ExecutionManager {
             zapiService.updateTestExecutionComment(tcExecutionId, comment);
         }else{
             log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute,projectName,versionName);
+        }
+    }
+
+    /**
+     * Update test execution bugs
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param tcAttribute
+     * @param bugs
+     */
+    public void updateTestExecutionBugs(String projectName, String versionName, String cycleName, String tcAttribute, List<String> bugs) {
+        if (!CollectionUtils.isEmpty(bugs)) {
+            String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName, versionName, cycleName, resolveTcToIssue(tcAttribute));
+            if (!StringUtils.isEmpty(tcExecutionId)) {
+                zapiService.updateTestExecutionBugs(tcExecutionId, bugs);
+            } else {
+                log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute, projectName, versionName);
+            }
         }
     }
 

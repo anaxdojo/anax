@@ -224,6 +224,20 @@ public class ZephyrZAPIService {
     }
 
 
+    /**
+     * Update test execution bugs
+     * @param tcExecutionID
+     * @param bugs
+     */
+    public void updateTestExecutionBugs(String tcExecutionID,List<String> bugs){
+        Map postBody = new HashMap();
+        postBody.put("defectList", bugs);
+        postBody.put("updateDefectList", "true");
+
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionID+"/execute", HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
+    }
+
+
     //Find the correct object in a jsonArray based on the value of an attribute,Create a list of label and then get the index of the JsonObject with this label
     private JSONObject filterDataByAttributeValue(JSONArray jsonArray, String attribute, String labelValue) throws JSONException {
         int index;

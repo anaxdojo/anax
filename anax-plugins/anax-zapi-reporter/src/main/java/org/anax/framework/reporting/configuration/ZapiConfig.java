@@ -1,7 +1,9 @@
 package org.anax.framework.reporting.configuration;
 
+import org.anax.framework.reporting.service.AnaxIssueAnnotationResolver;
 import org.anax.framework.reporting.service.AnaxZapiVersionResolver;
 import org.anax.framework.reporting.service.TestCaseToIssueResolver;
+import org.anax.framework.reporting.service.impl.IssueToBugAnnotationResolver;
 import org.anax.framework.reporting.service.impl.JiraZapiAppVersionResolver;
 import org.anax.framework.reporting.service.impl.TestCaseToLabelResolver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -22,5 +24,12 @@ public class ZapiConfig {
     TestCaseToIssueResolver issueResolver() {
         return new TestCaseToLabelResolver();
     }
+
+    @ConditionalOnMissingBean
+    @Bean
+    AnaxIssueAnnotationResolver issueAnnotationResolver(){
+        return new IssueToBugAnnotationResolver();
+    }
+
 
 }
