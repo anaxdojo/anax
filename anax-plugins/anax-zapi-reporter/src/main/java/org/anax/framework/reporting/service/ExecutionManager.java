@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,7 @@ public class ExecutionManager {
             String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName, versionName, cycleName, resolveTcToIssue(tcAttribute));
             if (!StringUtils.isEmpty(tcExecutionId)) {
                 zapiService.updateTestExecutionBugs(tcExecutionId, bugs);
+                log.error("Bugs: '{}' was added on tc '{}' at project: '{}' and version: '{}' ",new HashSet<>(bugs).toString(),tcAttribute,projectName, versionName);
             } else {
                 log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute, projectName, versionName);
             }
