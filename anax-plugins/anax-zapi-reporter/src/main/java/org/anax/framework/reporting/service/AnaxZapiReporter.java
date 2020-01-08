@@ -189,6 +189,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void endTest(Test test, TestMethod testMethod) {
         if (enabled) {
+
             log.info("Identify test status...");
             if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
                 passedTCs.add(test.getTestBeanName());
