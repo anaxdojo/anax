@@ -245,6 +245,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                     executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed Steps:\n" + tcCommentPrettyPrint(tcComment));
                 }
             }
+
             executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(),anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
         }
     }
