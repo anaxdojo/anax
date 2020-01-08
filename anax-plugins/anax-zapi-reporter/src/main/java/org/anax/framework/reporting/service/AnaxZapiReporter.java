@@ -24,11 +24,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
     @Autowired
-    protected CycleCreator cycleCreator;
+    protected CycleCreator                cycleCreator;
     @Autowired
-    protected ExecutionManager executionManager;
+    protected ExecutionManager            executionManager;
     @Autowired
-    protected WebController     controller;
+    protected WebController               controller;
+    @Autowired
+    protected AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
+
 
     @Value("${zapi.enabled:true}") private Boolean enabled;
     /** do not change the FPS value over 15, due to h/w limitations */
@@ -57,10 +60,6 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     private Set<String>  skippedTCs  = new HashSet<>();
     private Set<String>  errorTCs    = new HashSet<>();
     private List<String> tcSteps     = new ArrayList<>();
-
-
-    @Autowired
-    private AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
 
 
     @Autowired
