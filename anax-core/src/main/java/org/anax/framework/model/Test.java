@@ -25,5 +25,6 @@ public class Test {
 
     @Builder.Default List<TestMethod> testPreconditions = new ArrayList<>();
     @Builder.Default List<TestMethod> testPostconditions = new ArrayList<>();
+    @Builder.Default List<String> testIssues = new ArrayList<>();
 
 }

@@ -274,7 +274,6 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, Rep
 
     }
 
-
     @Override
     public void startTest(Test test, TestMethod testMethod) {
         testStarts.put(createTestDescription(test,testMethod), System.currentTimeMillis());

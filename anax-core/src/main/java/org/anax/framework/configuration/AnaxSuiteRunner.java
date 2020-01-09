@@ -403,6 +403,11 @@ public class AnaxSuiteRunner {
 //        return testMethod;
 //    }
 
+    public Test registerIssues(Test test, List<String> issues) {
+        test.getTestIssues().addAll(issues);
+        return test;
+    }
+
     public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, Object dataproviderValue, Object datasupplierValue) {
         TestMethod testMethod = TestMethod.builder()
                 .testMethod(method)

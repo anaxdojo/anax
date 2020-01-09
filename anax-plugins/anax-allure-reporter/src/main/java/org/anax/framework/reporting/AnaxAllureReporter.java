@@ -1,9 +1,10 @@
 package org.anax.framework.reporting;
 
 import io.qameta.allure.*;
-import io.qameta.allure.model.Link;
 import io.qameta.allure.model.*;
+import io.qameta.allure.model.Link;
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.annotations.AnaxIssues;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.qameta.allure.util.ResultsUtils.getHostName;
 import static io.qameta.allure.util.ResultsUtils.getThreadName;
@@ -37,18 +39,17 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     /** how many seconds to continue recording, after the "end recording" has been called */
     @Value("${anax.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
 
-
     private final AllureLifecycle lifecycle;
     private String suiteName;
     private VideoMaker videoMaker;
 
     @Autowired
-    WebController controller;
+    protected WebController controller;
+
     private boolean screenshotEnable;
     private boolean videoEnable;
     private String videoBaseDirectory;
     private String reportDirectory;
-
     private Boolean failed = false;
 
     public AnaxAllureReporter() {
@@ -58,22 +59,27 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     public AllureLifecycle getLifecycle() {
         return lifecycle;
     }
+
+
     @Override
-    public void startOutput(String reportDirectory, String suiteName) throws FileNotFoundException {
+    public void startOutput(String reportDirectory, String suiteName){
         this.reportDirectory = reportDirectory.contentEquals("reports/")?reportAllureDirectory:reportDirectory;
         this.suiteName = suiteName;
         log.info("Allure output directory {} suite name {}",this.reportDirectory,suiteName);
     }
+
     @Override
     public void setSystemOutput(String s) {
 
     }
+
     @Override
     public void setSystemError(String s) {
 
     }
+
     @Override
-    public void startTestSuite(Suite suite) throws ReportException {
+    public void startTestSuite(Suite suite) {
         suiteName = suite.getName();
         if(!keepResults) {//In case you need to merge results for all many suites execution
             try {
@@ -84,8 +90,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         }
     }
+
     @Override
-    public boolean endTestSuite(Suite suite) throws ReportException {
+    public boolean endTestSuite(Suite suite){
         try{
             generate(new File(reportDirectory).toPath(), Arrays.asList(new File(resultsAllureDirectory).toPath()), true);
         }catch(Exception e){
@@ -95,13 +102,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     @Override
-    public void startAnaxTest(Test test){
-
-    }
+    public void startAnaxTest(Test test){ }
 
     @Override
     public void endAnaxTest(Test test){
-
     }
 
     @Override
@@ -126,6 +130,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             log.warn("Video recording feature disabled");
         }
     }
+
     @Override
     public void endTest(Test test, TestMethod testMethod) {
         String testUniqueID = getUniqueUuid(test,testMethod);
@@ -154,13 +159,18 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStep(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setSeverity(testMethod));
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setAnaxIssue(testMethod));
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setLink(testMethod));
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setLinks(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssues(testMethod));
         getLifecycle().updateTestCase(testUniqueID, setStatus(getStepStatus(testMethod)));
         if(!testMethod.isSkip()){getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));}
 
         getLifecycle().stopTestCase(testUniqueID);
         getLifecycle().writeTestCase(testUniqueID);
     }
+
     @Override
     public void addFailure(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable, testMethod));
@@ -171,6 +181,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
+
     @Override
     public void addSkipped(Test test, TestMethod testMethod, String skipReason) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.SKIPPED,skipReason));
@@ -181,6 +192,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
+
     @Override
     public void addError(Test test, TestMethod testMethod, Throwable throwable) {
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.FAILED,throwable,testMethod));
@@ -191,6 +203,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             e.printStackTrace();
         }
     }
+
+
     private Consumer<TestResult> setStatus(final Status status) {
 
         return result -> {
@@ -198,6 +212,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         };
 
     }
+
     private Consumer<TestResult> setStatus(final Status status, Throwable throwable, TestMethod method) {
         return result -> {
             result.setStatus(status);
@@ -219,6 +234,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         };
     }
+
     private Consumer<TestResult> setPassStdOut(TestMethod method) {
         return result -> {
             StringBuilder html = new StringBuilder();
@@ -233,12 +249,14 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             result.setDescriptionHtml(html.toString());
         };
     }
+
     private Consumer<TestResult> setStatus(final Status status, String reason) {
         return result -> {
             result.setStatus(status);
             result.setDescription(reason);
         };
     }
+
     private Consumer<TestResult> setSeverity(final TestMethod testMethod) {
         return result -> {
             Severity severityAnnotationLevel = (Severity) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
@@ -250,19 +268,69 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             }
         };
     }
-    private Consumer<TestResult> setIssue(final TestMethod testMethod) {
+
+    private Consumer<TestResult> setAnaxIssue(final TestMethod testMethod) {
+
+        testMethod.getTestMethod().getDeclaredAnnotations();
+        return result -> {
+            AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
+                    .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
+            if(issueAnnotationLink !=null) {
+                result.setLinks(Arrays.asList(issueAnnotationLink.issueNames()).stream().map(it->new Link().setType("issue").setName(it)).collect(Collectors.toList()));
+            }
+        };
+    }
+
+
+    private Consumer<TestResult> setLink(final TestMethod testMethod) {
 
         testMethod.getTestMethod().getDeclaredAnnotations();
         return result -> {
             io.qameta.allure.Link issueAnnotationLink = (io.qameta.allure.Link) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Link.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Collections.singletonList(
-                        new Link().setName(issueAnnotationLink.value()))
-                );
+                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value())));
             }
         };
     }
+
+    private Consumer<TestResult> setLinks(final TestMethod testMethod) {
+
+        testMethod.getTestMethod().getDeclaredAnnotations();
+        return result -> {
+            io.qameta.allure.Links issueAnnotationLink = (io.qameta.allure.Links) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
+                    .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Links.class)).findFirst().orElse(null);
+            if(issueAnnotationLink !=null) {
+                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setName(it.value())).collect(Collectors.toList()));
+            }
+        };
+    }
+
+    private Consumer<TestResult> setIssue(final TestMethod testMethod) {
+
+        testMethod.getTestMethod().getDeclaredAnnotations();
+        return result -> {
+            io.qameta.allure.Issue issueAnnotationLink = (io.qameta.allure.Issue) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
+                    .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Issue.class)).findFirst().orElse(null);
+            if(issueAnnotationLink !=null) {
+                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value())));
+            }
+        };
+    }
+
+    private Consumer<TestResult> setIssues(final TestMethod testMethod) {
+
+        testMethod.getTestMethod().getDeclaredAnnotations();
+        return result -> {
+            io.qameta.allure.Issues issueAnnotationLink = (io.qameta.allure.Issues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
+                    .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Issues.class)).findFirst().orElse(null);
+            if(issueAnnotationLink !=null) {
+                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setType("issue").setName(it.value())).collect(Collectors.toList()));
+            }
+        };
+    }
+
+
     private TestResult createTestResult(Test test, TestMethod testMethod) {
         final String className = test.getTestBean().getClass().getName();
         final String methodName = testMethod.getTestMethod().getName();
@@ -408,8 +476,4 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         }
         log.info("Report successfully generated to {}", reportDirectory);
     }
-
-
-
-
 }

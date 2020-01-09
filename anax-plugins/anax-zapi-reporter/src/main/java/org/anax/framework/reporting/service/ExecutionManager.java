@@ -1,15 +1,17 @@
 package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.reporting.model.Results;
-import org.anax.framework.reporting.service.TestCaseToIssueResolver;
-import org.anax.framework.reporting.service.ZephyrZAPIService;
 import org.anax.framework.model.TestMethod;
+import org.anax.framework.reporting.model.Results;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,27 +33,60 @@ public class ExecutionManager {
      * @param projectName
      * @param versionName
      * @param cycleName
-     * @param tcNames
+     * @param tcAttributes
      * @param tcStatus
      * @throws Exception
      */
-    public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> tcNames, String tcStatus) throws Exception {
+    public void updateTestExecutions(String projectName, String versionName, String cycleName, List<String> tcAttributes, String tcStatus) throws Exception {
         List<String> executionIds;
 
-        if(tcNames.size()==0){
+        if(tcAttributes.size()==0){
             log.error("There are no test cases contained in update list");
             throw new NoSuchFieldException();
         }
 
-        executionIds = tcNames.stream().map(tc->zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tc))).collect(Collectors.toList());
+        executionIds = tcAttributes.stream().map(tc->zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tc))).collect(Collectors.toList());
+        executionIds.removeAll(Collections.singleton(""));//remove the execution ids that were not found and service returned ''
 
         Results results = Results.builder().executions(executionIds).status(tcStatus).build();
         try{ zapiService.updateBulkResults(results); }catch(Exception e){ log.error("Error during the update of TC: "+e.getMessage()); }
     }
 
-    public void updateTestExecutionComment(String projectName, String versionName, String cycleName, String tcName, String comment){
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcName));
-        zapiService.updateTestExecutionComment(tcExecutionId,comment);
+    /**
+     * Update tc execution comment
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param tcAttribute
+     * @param comment
+     */
+    public void updateTestExecutionComment(String projectName, String versionName, String cycleName, String tcAttribute, String comment){
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcAttribute));
+        if(!StringUtils.isEmpty(tcExecutionId)) {
+            zapiService.updateTestExecutionComment(tcExecutionId, comment);
+        }else{
+            log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute,projectName,versionName);
+        }
+    }
+
+    /**
+     * Update test execution bugs
+     * @param projectName
+     * @param versionName
+     * @param cycleName
+     * @param tcAttribute
+     * @param bugs
+     */
+    public void updateTestExecutionBugs(String projectName, String versionName, String cycleName, String tcAttribute, List<String> bugs) {
+        if (!CollectionUtils.isEmpty(bugs)) {
+            String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName, versionName, cycleName, resolveTcToIssue(tcAttribute));
+            if (!StringUtils.isEmpty(tcExecutionId)) {
+                zapiService.updateTestExecutionBugs(tcExecutionId, bugs);
+                log.error("Bugs: '{}' was added on tc '{}' at project: '{}' and version: '{}' ",new HashSet<>(bugs).toString(),tcAttribute,projectName, versionName);
+            } else {
+                log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute, projectName, versionName);
+            }
+        }
     }
 
     /**
@@ -59,13 +94,13 @@ public class ExecutionManager {
      * @param projectName
      * @param versionName
      * @param cycleName
-     * @param tcName
+     * @param tcAttribute
      * @param status
      * @param testMethod
      */
-    public void updateTestStepStatusAddAttachments(String projectName, String versionName, String cycleName, String tcName, String status, TestMethod testMethod, File screenshot, File video){
+    public void updateTestStepStatusAddAttachments(String projectName, String versionName, String cycleName, String tcAttribute, String status, TestMethod testMethod, File screenshot, File video){
         String tcStepExecutionId;
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcName));
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcAttribute));
         if(!tcExecutionId.isEmpty()) {
             tcStepExecutionId = zapiService.getTestStepExecutionId(tcExecutionId, testMethod.getOrdering());
             if (!tcStepExecutionId.isEmpty()) {
@@ -73,10 +108,10 @@ public class ExecutionManager {
                 if(screenshot != null){zapiService.addStepExecutionAttachments(tcStepExecutionId,screenshot);}
                 if(video != null){zapiService.addStepExecutionAttachments(tcStepExecutionId,video);}
             } else {
-                log.info("No test step found for this tc: {} in order to update test steps status", tcName);
+                log.info("No test step found for this tc: {} in order to update test steps status", tcAttribute);
             }
         }else{
-            log.error("ERROR: No test case execution Id found for tc: {}", tcName);
+            log.error("Check: No test case execution Id found for tc: {} at project: '{}' and version: '{}' in order to update test step status/attachments!!!", tcAttribute,projectName,versionName);
         }
     }
 
@@ -86,12 +121,12 @@ public class ExecutionManager {
      * @param projectName
      * @param versionName
      * @param cycleName
-     * @param tcName
+     * @param tcAttribute
      * @return
      */
-    public List<String> getTestCaseSteps(String projectName, String versionName, String cycleName, String tcName){
+    public List<String> getTestCaseSteps(String projectName, String versionName, String cycleName, String tcAttribute){
         List<String> tcStepExecutionIds = new ArrayList<>();
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcName));
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName, resolveTcToIssue(tcAttribute));
         if(!tcExecutionId.isEmpty()) {
             tcStepExecutionIds = zapiService.getTestSteps(tcExecutionId);
         }
@@ -104,16 +139,19 @@ public class ExecutionManager {
      * @param projectName
      * @param versionName
      * @param cycleName
-     * @param tcName
+     * @param tcAttribute
      * @param file
      */
-    public void addExecutionAttachment(String projectName, String versionName, String cycleName, String tcName, File file){
-        zapiService.addTcExecutionAttachments(projectName,versionName,cycleName, resolveTcToIssue(tcName),file);
+    public void addExecutionAttachment(String projectName, String versionName, String cycleName, String tcAttribute, File file){
+        String id = zapiService.getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName,resolveTcToIssue(tcAttribute));
+        if(!id.isEmpty()) {
+            zapiService.addTcExecutionAttachments(id, file);
+        }else{
+            log.error("Check: No test found for this tc: {} at project: '{}' and version: '{}' in order to add attachments!!!", tcAttribute,projectName,versionName);
+        }
     }
 
 
     //Resolve tc id either per label or per name or something else
-    private String resolveTcToIssue(String testCaseName){
-        return issueResolver.resolveTestCaseToIssue(testCaseName);
-    }
+    private String resolveTcToIssue(String testCaseAttribute){ return issueResolver.resolveTestCaseToIssue(testCaseAttribute); }
 }

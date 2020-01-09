@@ -9,7 +9,7 @@
 
         <groupId>org.anax.framework</groupId>
         <artifactId>anax-parent</artifactId>
-        <version>0.9.90</version>
+        <version>0.9.91</version>
     </parent>
 
     <properties>

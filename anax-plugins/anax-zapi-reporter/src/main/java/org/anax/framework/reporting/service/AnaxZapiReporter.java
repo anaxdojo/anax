@@ -24,11 +24,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
     @Autowired
-    protected CycleCreator cycleCreator;
+    protected CycleCreator                cycleCreator;
     @Autowired
-    protected ExecutionManager executionManager;
+    protected ExecutionManager            executionManager;
     @Autowired
-    protected WebController     controller;
+    protected WebController               controller;
+    @Autowired
+    protected AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
+
+
     @Value("${zapi.enabled:true}") private Boolean enabled;
     /** do not change the FPS value over 15, due to h/w limitations */
     @Value("${anax.video.fps:10}") Integer videoFramesPerSec;
@@ -47,7 +51,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     private String              videoBaseDirectory;
     private String              cycleName;
     private String              version;
-    private Map<String,String>  tcComment;
+    private Map<Integer,String> tcComment;
     private Boolean failed   =  false;
 
 
@@ -62,7 +66,6 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     public AnaxZapiReporter(AnaxZapiVersionResolver versionResolver){
         version = versionResolver.resolveAppVersion();
     }
-
 
     @Override
     public void startOutput(String reportDirectory, String suiteName){
@@ -88,6 +91,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             log.info("Create Cycle: " + suite.getName() + ", at project: " + project);
             log.info("********************************************\r\n\r\n");
 
+            printSuiteTestCases(suite);
             initialiseCycles(project, version, cycleName);
         }
     }
@@ -184,6 +188,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void endTest(Test test, TestMethod testMethod) {
         if (enabled) {
+
             log.info("Identify test status...");
             if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
                 passedTCs.add(test.getTestBeanName());
@@ -191,7 +196,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if(CollectionUtils.isEmpty(tcSteps)){
                 if(!testMethod.isPassed() && testMethod.getDescription() != null) {
-                    tcComment.put("Step" + (testMethod.getOrdering() + 1), testMethod.getDescription());
+                    tcComment.put((testMethod.getOrdering() + 1), testMethod.getDescription());
                 }
             }
 
@@ -237,46 +242,58 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             if (testStepStatusUpdateEnabled) {
                 if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
-                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed:\n" + tcCommentPrettyPrint(tcComment));
+                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed Steps:\n" + tcCommentPrettyPrint(tcComment));
+                }
+            }
+
+            executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(),anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
+        }
+    }
+
+    @Override
+    public void addFailure(Test test, TestMethod method, Throwable t) {
+        if (enabled) {
+
+            log.info("Added TC on the failedTCs is: " + test.getTestBeanName());
+            failed = true;
+            failedTCs.add(test.getTestBeanName());
+        }
+    }
+
+    @Override
+    public void addSkipped(Test test, TestMethod method, String skipReason) {
+        if (enabled) {
+
+            log.info("Added TC on the skippedTCs is: " + test.getTestBeanName());
+            failed = true;
+
+            skippedTCs.add(test.getTestBeanName());
+            if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+                if (screenshotEnable) {
+                    File file = takeScreenshotReturnPath(test, method);
+                    executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
                 }
             }
         }
     }
 
     @Override
-    public void addFailure(Test test, TestMethod method, Throwable t) {
-        log.info("Added TC on the failedTCs is: "+test.getTestBeanName());
-        failed = true;
-        failedTCs.add(test.getTestBeanName());
-    }
-
-    @Override
-    public void addSkipped(Test test, TestMethod method, String skipReason) {
-        log.info("Added TC on the skippedTCs is: "+test.getTestBeanName());
-        failed = true;
-
-        skippedTCs.add(test.getTestBeanName());
-        if(CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
-            if(screenshotEnable) {
-                File file = takeScreenshotReturnPath(test, method);
-                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
-            }
-        }
-    }
-
-    @Override
     public void addError(Test test, TestMethod method, Throwable t){
-        log.info("Added TC on the errorTCs is: "+test.getTestBeanName());
-        failed = true;
+        if (enabled) {
 
-        errorTCs.add(test.getTestBeanName());
-        if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
-            if (screenshotEnable) {
-                File file = takeScreenshotReturnPath(test, method);
-                executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+            log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
+            failed = true;
+
+            errorTCs.add(test.getTestBeanName());
+            if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
+                if (screenshotEnable) {
+                    File file = takeScreenshotReturnPath(test, method);
+                    executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), file);
+                }
             }
         }
     }
+
 
     @Override
     public void screenshotRecording(boolean enable) {
@@ -289,6 +306,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         this.videoBaseDirectory = videoBaseDirectory;
     }
 
+    //Create cycle
     private void initialiseCycles(String projectName, String versionName, String cycleName) {
         try{
             cycleCreator.createCycleInVersion(projectName,versionName.trim(), cycleName.trim());
@@ -297,7 +315,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         }
     }
 
-
+    //Return path of screenshot
     private File takeScreenshotReturnPath(Test test, TestMethod method){
         String path = resultsZapiDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png";
         if (screenshotEnable) {
@@ -311,10 +329,12 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
 
+    //Returns video path
     private File getVideoPath(Test test, TestMethod method){
         return new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov");
     }
 
+    //attach video on tc when no steps available
     private void attachVideoOnTc(Test test, TestMethod method) {
         File recording = getVideoPath(test,method);
         if (recording.exists()) {
@@ -327,6 +347,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         }
     }
 
+    //Returns status code
     private String getTestStepStatusCode(TestMethod testMethod){
         if (testMethod.isPassed()){
             return pass;
@@ -336,13 +357,21 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             return fail;
         }
     }
-    
+
+    private void printSuiteTestCases(Suite suite){
+        try {
+            List<String> tcs = suite.getTests().stream().map(it -> it.getTestBeanName()).collect(Collectors.toList());
+            log.info("Start suite: {} with tests: {}", suite.getName(), tcs);
+        }catch (Exception e){e.printStackTrace();}
+    }
+
+    //Sort map - split entry per line
     private String tcCommentPrettyPrint(Map map){
-        Map<String, String> treeMap = new TreeMap<>(map);
+        TreeMap<Integer, String> treeMap = new TreeMap<>(map);
+
         String mapAsString = treeMap.keySet().stream()
-                .map(key -> key + "=" + map.get(key))
+                .map(key -> "Step"+String.valueOf(key) + "=" + map.get(key))
                 .collect(Collectors.joining("\n", "{", "}"));
         return mapAsString;
     }
-
 }

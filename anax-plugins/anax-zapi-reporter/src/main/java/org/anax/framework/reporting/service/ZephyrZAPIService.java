@@ -33,7 +33,7 @@ public class ZephyrZAPIService {
     protected RestTemplate restTemplate;
 
     @Autowired
-    AnaxZapiVersionResolver versionResolver;
+    protected AnaxZapiVersionResolver versionResolver;
 
     @Value("${zapi.url:https:NOT_CONFIGURED}")  private String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")  private String jiraUrl;
@@ -97,28 +97,7 @@ public class ZephyrZAPIService {
 
 
     /**
-     * Update execution results as bulk
-     * @param results
-     */
-    public void updateBulkResults(Results results){
-        restTemplate.exchange(zapiUrl+"execution/updateBulkStatus/",HttpMethod.PUT ,new HttpEntity(results, getHeaders()), Results.class);
-    }
-
-    /**
-     * Update test step status
-     * @param tcExecutionID
-     * @param comment
-     */
-    public void updateTestExecutionComment(String tcExecutionID, String comment){
-        Map postBody = new HashMap();
-        postBody.put("comment",comment);
-
-        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionID+"/execute", HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
-    }
-
-
-    /**
-     * Returns the test id from label or either the name
+     * Returns the test id from label or either the name - empty string in case no tc was found
      * @param projectName
      * @param versionName
      * @param cycleName
@@ -135,7 +114,7 @@ public class ZephyrZAPIService {
             return filterDataByAttributeValue((JSONArray) new JSONObject(restTemplate.exchange(zapiUrl + "execution?projectId=" + projectId + "&versionId=" + versionId + "&cycleId=" + cycleId, HttpMethod.GET, new HttpEntity<>(getHeaders()), String.class).getBody()).get("executions"),attribute, attributeValue).get("id").toString();
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("Check !! Issue with this label:{} was not found",attributeValue);
+            log.error("Check !! Issue with this label: {} was not found on project: '{}' at version: '{}' and cycle: '{}'",attributeValue,projectName,versionName,cycleName);
             return "";
         }
     }
@@ -175,39 +154,35 @@ public class ZephyrZAPIService {
      */
     public void updateTestStepStatus(String testStepExecutionId, String status, TestMethod testMethod){
         Map postBody = new HashMap();
-        postBody.put("status",status);
-        if(!status.equals(pass) && !StringUtils.isEmpty(testMethod.getDescription()))//not pass and has description
-            postBody.put("comment",testMethod.getDescription());
+        postBody.put("status", status);
+        if (!status.equals(pass) && !StringUtils.isEmpty(testMethod.getDescription()))//not pass and has description
+            postBody.put("comment", testMethod.getDescription());
 
-        restTemplate.exchange(zapiUrl + "stepResult/" + testStepExecutionId, HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
+        restTemplate.exchange(zapiUrl + "stepResult/" + testStepExecutionId, HttpMethod.PUT, new HttpEntity<>(postBody, getHeaders()), String.class);
     }
 
     /**
      * Add attachement on execution
-     * @param projectName
-     * @param versionName
-     * @param cycleName
-     * @param label
+     * @param executionId
      * @param file
      */
-    public void addTcExecutionAttachments(String projectName, String versionName, String cycleName, String label, File file){
-        String id = getIssueExecutionIdViaAttributeValue(projectName,versionName,cycleName,label);
+    public void addTcExecutionAttachments(String executionId, File file) {
         LinkedMultiValueMap postBody = new LinkedMultiValueMap();
         postBody.add("file", new FileSystemResource(file));
 
-        restTemplate.exchange(zapiUrl+"attachment?entityId="+id+"&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
+        restTemplate.exchange(zapiUrl + "attachment?entityId=" + executionId + "&entityType=EXECUTION", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
     }
 
     /**
-     * Add attachement on execution step
+     * Add attachment on execution step
      * @param executionStepId
      * @param file
      */
-    public void addStepExecutionAttachments(String executionStepId, File file){
+    public void addStepExecutionAttachments(String executionStepId, File file) {
         LinkedMultiValueMap postBody = new LinkedMultiValueMap();
         postBody.add("file", new FileSystemResource(file));
 
-        restTemplate.exchange(zapiUrl+"attachment?entityId="+executionStepId+"&entityType=stepResult", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
+        restTemplate.exchange(zapiUrl + "attachment?entityId=" + executionStepId + "&entityType=stepResult", HttpMethod.POST, new HttpEntity<>(postBody, getMultiPartHeaders()), String.class);
     }
 
     /**
@@ -226,6 +201,40 @@ public class ZephyrZAPIService {
         cycleClone.setVersionId(versionId);
         cycleClone.setClonedCycleId(cycleId);
         restTemplate.exchange(zapiUrl+"cycle",HttpMethod.POST ,new HttpEntity(cycleClone, getHeaders()), CycleClone.class);
+    }
+
+    /**
+     * Update execution results as bulk
+     * @param results
+     */
+    public void updateBulkResults(Results results){
+        restTemplate.exchange(zapiUrl+"execution/updateBulkStatus/",HttpMethod.PUT ,new HttpEntity(results, getHeaders()), Results.class);
+    }
+
+    /**
+     * Update test step status
+     * @param tcExecutionID
+     * @param comment
+     */
+    public void updateTestExecutionComment(String tcExecutionID, String comment){
+        Map postBody = new HashMap();
+        postBody.put("comment",comment);
+
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionID+"/execute", HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
+    }
+
+
+    /**
+     * Update test execution bugs
+     * @param tcExecutionID
+     * @param bugs
+     */
+    public void updateTestExecutionBugs(String tcExecutionID,List<String> bugs){
+        Map postBody = new HashMap();
+        postBody.put("defectList", bugs);
+        postBody.put("updateDefectList", "true");
+
+        restTemplate.exchange(zapiUrl + "execution/" + tcExecutionID+"/execute", HttpMethod.PUT, new HttpEntity<>(postBody,getHeaders()), String.class);
     }
 
 
