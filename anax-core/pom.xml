@@ -22,7 +22,6 @@
 
 
     <dependencies>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
@@ -73,7 +72,6 @@
             <artifactId>mockito-core</artifactId>
             <version>1.10.19</version>
         </dependency>
-
     </dependencies>
 
     <build>

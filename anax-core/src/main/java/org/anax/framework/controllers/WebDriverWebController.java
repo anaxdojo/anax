@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 @Slf4j
@@ -22,6 +23,8 @@ public class WebDriverWebController implements WebController {
     /** The driver. */
     private WebDriver driver;
     private final long defaultWaitSeconds;
+
+    private final Duration defaultDuration=Duration.ofSeconds(5);
 
     /** The Constant TO_MILLIS. */
     private static final int TO_MILLIS = 1000;
@@ -40,6 +43,15 @@ public class WebDriverWebController implements WebController {
 
     /** The Constant LINK. */
     private static final String LINK = "link";
+
+    /** The Constant PARTIAL LINK. */
+    private static final String PARTIAL_LINK = "partial_link";
+
+    /** The Constant CLASS_NAME. */
+    private static final String CLASS_NAME = "class_name";
+
+    /** The Constant TAG_NAME. */
+    private static final String TAG_NAME = "tag_name";
 
     /** The Constant ID. */
     private static final String ID = "id";
@@ -142,6 +154,12 @@ public class WebDriverWebController implements WebController {
             return By.linkText(findLocatorSubstring(locator));
         } else if (locator.startsWith(ID)) {
             return By.id(findLocatorSubstring(locator));
+        } else if (locator.startsWith(PARTIAL_LINK)){
+            return By.partialLinkText(findLocatorSubstring(locator));
+        } else if (locator.startsWith(CLASS_NAME)){
+            return  By.className(findLocatorSubstring(locator));
+        } else if (locator.startsWith(TAG_NAME)){
+            return By.tagName(findLocatorSubstring(locator));
         }
         else {
             return By.id(locator);
@@ -159,6 +177,12 @@ public class WebDriverWebController implements WebController {
     @Override
     public WebElement waitForElement(String locator, long waitSeconds) {
         WebDriverWait wait = new WebDriverWait(driver, waitSeconds,THREAD_SLEEP);
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(determineLocator(locator)));
+    }
+
+    @Override
+    public WebElement waitForElement(String locator, Duration waitSeconds) {
+        WebDriverWait wait = new WebDriverWait(driver, defaultDuration);
         return wait.until(ExpectedConditions.visibilityOfElementLocated(determineLocator(locator)));
     }
 

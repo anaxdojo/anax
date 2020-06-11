@@ -18,6 +18,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class AppiumDriverWebController implements WebController{
 
     /** The Constant THREAD_SLEEP. */
     private final long defaultWaitSeconds;
+    private final Duration defaultDuration = Duration.ofSeconds(5);
 
     public AppiumDriverWebController(WebDriver webDriver, long defaultWaitSeconds) {
         this.driver = webDriver;
@@ -65,6 +67,12 @@ public class AppiumDriverWebController implements WebController{
     @Override
     public WebElement waitForElement(String locator, long waitSeconds) {
         WebDriverWait wait = new WebDriverWait(driver, waitSeconds,defaultWaitSeconds);
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(determineLocator(locator)));
+    }
+
+    @Override
+    public WebElement waitForElement(String locator, Duration waitSeconds) {
+        WebDriverWait wait = new WebDriverWait(driver, defaultDuration);
         return wait.until(ExpectedConditions.visibilityOfElementLocated(determineLocator(locator)));
     }
 

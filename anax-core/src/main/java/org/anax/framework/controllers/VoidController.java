@@ -3,6 +3,7 @@ package org.anax.framework.controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,10 @@ public class VoidController implements WebController {
         return null;
     }
 
+    @Override
+    public WebElement waitForElement(String locator, Duration waitSeconds) {
+        return null;
+    }
 
 
     @Override

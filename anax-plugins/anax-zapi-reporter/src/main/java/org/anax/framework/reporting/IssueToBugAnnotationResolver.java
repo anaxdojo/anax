@@ -1,4 +1,4 @@
-package org.anax.framework.reporting.service.impl;
+package org.anax.framework.reporting;
 
 import org.anax.framework.reporting.service.AnaxIssueAnnotationResolver;
 

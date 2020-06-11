@@ -1,4 +1,4 @@
-package org.anax.framework.reporting.service.impl;
+package org.anax.framework.reporting;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.reporting.service.AnaxZapiVersionResolver;

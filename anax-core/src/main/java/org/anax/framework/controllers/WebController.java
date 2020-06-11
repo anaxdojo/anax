@@ -9,6 +9,7 @@ import org.openqa.selenium.interactions.Actions;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -150,6 +151,15 @@ public interface WebController {
     WebElement waitForElement(String locator, long waitSeconds);
 
 
+    /**
+     * Wait for an element to become visible with maximum time in seconds given as parameter.
+     * If the time expires an Exception is thrown
+     *
+     * @param locator an element locator
+     * @param waitSeconds the number of seconds to wait for element visibility
+     * @return the web element in case of WebDriver or null in case of Selenium
+     */
+    WebElement waitForElement(String locator, Duration waitSeconds);
 
     /**
      * Wait for element invisibility.

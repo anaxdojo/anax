@@ -29,8 +29,6 @@
             <artifactId>allure-junit4</artifactId>
             <version>${allure.version}</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.qameta.allure/allure-java-commons -->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-java-commons</artifactId>
@@ -60,7 +58,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -76,16 +73,11 @@
             <artifactId>anax-videorec</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-	
-<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-	<dependency>
+    	<dependency>
     	  <groupId>org.projectlombok</groupId>
     	  <artifactId>lombok</artifactId>
     	  <scope>provided</scope>
-	</dependency>
-
-
-
+	    </dependency>
     </dependencies>
 
     <repositories>

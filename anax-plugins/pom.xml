@@ -27,5 +27,6 @@
         <module>anax-allure-reporter</module>
         <module>anax-zapi-reporter</module>
         <module>anax-allurezapi-reporter</module>
+        <module>custom-reporter</module>
     </modules>
 </project>

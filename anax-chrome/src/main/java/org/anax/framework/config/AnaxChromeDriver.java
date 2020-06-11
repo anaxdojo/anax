@@ -36,11 +36,11 @@ public class AnaxChromeDriver {
     @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
-        DesiredCapabilities capabilities = DesiredCapabilities.chrome();
+
+        DesiredCapabilities capabilities = new DesiredCapabilities();
         ChromeOptions options;
 
         if (useLocal) {
-
             ChromeDriverService service = new ChromeDriverService.Builder().build();
             options = new ChromeOptions();
             if(maximize.equals("true")) {
@@ -51,6 +51,7 @@ public class AnaxChromeDriver {
 
             return () -> {
                 ChromeDriver driver = new ChromeDriver(service, options);
+//                driver.getDevTools().createSession();
                 driver.get(targetUrl);
                 return driver;
             };

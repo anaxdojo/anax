@@ -34,7 +34,7 @@ public class AnaxFirefoxDriver {
     @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
-        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
+        DesiredCapabilities capabilities = new DesiredCapabilities();
         FirefoxOptions firefoxoptions;
 
         if (useLocal) {
