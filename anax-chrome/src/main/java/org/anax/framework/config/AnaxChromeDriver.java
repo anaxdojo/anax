@@ -31,7 +31,7 @@ public class AnaxChromeDriver {
     String remotePort;
     @Value("${anax.maximize:false}")
     String maximize;
-    @Value("${anax.accept_untrusted_certs:false}")
+    @Value("${anax.accept.untrusted.certs:false}")
     Boolean acceptUntrustedCerts;
 
 
