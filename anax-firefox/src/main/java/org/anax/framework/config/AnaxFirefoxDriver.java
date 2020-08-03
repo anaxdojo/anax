@@ -30,6 +30,8 @@ public class AnaxFirefoxDriver {
     String remotePort;
     @Value("${anax.maximize:false}")
     String maximize;
+    @Value("${anax.accept_untrusted_certs:false")
+    Boolean acceptUntrustedCerts;
 
     @ConditionalOnMissingBean
     @Bean
@@ -43,6 +45,9 @@ public class AnaxFirefoxDriver {
             if(maximize.equals("true")) {
                 String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
                 firefoxoptions.addArguments(x);
+            }
+            if(acceptUntrustedCerts) {
+                firefoxoptions.setAcceptInsecureCerts(true);
             }
             return () -> {
                 FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
