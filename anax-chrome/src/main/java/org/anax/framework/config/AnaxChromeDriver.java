@@ -31,6 +31,8 @@ public class AnaxChromeDriver {
     String remotePort;
     @Value("${anax.maximize:false}")
     String maximize;
+    @Value("${anax.accept_untrusted_certs:false}")
+    Boolean acceptUntrustedCerts;
 
 
     @ConditionalOnMissingBean
@@ -48,6 +50,10 @@ public class AnaxChromeDriver {
                 options.addArguments(x);
             }
             options.merge(capabilities);
+
+            if(acceptUntrustedCerts) {
+                options.addArguments("ignore-certificate-errors");
+            }
 
             return () -> {
                 ChromeDriver driver = new ChromeDriver(service, options);
