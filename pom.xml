@@ -19,10 +19,15 @@
 
     <name>Anax Framework</name>
     <distributionManagement>
-        <repository>
+<!--        <repository>
             <id>bintray-thanosa75-maven</id>
             <name>thanosa75-maven</name>
             <url>https://api.bintray.com/maven/thanosa75/maven/Anax/;publish=1</url>
+        </repository> -->
+	<repository>
+           <id>github</id>
+           <name>NoticeBoard Simple CRUD application</name>
+           <url>https://maven.pkg.github.com/anaxdojo/anax</url>
         </repository>
     </distributionManagement>
 
