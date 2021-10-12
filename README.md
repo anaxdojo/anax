@@ -6,7 +6,7 @@ Origin: ἄναξ (pronounced: /á.naks/ → /ˈa.naks/ → /ˈa.naks/) is a Gre
 
 We are using `Github Actions` for our builds. Current status:
 
-- Develop [![Java CI with Maven](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml/badge.svg?branch=develop)](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml)
+- Develop [![Actions](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml/badge.svg?branch=develop)](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml)
 
 We are currently experimenting with the major directions that Anax is going to take in the future. The 'develop' branch is considered _highly_ volatile, and the master branch is not stable either. However, we've already done *some* effort to decide on publishing and the first artefacts are now available in Bintray.
 
