@@ -64,8 +64,8 @@
         <module>anax-saucelabs</module>
         <module>anax-plugins</module>
 
-        <!-- demo app should be the last -->
-        <module>anax-chrome-demo-app</module>
+        <!-- demo app cannot be deployed (easily) to github packages
+        <module>anax-chrome-demo-app</module> -->
     </modules>
 </project>
 
