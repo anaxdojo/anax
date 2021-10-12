@@ -12,41 +12,8 @@ We are currently experimenting with the major directions that Anax is going to t
 
 ## How to work with our new release
 ### Maven 
-Using the bintray repo is simple - create a new settings.xml file or add the "profiles" tag (usually in your MAVEN_HOME):
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<settings xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd'
-          xmlns='http://maven.apache.org/SETTINGS/1.0.0' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>
-    <profiles>
-        <profile>
-            <id>bintray</id>
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>bintray-thanosa75-maven</id>
-                    <name>bintray</name>
-                    <url>https://dl.bintray.com/thanosa75/maven</url>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <id>bintray-thanosa75-maven</id>
-                    <name>bintray-plugins</name>
-                    <url>https://dl.bintray.com/thanosa75/maven</url>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-    </profiles>
-    <activeProfiles>
-        <activeProfile>bintray</activeProfile>
-    </activeProfiles>
-</settings>
-```
+
+Complete instructions are in the page [Installing a Package.](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry#installing-a-package)
 
 Then, add the dependency for Chrome to your project:
 ```xml
@@ -59,10 +26,7 @@ Then, add the dependency for Chrome to your project:
 
 ### Gradle
 
-Add the following:
-```gradle
-repositories { maven { url "https://dl.bintray.com/thanosa75/maven" } }
-```
+For gradle [see instructions here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package).
 
 Then, add the dependency for Anax-Chrome to your project:
 ```gradle
