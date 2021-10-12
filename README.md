@@ -3,13 +3,10 @@ Origin: ἄναξ (pronounced: /á.naks/ → /ˈa.naks/ → /ˈa.naks/) is a Gre
 
 ## Status: Getting serious
 
-We release almost regularly on bintray. Get the latest version from the link below:
-- [ ![Download](https://api.bintray.com/packages/thanosa75/maven/Anax/images/download.svg) ](https://bintray.com/thanosa75/maven/Anax/_latestVersion)
 
-We are using Travis-CI for our builds. Current status:
+We are using `Github Actions` for our builds. Current status:
 
-- Develop [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=develop)](https://www.travis-ci.org/thanosa75/anax)
-- Master [![Build Status](https://www.travis-ci.org/thanosa75/anax.svg?branch=master)](https://www.travis-ci.org/thanosa75/anax)
+- Develop [![Actions](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml/badge.svg?branch=develop)](https://github.com/anaxdojo/anax/actions/workflows/maven-build.yml)
 
 We are currently experimenting with the major directions that Anax is going to take in the future. The 'develop' branch is considered _highly_ volatile, and the master branch is not stable either. However, we've already done *some* effort to decide on publishing and the first artefacts are now available in Bintray.
 

@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>anax-zapi-reporter</artifactId>
-    <version>0.9.91</version>
+    <version>1.0.2-SNAPSHOT</version>
 
     <parent>
         <artifactId>anax-plugins</artifactId>
         <groupId>org.anax.framework.plugins</groupId>
-        <version>0.9.91</version>
+        <version>1.0.2-SNAPSHOT</version>
     </parent>
 
     <name>Anax :: Plugins :: Zephyr (ZAPI)</name>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.11.3</version>
+            <version>1.14.2</version>
         </dependency>
     </dependencies>
 

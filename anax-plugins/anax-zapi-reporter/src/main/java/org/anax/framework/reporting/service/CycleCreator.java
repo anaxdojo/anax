@@ -23,7 +23,7 @@ public class CycleCreator {
     protected ZephyrZAPIService zapiService;
 
     /**
-     * Create new cycle (clone existing one). If not exist create with given name, else append incremental number
+     * Create new cycle (clone existing one). If not exist create with given name, else do nothing
      * @param projectName
      * @param versionName
      * @param cycleName
