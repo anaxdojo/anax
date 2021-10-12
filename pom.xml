@@ -26,7 +26,7 @@
         </repository> -->
 	<repository>
            <id>github</id>
-           <name>NoticeBoard Simple CRUD application</name>
+           <name>Anax - the QA Testing Framework</name>
            <url>https://maven.pkg.github.com/anaxdojo/anax</url>
         </repository>
     </distributionManagement>
