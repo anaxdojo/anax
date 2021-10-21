@@ -1,8 +1,9 @@
 package org.anax.framework.capture.direct;
 
+
 import java.awt.*;
 import java.awt.peer.*;
-import sun.awt.*;
+//import sun.awt.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.io.*;
@@ -22,7 +23,16 @@ public final class DirectRobot
 
         this.device = device;
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        peer = ((ComponentFactory) toolkit).createRobot(null, device);
+        Robot robot =  new Robot( device);
+        try {
+            Field pField = Robot.class.getDeclaredField("peer");
+            pField.setAccessible(true);
+            peer = (RobotPeer) pField.get(null);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+
+        peer = new Robot( device);
         Class<?> peerClass = peer.getClass();
         Method method = null;
         int methodType = -1;
