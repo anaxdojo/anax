@@ -44,13 +44,13 @@ Complete instructions are in the page [Installing a Package.](https://docs.githu
 
 2. Add also the repository in your pom.xml
 ```xml
-    <repository>
-            <id>github</id>
-            <name>GitHub Anax</name>
-            <url>https://maven.pkg.github.com/anaxdojo/anax</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>true</enabled></snapshots>
-        </repository>
+<repository>
+    <id>github</id>
+    <name>GitHub Anax</name>
+    <url>https://maven.pkg.github.com/anaxdojo/anax</url>
+    <releases><enabled>true</enabled></releases>
+    <snapshots><enabled>true</enabled></snapshots>
+</repository>
 
 ```
 
