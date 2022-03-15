@@ -2,17 +2,15 @@ package org.anax.framework.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
-import org.openqa.selenium.internal.FindsByCssSelector;
-import org.openqa.selenium.internal.FindsByXPath;
 import org.openqa.selenium.remote.RemoteWebElement;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Slf4j
-public abstract class ByExtended extends By {
+public abstract class BySizzle extends By {
 
     static boolean sizzleEnabled = true;
 
@@ -27,93 +25,41 @@ public abstract class ByExtended extends By {
      * emulate the API. In this case, we strive for at least CSS2 support, but
      * offer no guarantees.
      */
-    public static By cssSelector(final String selector, WebDriver driver) {
+    public static By css(final String selector, WebDriver driver) {
         if (selector == null)
             throw new IllegalArgumentException(
                     "Cannot find elements when the selector is null");
 
-        return new ByCssSelectorExtended(selector, driver);
+        return new BySizzleCssSelector(selector, driver);
 
     }
 
-    /**
-     * @param xpathExpression The xpath to use
-     * @return a By which locates elements via XPath
-     */
-    public static By xpath(final String xpathExpression) {
-        if (xpathExpression == null)
-            throw new IllegalArgumentException(
-                    "Cannot find elements when the XPath expression is null.");
 
-        return new ByXPathExtended(xpathExpression);
-    }
-
-
-    public static class ByCssSelectorExtended extends ByCssSelector {
+    public static class BySizzleCssSelector extends By implements Serializable {
 
         private static final String HTTPS = "https://";
-
         private static final String HTTP = "http://";
-
-        /**
-         * uid
-         */
-        private static final long serialVersionUID = 1L;
-
         private static final String DEFAULT_SIZZLE_URL = "http://cdnjs.cloudflare.com/ajax/libs/sizzle/2.3.3/sizzle.min.js";
 
         private String ownSelector;
         private WebDriver driver;
 
-        public ByCssSelectorExtended(String selector, WebDriver driver) {
-            super(selector);
+        public BySizzleCssSelector(String selector, WebDriver driver) {
             ownSelector = selector;
             this.driver = driver;
         }
 
         @Override
         public WebElement findElement(SearchContext context) {
-            try {
-                if (context instanceof FindsByCssSelector) {
-                    return ((FindsByCssSelector) context)
-                            .findElementByCssSelector(ownSelector);
-                }
-            } catch(InvalidSelectorException e){
-                return findElementBySizzleCss(context,ownSelector);
-
-            } catch (InvalidElementStateException e) {
-                return findElementBySizzleCss(context, ownSelector);
-
-            } catch (WebDriverException e) {
-                if (e.getMessage().startsWith(
-                        "An invalid or illegal string was specified")) {
-                    return findElementBySizzleCss(context, ownSelector);
-                }
-                throw e;
-            }
-            throw new WebDriverException("Driver does not support finding an element by selector: "	+ ownSelector);
+            return findElementBySizzleCss(context, ownSelector);
         }
+
 
         @Override
         public List<WebElement> findElements(SearchContext context) {
-            try {
-                if (context instanceof FindsByCssSelector) {
-                    return ((FindsByCssSelector) context)
-                            .findElementsByCssSelector(ownSelector);
-                }
-            } catch(InvalidSelectorException e){
-                return findElementsBySizzleCss(context, ownSelector);
-            } catch (InvalidElementStateException e) {
-                return findElementsBySizzleCss(context, ownSelector);
-            } catch (WebDriverException e) {
-                if (e.getMessage().startsWith(
-                        "An invalid or illegal string was specified")) {
-                    return findElementsBySizzleCss(context, ownSelector);
-                }
-                throw e;
-            }
-            throw new WebDriverException("Driver does not support finding an element by selector: "	+ ownSelector);
+            return findElementsBySizzleCss(context, ownSelector);
         }
+
 
         @Override
         public String toString() {
@@ -176,13 +122,18 @@ public abstract class ByExtended extends By {
          * @return the list of the web elements that match this locator
          */
         public List<WebElement> findElementsBySizzleCss(SearchContext context, String cssLocator) {
-            injectSizzleIfNeeded();
-            String javascriptExpression = createSizzleSelectorExpression(cssLocator);
-            List<WebElement> elements = executeRemoteScript(javascriptExpression);
-            if (elements.size() > 0) {
-                for (WebElement el : elements) {
-                    fixLocator(context, cssLocator, el);
+            List<WebElement> elements;
+            try {
+                injectSizzleIfNeeded();
+                String javascriptExpression = createSizzleSelectorExpression(cssLocator);
+                elements = executeRemoteScript(javascriptExpression);
+                if (elements.size() > 0) {
+                    for (WebElement el : elements) {
+                        fixLocator(context, cssLocator, el);
+                    }
                 }
+            }catch(RuntimeException e){//case site does not accept invoke sizzle
+                elements = driver.findElements(By.cssSelector(cssLocator));
             }
             return elements;
         }
@@ -312,75 +263,5 @@ public abstract class ByExtended extends By {
          * ******************** SIZZLE SUPPORT CODE
          */
 
-    }
-
-    public static class ByXPathExtended extends ByXPath {
-
-        /**
-         * uid
-         */
-        private static final long serialVersionUID = 1L;
-
-
-        private final String ownXpathExpression;
-
-        public ByXPathExtended(String xpathExpression) {
-            super(xpathExpression);
-            ownXpathExpression = xpathExpression;
-        }
-
-        @Override
-        public List<WebElement> findElements(SearchContext context) {
-            long t0 = System.currentTimeMillis();
-            try {
-                return ((FindsByXPath) context)
-                        .findElementsByXPath(ownXpathExpression);
-            } finally {
-                long l = System.currentTimeMillis()-t0;
-                if (l > 100) {
-                    log.warn("SLOW findElements() = {}ms. Slow selector : {} ", l,  ownXpathExpression);
-                }
-            }
-        }
-
-        @Override
-        public WebElement findElement(SearchContext context) {
-            long t0 = System.currentTimeMillis();
-            try {
-                int indexOf = ownXpathExpression.indexOf("//", 3);
-                if (indexOf > -1) { // we found an // inside the selector
-                    String[] splitSelectors = ownXpathExpression.substring(2).split(Pattern.quote("//"));
-
-                    WebElement parent = ((FindsByXPath) context).findElementByXPath("//"+splitSelectors[0]);
-                    for (int i = 1; i < splitSelectors.length; i++) {
-                        if (parent == null) {
-                            throw new WebDriverException("Failed to match the parent selector : "+splitSelectors[i-1]);
-                        }
-                        WebElement found = parent.findElement(By.xpath(".//"+splitSelectors[i]));
-                        if (found != null) {
-                            parent = found;
-                        } else {
-                            throw new WebDriverException("Failed to match the selector : "+splitSelectors[i]+" within "+ownXpathExpression);
-                        }
-                    }
-
-                    // by here, we should have the parent WebElement to contain what we want.
-                    //LOG.info("Found compound selector : "+parent.toString());
-                    return parent;
-                }
-                // simple case: one selector
-                return ((FindsByXPath) context).findElementByXPath(ownXpathExpression);
-            } finally {
-                long l = System.currentTimeMillis()-t0;
-                if (l > 100) {
-                    log.warn("SLOW findElement() = {}ms. Slow selector : {} ", l,  ownXpathExpression);
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "ByExtended.xpath: " + ownXpathExpression;
-        }
     }
 }

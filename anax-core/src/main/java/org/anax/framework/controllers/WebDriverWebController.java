@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 @Slf4j
@@ -135,7 +136,7 @@ public class WebDriverWebController implements WebController {
         } else if (locator.startsWith("//")) {
             return By.xpath(locator);
         } else if (locator.startsWith(CSS)) {
-            return ByExtended.cssSelector(findLocatorSubstring(locator), getDriver());
+            return BySizzle.css(findLocatorSubstring(locator), getDriver());
         } else if (locator.startsWith(NAME)) {
             return By.name(findLocatorSubstring(locator));
         } else if (locator.startsWith(LINK)) {
@@ -158,7 +159,7 @@ public class WebDriverWebController implements WebController {
      */
     @Override
     public WebElement waitForElement(String locator, long waitSeconds) {
-        WebDriverWait wait = new WebDriverWait(driver, waitSeconds,THREAD_SLEEP);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds), Duration.ofMillis(THREAD_SLEEP));
         return wait.until(ExpectedConditions.visibilityOfElementLocated(determineLocator(locator)));
     }
 
@@ -171,7 +172,7 @@ public class WebDriverWebController implements WebController {
      */
     @Override
     public void waitForElementInvisibility(String locator, long waitSeconds) {
-        WebDriverWait wait = new WebDriverWait(driver, waitSeconds);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds));
         wait.until(ExpectedConditions.invisibilityOfElementLocated(determineLocator(locator)));
 
     }
@@ -186,7 +187,7 @@ public class WebDriverWebController implements WebController {
      */
 
     public WebElement waitForElementPresence(String locator, long waitSeconds) {
-        WebDriverWait wait = new WebDriverWait(driver, waitSeconds,THREAD_SLEEP);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds), Duration.ofMillis(THREAD_SLEEP));
         return wait.until(ExpectedConditions.presenceOfElementLocated(determineLocator(locator)));
     }
 
@@ -199,7 +200,7 @@ public class WebDriverWebController implements WebController {
      */
     @Override
     public List<WebElement> findElements(String locator, long waitSeconds) {
-        WebDriverWait wait = new WebDriverWait(driver, waitSeconds,THREAD_SLEEP);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds), Duration.ofMillis(THREAD_SLEEP));
         return wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(determineLocator(locator)));
     }
 
@@ -856,7 +857,7 @@ public class WebDriverWebController implements WebController {
      * @return the alert
      */
     public Alert waitForAlert() {
-        WebDriverWait wait = new WebDriverWait(driver, defaultWaitSeconds);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(defaultWaitSeconds));
         return wait.until(ExpectedConditions.alertIsPresent());
     }
 
@@ -1170,7 +1171,7 @@ public class WebDriverWebController implements WebController {
      */
     @Override
     public void pressLinkName(String linkName) {
-        (new WebDriverWait(driver, defaultWaitSeconds)).until(ExpectedConditions.visibilityOfElementLocated((By.linkText(linkName)))).click();
+        (new WebDriverWait(driver, Duration.ofSeconds(defaultWaitSeconds))).until(ExpectedConditions.visibilityOfElementLocated((By.linkText(linkName)))).click();
 
     }
 
