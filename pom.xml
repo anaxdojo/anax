@@ -13,8 +13,8 @@
     </parent>
 
     <properties>
-        <selenium.version>3.8.1</selenium.version>
-	<lombok.version>1.16.22</lombok.version>
+        <selenium.version>4.1.0</selenium.version>
+	    <lombok.version>1.16.22</lombok.version>
     </properties>
 
     <name>Anax Framework</name>

@@ -4,17 +4,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.controllers.WebDriverWebController;
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.Augmenter;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import java.net.URL;
 
 
@@ -30,22 +32,24 @@ public class AnaxFirefoxDriver {
     String remotePort;
     @Value("${anax.maximize:false}")
     String maximize;
+    @Value("${selenium.page.strategy:#{null}}")
+    String pageStrategy;
 
     @ConditionalOnMissingBean
     @Bean
     public AnaxDriver getWebDriver(@Value("${anax.localdriver:true}") Boolean useLocal) {
-        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
-        FirefoxOptions firefoxoptions;
+        FirefoxOptions options = new FirefoxOptions();
+        pageStrategy = (pageStrategy == null) ? PageLoadStrategy.NORMAL.toString() : pageStrategy;
+        options.setCapability(CapabilityType.PAGE_LOAD_STRATEGY,pageStrategy);
+
 
         if (useLocal) {
-
-            firefoxoptions = new FirefoxOptions();
             if(maximize.equals("true")) {
                 String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
-                firefoxoptions.addArguments(x);
+                options.addArguments(x);
             }
             return () -> {
-                FirefoxDriver driver = new FirefoxDriver(firefoxoptions);
+                FirefoxDriver driver = new FirefoxDriver(options);
                 driver.get(targetUrl);
                 return driver;
             };
@@ -54,8 +58,7 @@ public class AnaxFirefoxDriver {
             return () -> {
                     Augmenter augmenter = new Augmenter();
                 WebDriver driver = augmenter.augment(new RemoteWebDriver(
-                        new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"),
-                        capabilities));
+                        new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"), options));
                 driver.get(targetUrl);
                 return driver;
             };

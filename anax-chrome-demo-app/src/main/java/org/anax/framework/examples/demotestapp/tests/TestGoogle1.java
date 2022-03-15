@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 
 
 @AnaxTest(value = "myTest")
-@Component
 @Slf4j
 public class TestGoogle1 {
     @Autowired
@@ -23,6 +22,7 @@ public class TestGoogle1 {
     @AnaxBeforeTest
     public void load() {
         log.info("First");
+        googlePageObject.pressAgree();
     }
 
     @AnaxBeforeTest(ordering = 1)
