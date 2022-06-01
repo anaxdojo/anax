@@ -3,6 +3,7 @@ package org.anax.framework.controllers;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import org.anax.framework.util.HttpCookie;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.logging.LogEntry;
 
 
 public class VoidController implements WebController {
@@ -439,6 +441,12 @@ public class VoidController implements WebController {
     public int getNumberOfTotalColumns(String locator) {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public List<LogEntry> getBrowserLogs() {
+        // TODO Auto-generated method stub
+        return Collections.emptyList();
     }
 
     @Override

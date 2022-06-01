@@ -7,12 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxIssues;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
+import org.anax.framework.controllers.VoidController;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.openqa.selenium.logging.LogEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -160,12 +163,13 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStep(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setSeverity(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setAnaxIssue(testMethod));
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setFlaky(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setLink(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setLinks(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssue(testMethod));
         getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setIssues(testMethod));
         getLifecycle().updateTestCase(testUniqueID, setStatus(getStepStatus(testMethod)));
-        if(!testMethod.isSkip()){getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));}
+        if(testMethod.isPassed()){getLifecycle().updateTestCase(testUniqueID, setPassStdOut(testMethod));}
 
         getLifecycle().stopTestCase(testUniqueID);
         getLifecycle().writeTestCase(testUniqueID);
@@ -225,11 +229,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                 StringWriter wr = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(wr));
 
-                html.append("<h3>Console Logs</h3>");
-                html.append("<pre>").append(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:")).append("</pre>");
-
-                html.append("<h3>Exception Detail</h3>");
-                html.append("<pre>").append(wr.toString()).append("</pre>");
+                html.append(expandableHtmlSection("Console Logs", List.of(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:"))));
+                html.append(controller instanceof VoidController ? "" : expandableHtmlSection("Browser Logs", controller.getBrowserLogs().stream().map(LogEntry::toString).collect(Collectors.toList())));
+                html.append(expandableHtmlSection("Exception Detail", List.of(StringEscapeUtils.escapeHtml4(wr.toString()))));
                 result.setDescriptionHtml(html.toString());
             }
         };
@@ -239,12 +241,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         return result -> {
             StringBuilder html = new StringBuilder();
 
-            html.append("<h3>Console Logs</h3>");
-            html.append("<pre>").append(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:")).append("</pre>");
-
-            html.append("<h3>Special Info</h3>");
-
-//            html.append("<pre>" + StringUtils.substringAfter(method.getStdOut().toString(), ":") + "</pre>");
+            html.append(expandableHtmlSection("Console Logs", List.of(StringUtils.substringAfter(method.getStdOut().toString(), "Caused by:"))));
+            html.append(expandableHtmlSection("Special Info", Collections.emptyList()));
 
             result.setDescriptionHtml(html.toString());
         };
@@ -263,7 +261,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     .filter(annotation -> annotation.annotationType().equals(Severity.class)).findFirst().orElse(null);
             if(severityAnnotationLevel !=null) {
                 result.setLabels(
-                        new Label().setName("severity").setValue(severityAnnotationLevel.value().toString())
+                        List.of(new Label().setName("severity").setValue(severityAnnotationLevel.value().toString()))
                 );
             }
         };
@@ -276,7 +274,18 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Arrays.asList(issueAnnotationLink.issueNames()).stream().map(it->new Link().setType("issue").setName(it)).collect(Collectors.toList()));
+                result.setLinks(Arrays.asList(issueAnnotationLink.issueNames()).stream().map(it->new Link().setType("issue").setName(it.contains("/") ? StringUtils.substringAfterLast(it, "/") : it).setUrl(it)).collect(Collectors.toList()));
+            }
+        };
+    }
+
+    private Consumer<TestResult> setFlaky(final TestMethod testMethod) {
+
+        return result -> {
+            io.qameta.allure.Flaky issueAnnotationLink = (io.qameta.allure.Flaky) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
+                    .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Flaky.class)).findFirst().orElse(null);
+            if (issueAnnotationLink != null) {
+                result.setStatusDetails(result.getStatusDetails() == null ? new StatusDetails().setFlaky(true) : result.getStatusDetails().setFlaky(true));
             }
         };
     }
@@ -289,7 +298,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Link issueAnnotationLink = (io.qameta.allure.Link) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Link.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value())));
+                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value().contains("/") ? StringUtils.substringAfterLast(issueAnnotationLink.value(),"/") : issueAnnotationLink.value()).setUrl(issueAnnotationLink.url())));
             }
         };
     }
@@ -301,7 +310,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Links issueAnnotationLink = (io.qameta.allure.Links) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Links.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setName(it.value())).collect(Collectors.toList()));
+                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setName(it.value().contains("/") ? StringUtils.substringAfterLast(it.value(),"/") : it.value()).setUrl(it.url())).collect(Collectors.toList()));
             }
         };
     }
@@ -313,7 +322,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Issue issueAnnotationLink = (io.qameta.allure.Issue) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Issue.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value())));
+                result.setLinks(Collections.singletonList(new Link().setName(issueAnnotationLink.value().contains("/") ? StringUtils.substringAfterLast(issueAnnotationLink.value(),"/") : issueAnnotationLink.value()).setUrl(issueAnnotationLink.value())));
             }
         };
     }
@@ -325,7 +334,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             io.qameta.allure.Issues issueAnnotationLink = (io.qameta.allure.Issues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
                     .filter(annotation -> annotation.annotationType().equals(io.qameta.allure.Issues.class)).findFirst().orElse(null);
             if(issueAnnotationLink !=null) {
-                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setType("issue").setName(it.value())).collect(Collectors.toList()));
+                result.setLinks(Arrays.asList(issueAnnotationLink.value()).stream().map(it->new Link().setType("issue").setName(it.value().contains("/") ? StringUtils.substringAfterLast(it.value(),"/") : it.value()).setUrl(it.value())).collect(Collectors.toList()));
             }
         };
     }
@@ -403,13 +412,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
                     .filter(annotation -> annotation.annotationType().equals(AnaxTestStep.class)).findFirst().orElse(null);
             if (stepDescription != null) {
                 if (stepDescription.description().isEmpty()) {
-                    result.withSteps(
-                            new StepResult().withName("No available description found.").withStatus(getStepStatus(testMethod))
-                    );
+                    result.setSteps(List.of(new StepResult().setName("No available description found.").setStatus(getStepStatus(testMethod))));
                 } else {
-                    result.withSteps(
-                            new StepResult().withName(stepDescription.description()).withStatus(getStepStatus(testMethod))
-                    );
+                    result.setSteps(List.of(new StepResult().setName(stepDescription.description()).setStatus(getStepStatus(testMethod))));
                 }
 
             }
@@ -455,8 +460,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     public void generate(final Path reportDirectory,
-                             final List<Path> resultsDirectories,
-                             final boolean clean) {
+                         final List<Path> resultsDirectories,
+                         final boolean clean) {
         final boolean directoryExists = Files.exists(reportDirectory);
         if (clean && directoryExists) {
             FileUtils.deleteQuietly(reportDirectory.toFile());
@@ -475,5 +480,21 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             log.error("Could not generate report: {}", e);
         }
         log.info("Report successfully generated to {}", reportDirectory);
+    }
+
+    private String expandableHtmlSection(String sectionTitle, List<String> sectionContent) {
+        StringBuilder html = new StringBuilder();
+        String toggleScript = "function changeColor(el){var childClass=el.getElementsByTagName('i')[0].classList; " +
+                "if (childClass.contains('fa-angle-right')) {childClass.remove('fa-angle-right'); childClass.add('fa-angle-down');} " +
+                "else {childClass.add('fa-angle-right'); childClass.remove('fa-angle-down');}}; changeColor(this)";
+        html.append("<details open>")
+                .append("<summary style=\"cursor:pointer\">")
+                .append("<h3 onclick=\"" + toggleScript + "\">")
+                .append("<i class=\"fa fa-angle-down\" aria-hidden=\"true\"></i>\n")
+                .append(sectionTitle).append("</h3>")
+                .append("</summary>");
+        sectionContent.forEach(content -> html.append("<pre>").append(content).append("</pre>"));
+        html.append("</details>");
+        return html.toString();
     }
 }

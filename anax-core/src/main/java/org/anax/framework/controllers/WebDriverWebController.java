@@ -6,6 +6,8 @@ import org.anax.framework.util.HttpCookie;
 import org.openqa.selenium.*;
 
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -28,7 +30,7 @@ public class WebDriverWebController implements WebController {
     private static final int TO_MILLIS = 1000;
 
     /** The Constant THREAD_SLEEP. */
-    private static final long THREAD_SLEEP = 10000;
+    private static final long THREAD_SLEEP = 100;
 
     /** The Constant XPATH. */
     private static final String XPATH = "xpath";
@@ -1517,6 +1519,14 @@ public class WebDriverWebController implements WebController {
             allCookies.add(new HttpCookie(c.getName(), c.getValue()));
         }
         return allCookies;
+    }
+
+    /* (non-Javadoc)
+     * @see com.persado.oss.quality.stevia.selenium.core.WebController#getBrowserLogs()
+     */
+    @Override
+    public List<LogEntry> getBrowserLogs() {
+        return driver.manage().logs().get(LogType.BROWSER).getAll();
     }
 
     public Map<String, Map<String, String>> getTableInfo(String locator, int numberOfColumns) {

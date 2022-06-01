@@ -5,6 +5,7 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.logging.LogEntry;
 
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -701,6 +702,13 @@ public interface WebController {
      * @return the columns number of the table
      */
     int getNumberOfTotalColumns(String locator);
+
+    /**
+     * Get the logs from browser
+     * @return
+     */
+    List<LogEntry> getBrowserLogs();
+
 
     /**
      * Gets the table info.
