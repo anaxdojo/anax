@@ -12,6 +12,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.touch.TouchActions;
+import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.remote.RemoteWebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -412,6 +413,11 @@ public class AppiumDriverWebController implements WebController{
     @Override
     public int getNumberOfTotalColumns(String locator) {
         return 0;
+    }
+
+    @Override
+    public List<LogEntry> getBrowserLogs() {
+        return driver.manage().logs().get("browser").getAll();
     }
 
     @Override
