@@ -188,7 +188,7 @@ public abstract class BySizzle extends By {
                 return; // sizzle is ready
             }
 
-            for (int i = 0; i<40; i++ ) {
+            for (int i = 0; i < 6; i++ ) {
                 if(sizzleLoaded() ) {
                     return; // sizzle is loaded
                 }
@@ -197,7 +197,7 @@ public abstract class BySizzle extends By {
                 } catch (InterruptedException e) {
                     // FIX: nothing to print here
                 }
-                if (i % 10 == 0) {
+                if (i % 2 == 0) {
                     log.error("Attempting to re-load SizzleCSS from {}",getSizzleUrl());
                     injectSizzle();
                 }
@@ -209,7 +209,7 @@ public abstract class BySizzle extends By {
             }
             // sizzle is not loaded yet
             throw new RuntimeException("Sizzle loading from ("+ getSizzleUrl() +") has failed - " +
-                    "provide a better sizzle URL via -DsizzleUrl");
+                    "provide a better sizzle URL via -DsizzleUrl or the page do not allow it");
         }
 
         private String getSizzleUrl() {
