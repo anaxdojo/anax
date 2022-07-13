@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.anax.framework.plugins</groupId>
         <artifactId>anax-plugins</artifactId>
-        <version>1.0.11-SNAPSHOT</version>
+        <version>1.0.12-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
