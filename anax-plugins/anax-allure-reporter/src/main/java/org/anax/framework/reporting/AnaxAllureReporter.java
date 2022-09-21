@@ -187,8 +187,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     @Override
-    public void addSkipped(Test test, TestMethod testMethod, String skipReason) {
-        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.SKIPPED,skipReason));
+    public void addSkipped(Test test, TestMethod testMethod, Throwable throwable) {
+        getLifecycle().updateTestCase(getUniqueUuid(test,testMethod), setStatus(Status.SKIPPED,throwable,testMethod));
         try {
             failed = true;
             takeScreenshotOnFailure();
@@ -258,13 +258,6 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
             html.append(expandableHtmlSection("Special Info", Collections.emptyList()));
 
             result.setDescriptionHtml(html.toString());
-        };
-    }
-
-    private Consumer<TestResult> setStatus(final Status status, String reason) {
-        return result -> {
-            result.setStatus(status);
-            result.setDescription(reason);
         };
     }
 

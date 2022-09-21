@@ -181,17 +181,19 @@ public class AnaxSuiteRunner {
 
         testsToRun.sort(Comparator.comparingInt(TestMethod::getOrdering));
 
-        //before testmethod:
+        //before testmethod - Skip if the first before fails
         test.getTestBeforeMethods().sort(Comparator.comparingInt(TestMethod::getOrdering));//sort beforeTest via order
         test.getTestBeforeMethods().forEach(tm -> {
-            log.info("---- BEFORE START: {}", tm.getTestMethod());
-            TestResult result = executeRecordingResult(suite, test, tm, false);
-            if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
-                globalSkip.set(true);
-                tm.getStdOut().append(result.getStdOutput());
-                reporter.startTest(test,tm);
-                reporter.addSkipped(test, tm, "Skipped due to @AnaxBefore failure");
-                reporter.endTest(test, tm);
+            if (!globalSkip.get()) {//in case the first before skipped
+                log.info("---- BEFORE START: {}", tm.getTestMethod());
+                TestResult result = executeRecordingResult(suite, test, tm, false);
+                if (result.notPassed()) { // if before is skipped, execute no other method - all are skipped.
+                    globalSkip.set(true);
+                    tm.getStdOut().append(result.getStdOutput());
+                    reporter.startTest(test, tm);
+                    reporter.addSkipped(test, tm, result.getThrowable());
+                    reporter.endTest(test, tm);
+                }
             }
             log.info("---- BEFORE END: {}", tm.getTestMethod());
         });

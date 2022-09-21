@@ -332,8 +332,8 @@ public class DefaultJUnitReporter implements XMLConstants, AnaxTestReporter, Rep
 
 
     @Override
-    public void addSkipped(Test test,  TestMethod method, String skipReason) {
-        formatSkip(test, method, skipReason);
+    public void addSkipped(Test test,  TestMethod method, Throwable t) {
+        formatSkip(test, method, t.getMessage());
         if (test != null) {
             ignoredTests.put(createTestDescription(test,method), test);
         }

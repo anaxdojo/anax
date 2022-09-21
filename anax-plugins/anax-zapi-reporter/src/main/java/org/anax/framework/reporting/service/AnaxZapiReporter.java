@@ -261,7 +261,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
     @Override
-    public void addSkipped(Test test, TestMethod method, String skipReason) {
+    public void addSkipped(Test test, TestMethod method, Throwable t) {
         if (enabled) {
 
             log.info("Added TC on the skippedTCs is: " + test.getTestBeanName());

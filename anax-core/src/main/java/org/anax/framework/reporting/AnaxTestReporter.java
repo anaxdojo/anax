@@ -33,7 +33,7 @@ public interface AnaxTestReporter {
 
     void addFailure(Test test, TestMethod method, Throwable t);
 
-    void addSkipped(Test test, TestMethod method, String skipReason);
+    void addSkipped(Test test, TestMethod method, Throwable t);
 
     void addError(Test test, TestMethod method, Throwable t);
 }

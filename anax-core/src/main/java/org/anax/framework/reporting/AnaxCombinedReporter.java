@@ -86,9 +86,9 @@ public class AnaxCombinedReporter implements AnaxTestReporter, ReporterSupportsS
     }
 
     @Override
-    public void addSkipped(Test test, TestMethod method, String skipReason) {
-        reporterA.addSkipped(test, method, skipReason);
-        reporterB.addSkipped(test, method, skipReason);
+    public void addSkipped(Test test, TestMethod method, Throwable t) {
+        reporterA.addSkipped(test, method, t);
+        reporterB.addSkipped(test, method, t);
     }
 
     @Override
