@@ -533,10 +533,10 @@ public class ZephyrZAPICloudService implements ZephyrService {
                 log.error("Jira issue {} not found! Will return empty issue id", issueKey);
             } else {
                 issueId = (String) new JSONObject(jiraIssueResponseEntity.getBody()).get("id");
-                log.info("Found jira issue with id: {}", issueId);
+                log.info("Found jira issue id: {} for issue key: {}", issueId, issueKey);
             }
         } catch (Exception e) {
-            log.error("Error while getting jira issue");
+            log.error("Error while getting jira issue id with key: {}", issueKey);
             e.printStackTrace();
         }
         return issueId;
