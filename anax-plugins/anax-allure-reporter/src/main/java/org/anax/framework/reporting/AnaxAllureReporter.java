@@ -5,6 +5,7 @@ import io.qameta.allure.model.Link;
 import io.qameta.allure.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.annotations.AnaxIssues;
+import org.anax.framework.annotations.AnaxIssuesContainer;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.VoidController;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -41,6 +43,8 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     @Value("${anax.video.fps:10}") Integer videoFramesPerSec;
     /** how many seconds to continue recording, after the "end recording" has been called */
     @Value("${anax.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
+    @Value("${spring.profiles.active:NOT_CONFIGURED}")
+    protected String environment;
 
     private final AllureLifecycle lifecycle;
     private String suiteName;
@@ -210,9 +214,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
 
     private Consumer<TestResult> setStatus(final Status status, TestMethod testMethod) {
-        AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
-                .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
-        boolean hasLinkedIssues = issueAnnotationLink != null && issueAnnotationLink.issueNames() != null && issueAnnotationLink.issueNames().length != 0;
+        boolean hasLinkedIssues = !getIssueNamesOfTest(testMethod).isEmpty();
         return result -> {
             if (status == Status.FAILED && hasLinkedIssues) {
                 log.info("Failed test is has known issue. Changing status to {}", Status.KNOWN.value());
@@ -274,13 +276,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     private Consumer<TestResult> setAnaxIssue(final TestMethod testMethod) {
-
-        testMethod.getTestMethod().getDeclaredAnnotations();
         return result -> {
-            AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
-                    .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
-            if(issueAnnotationLink !=null) {
-                result.setLinks(Arrays.asList(issueAnnotationLink.issueNames()).stream().map(it->new Link().setType("issue").setName(it.contains("/") ? StringUtils.substringAfterLast(it, "/") : it).setUrl(it)).collect(Collectors.toList()));
+            List<String> issueNames = getIssueNamesOfTest(testMethod);
+            if (!issueNames.isEmpty()) {
+                result.setLinks(issueNames.stream().map(it -> new Link().setType("issue").setName(it.contains("/") ? StringUtils.substringAfterLast(it, "/") : it).setUrl(it)).collect(Collectors.toList()));
             }
         };
     }
@@ -502,5 +501,33 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         sectionContent.forEach(content -> html.append("<pre>").append(content).append("</pre>"));
         html.append("</details>");
         return html.toString();
+    }
+
+    /**
+     * Returns the issue names of this method, for this environment
+     *
+     * @param testMethod
+     * @return
+     */
+    private List<String> getIssueNamesOfTest(TestMethod testMethod) {
+        List<String> issueNames = new ArrayList<>();
+        List<AnaxIssues> anaxIssuesList = new ArrayList<>();
+        Annotation anaxIssuesContainer = Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations()).filter(annotation -> annotation.annotationType().equals(AnaxIssuesContainer.class)).findFirst().orElse(null);
+        Annotation anaxIssues = Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations()).filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
+        if (anaxIssuesContainer != null) {
+            anaxIssuesList.addAll(Arrays.asList(((AnaxIssuesContainer) anaxIssuesContainer).value()));
+        } else if (anaxIssues != null) {
+            anaxIssuesList.add(((AnaxIssues) anaxIssues));
+        }
+        anaxIssuesList.forEach(anaxIssue -> {
+            if (anaxIssue.environment() == null || anaxIssue.environment().isEmpty() || anaxIssue.environment().equals(environment)) {
+                Arrays.stream(anaxIssue.issueNames()).forEach(issueName -> {
+                    if (issueName != null && !issueName.isEmpty() && !issueNames.contains(issueName)) {
+                        issueNames.add(issueName);
+                    }
+                });
+            }
+        });
+        return issueNames;
     }
 }
