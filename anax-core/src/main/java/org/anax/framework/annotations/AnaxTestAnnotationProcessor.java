@@ -4,6 +4,7 @@ package org.anax.framework.annotations;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxSuiteRunner;
 import org.anax.framework.model.*;
+import org.anax.framework.util.IssuesPerEnvironmentResolver;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -25,6 +26,9 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
 
     private final ApplicationContext context;
     private final AnaxSuiteRunner suiteRunner;
+
+    @Autowired
+    protected IssuesPerEnvironmentResolver issuesPerEnvironmentResolver;
 
     public AnaxTestAnnotationProcessor(@Autowired ApplicationContext context, @Autowired AnaxSuiteRunner suiteRunner) {
         this.context = context;
@@ -71,13 +75,10 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                     suiteRunner.registerBeforeTest(test, method, beforeTest.ordering());
                 });
 
-                Arrays.stream(declaredAnnotations).filter(item -> item.annotationType() == AnaxIssues.class)
-                        .findFirst().ifPresent(testIssue -> {
-                    AnaxIssues issues = (AnaxIssues) testIssue;
-
-                    suiteRunner.registerIssues(test, Arrays.asList(issues.issueNames()));
-                });
-
+                List<String> issueNames = issuesPerEnvironmentResolver.getIssueNamesOfTest(method);
+                if (!issueNames.isEmpty()) {
+                    suiteRunner.registerIssues(test, issueNames);
+                }
                 //we need the AtomicReference to simulate the "effectively final"
                 final AtomicReference<TestMethod> mainTestMethod = new AtomicReference<>();
 //--------------------------------- Setting Up the TestStep  ---------------------------------------------------------------------
