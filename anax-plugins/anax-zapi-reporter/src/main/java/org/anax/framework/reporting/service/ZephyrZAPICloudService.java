@@ -8,6 +8,7 @@ import org.anax.framework.reporting.model.CycleInfo;
 import org.anax.framework.reporting.model.Results;
 import org.anax.framework.reporting.model.Version;
 import org.anax.framework.reporting.model.jira.Project;
+import org.anax.framework.reporting.utilities.CycleEnvironmentResolver;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,6 +38,9 @@ public class ZephyrZAPICloudService implements ZephyrService {
     @Autowired
     protected AnaxZapiVersionResolver versionResolver;
 
+    @Autowired
+    protected CycleEnvironmentResolver cycleEnvironmentResolver;
+
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     private String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")
@@ -53,6 +57,8 @@ public class ZephyrZAPICloudService implements ZephyrService {
     private String jiraUserEmail;
     @Value("${jira.api.token:https:NOT_CONFIGURED}")
     private String jiraApiToken;
+    @Value("${spring.profiles.active:NOT_CONFIGURED}")
+    private String environment;
 
     /**
      * Get cycle id from cycle name at UnSchedule
@@ -70,12 +76,12 @@ public class ZephyrZAPICloudService implements ZephyrService {
         String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
         String canonicalUrl = "GET&/public/rest/api/1.0/cycles/search&projectId=" + projectId + "&versionId=" + versionId;
         ResponseEntity<CycleInfo[]> cycleInfosArray = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(getZapiHeaders(MediaType.TEXT_PLAIN, JwtBuilder.generateJWTToken(canonicalUrl, zapiAccessKey, zapiSecretKey))), CycleInfo[].class);
-        CycleInfo cycleInfoFound = Arrays.stream(Objects.requireNonNull(cycleInfosArray.getBody())).filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
+        CycleInfo cycleInfoFound = Arrays.stream(Objects.requireNonNull(cycleInfosArray.getBody())).filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment)).findFirst().orElse(null);
 
         if (cycleInfoFound == null) {
-            log.error("No Cycle found on project key: {} with this name: {} for the version: {}", projectKey, cycleName, versionName);
+            log.error("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, environment);
         } else {
-            log.info("Cycle with id {} and name {} found on project key {} and version {}", cycleInfoFound.getId(), cycleName, projectKey, versionName);
+            log.info("Cycle with id: {} and name: {} found on project key: {} for version: {} and environment: {}", cycleInfoFound.getId(), cycleName, projectKey, versionName, environment);
         }
         return (cycleInfoFound != null) ? cycleInfoFound.getId() : null;
     }
@@ -378,6 +384,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
 
         cycleClone.setProjectId(projectId);
         cycleClone.setVersionId(versionId);
+        cycleClone.setEnvironment(environment);
         //cycleClone.setClonedCycleId(cycleId);
         String requestUrl = zapiUrl + "/public/rest/api/1.0/cycle?clonedCycleId=" + cycleId;
         String canonicalUrl = "POST&/public/rest/api/1.0/cycle&clonedCycleId=" + cycleId;
