@@ -2,6 +2,7 @@ package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.TestMethod;
+import org.anax.framework.reporting.cache.Caches;
 import org.anax.framework.reporting.model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -53,6 +55,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.CYCLES, unless = "#result == null")
     public String getCycleId(String projectName, String versionName, String cycleName) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);
@@ -71,6 +74,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.PROJECTS)
     public String getProjectId(String projectName) {
         ProjectList projectList = restTemplate.getForObject(zapiUrl + "util/project-list", ProjectList.class);
         LabelValue labelValue = projectList.getOptions().stream().filter(data -> data.getLabel().equals(projectName)).findFirst().orElse(null);
@@ -87,6 +91,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.CYCLES, unless = "#result == null")
     public String getCycleIdUnderUnSchedule(String projectName, String cycleName) {
         String projectId = getProjectId(projectName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=-1", HttpMethod.GET, HttpEntity.EMPTY, Map.class);
@@ -103,6 +108,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.VERSIONS)
     public String getVersionId(String projectId, String versionName) {
         ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectId + "/versions", HttpMethod.GET, new HttpEntity<>(getHeaders()), new ParameterizedTypeReference<List<Version>>() {
         });
@@ -126,6 +132,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      * @throws Exception
      */
     @Override
+    @Cacheable(value = Caches.EXECUTION_IDS, unless = "#result == null")
     public String getIssueExecutionIdViaAttributeValue(String projectName, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);

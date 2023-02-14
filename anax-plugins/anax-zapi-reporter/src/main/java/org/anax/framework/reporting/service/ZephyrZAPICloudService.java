@@ -2,6 +2,7 @@ package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.TestMethod;
+import org.anax.framework.reporting.cache.Caches;
 import org.anax.framework.reporting.configuration.CustomHttpHeaders;
 import org.anax.framework.reporting.model.CycleClone;
 import org.anax.framework.reporting.model.CycleInfo;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -62,6 +64,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.CYCLES, unless = "#result == null")
     public String getCycleId(String projectKey, String versionName, String cycleName) {
         String projectId = getProjectId(projectKey);
         String versionId = "Unscheduled".equals(versionName) ? "-1" : getVersionId(projectKey, versionName);
@@ -88,6 +91,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.PROJECTS)
     public String getProjectId(String projectKey) {
         String projectId = "";
         try {
@@ -122,6 +126,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.VERSIONS)
     public String getVersionId(String projectKey, String versionName) {
         ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getJiraHeaders()), new ParameterizedTypeReference<List<Version>>() {
         });
@@ -139,6 +144,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.EXECUTIONS)
     public JSONObject getIssueExecutionViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectKey);
         String versionId = getVersionId(projectKey, versionName);
@@ -163,6 +169,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
+    @Cacheable(value = Caches.EXECUTION_IDS, unless = "#result == null")
     public String getIssueExecutionIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         try {
             return getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("id").toString();
@@ -181,6 +188,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
+    @Cacheable(value = Caches.EXECUTION_ISSUE_IDS, unless = "#result == null")
     public String getIssueExecutionIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         try {
             return getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("issueId").toString();
@@ -200,6 +208,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
+    @Cacheable(value = Caches.ISSUE_IDS, unless = "#result == null")
     public String getIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectKey);
         String versionId = getVersionId(projectKey, versionName);
@@ -496,10 +505,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
         String versionId = getVersionId(projectKey, versionName);
         String cycleId = getCycleId(projectKey, versionName, cycleName);
         List<String> bugsIds = new ArrayList<>();
-        for (String bugKey : bugs) {
-            bugsIds.add(getJiraIssueId(bugKey));
-        }
-        //bugs.forEach(bugKey -> getJiraIssue(bugKey));
+        bugs.forEach(bugKey -> bugsIds.add(getJiraIssueId(bugKey)));
         Map postBody = new HashMap();
         postBody.put("cycleId", cycleId);
         postBody.put("projectId", projectId);
@@ -518,6 +524,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param issueKey
      * @return
      */
+    @Cacheable(value = Caches.ISSUES)
     private String getJiraIssueId(String issueKey) {
         String issueId = "";
         try {
