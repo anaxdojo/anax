@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.TestMethod;
 import org.anax.framework.reporting.model.*;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -19,11 +18,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
+
+import static org.anax.framework.reporting.utilities.JsonUtilities.filterDataByAttributeValue;
 
 @Service
 @Slf4j
@@ -235,7 +234,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
 
     @Override
     public void addTcExecutionAttachments(String entityId, String executionId, String issueId, String projectId, String versionId, String cycleId, File file) {
-        log.error(">>> Not implemented for Zephyr server instance!");
+        log.error("Not implemented for Zephyr server instance!");
     }
 
     /**
@@ -254,7 +253,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
 
     @Override
     public void addStepExecutionAttachments(String stepResultId, String tcExecutionId, String issueId, String projectId, String versionId, String cycleId, File file) {
-        log.error(">>> Not implemented for Zephyr server instance!");
+        log.error("Not implemented for Zephyr server instance!");
     }
 
     /**
@@ -303,7 +302,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
 
     @Override
     public void updateTestExecutionComment(String projectName, String versionName, String cycleName, String tcExecutionID, String tcExecutionIssueID, String comment) {
-        log.error(">>> Not implemented for Zephyr server instance!");
+        log.error("Not implemented for Zephyr server instance!");
     }
 
 
@@ -324,25 +323,12 @@ public class ZephyrZAPIServerService implements ZephyrService {
 
     @Override
     public void updateTestExecutionBugs(String projectName, String versionName, String cycleName, String tcExecutionID, String tcExecutionIssueID, List<String> bugs) {
-        log.error(">>> Not implemented for Zephyr server instance!");
+        log.error("Not implemented for Zephyr server instance!");
     }
 
     @Override
     public void updateTestStepStatus(String tcExecutionId, String stepResultId, String executionIssueId, String testStepId, String status) {
         log.error("Not implemented for Zephyr server instance");
-    }
-
-
-    //Find the correct object in a jsonArray based on the value of an attribute,Create a list of label and then get the index of the JsonObject with this label
-    private JSONObject filterDataByAttributeValue(JSONArray jsonArray, String attribute, String labelValue) throws JSONException {
-        int index;
-        ArrayList<String> values = new ArrayList<>();
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            values.add(jsonArray.getJSONObject(i).getString(attribute).toLowerCase());
-        }
-        index = IntStream.range(0, values.size()).filter(i -> values.get(i).contains(labelValue.toLowerCase())).findFirst().getAsInt();
-        return jsonArray.getJSONObject(index);
     }
 
     //Search all the steps of tc executionId , returns the testStepId according the orderId

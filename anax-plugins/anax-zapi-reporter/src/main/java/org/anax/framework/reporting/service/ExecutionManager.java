@@ -26,9 +26,9 @@ public class ExecutionManager {
     public ExecutionManager(ZephyrService zapiService, TestCaseToIssueResolver issueResolver) {
         this.zapiService = zapiService;
         if (this.zapiService instanceof ZephyrZAPIServerService) {
-            log.info(">>> Instantiated ZAPI server service...");
+            log.info("Instantiated ZAPI server service...");
         } else if (this.zapiService instanceof ZephyrZAPICloudService) {
-            log.info(">>> Instantiated ZAPI cloud service...");
+            log.info("Instantiated ZAPI cloud service...");
         }
         this.issueResolver = issueResolver;
     }
