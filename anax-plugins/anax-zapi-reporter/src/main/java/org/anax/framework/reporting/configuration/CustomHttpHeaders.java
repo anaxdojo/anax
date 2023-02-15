@@ -3,6 +3,7 @@ package org.anax.framework.reporting.configuration;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.reporting.authentication.JwtBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ public class CustomHttpHeaders {
     @Value("${jira.api.token:https:NOT_CONFIGURED}")
     private String jiraApiToken;
 
+    @Bean(name = "single")
     public HttpHeaders getJiraHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

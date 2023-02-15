@@ -168,11 +168,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void startAnaxTest(Test test) {
         if (enabled) {
-            if (testStepStatusUpdateEnabled) {
-                tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
-                if (CollectionUtils.isEmpty(tcSteps)) {
-                    tcComment = new HashMap<>();
-                }
+            tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
+            if (CollectionUtils.isEmpty(tcSteps)) {//If no steps exist ,init map
+                tcComment = new HashMap<>();
             }
         }
     }
@@ -207,7 +205,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 passedTCs.add(test.getTestBeanName());
             }
 
-            if (CollectionUtils.isEmpty(tcSteps)) {
+            if (tcComment != null) {//if steps do not exist so map was init previously , fill it
                 if (!testMethod.isPassed() && testMethod.getDescription() != null) {
                     tcComment.put((testMethod.getOrdering() + 1), testMethod.getDescription());
                 }

@@ -47,8 +47,10 @@ public class ZephyrZAPICloudService implements ZephyrService {
     protected CycleEnvironmentResolver cycleEnvironmentResolver;
 
     @Autowired
+    @Qualifier("single")
+    protected HttpHeaders jiraHttpHeaders;
+    @Autowired
     protected CustomHttpHeaders customHttpHeaders;
-
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     protected String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")
@@ -101,7 +103,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     public String getProjectId(String projectKey) {
         String projectId = "";
         try {
-            ResponseEntity<String> projectResponseEntity = restTemplate.exchange(jiraUrl + "project/" + projectKey, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getJiraHeaders()), String.class);
+            ResponseEntity<String> projectResponseEntity = restTemplate.exchange(jiraUrl + "project/" + projectKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
             projectId = new JSONObject(projectResponseEntity.getBody()).get("id").toString();
         } catch (Exception e) {
             log.error("Error while getting the project id");
@@ -134,7 +136,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     @Override
     @Cacheable(value = Caches.VERSIONS)
     public String getVersionId(String projectKey, String versionName) {
-        ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getJiraHeaders()), new ParameterizedTypeReference<List<Version>>() {
+        ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), new ParameterizedTypeReference<List<Version>>() {
         });
         log.info("Version id: {}", versionResolver.getVersionFromJIRA(versionName, versions));
         return versionResolver.getVersionFromJIRA(versionName, versions);
@@ -535,7 +537,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     private String getJiraIssueId(String issueKey) {
         String issueId = "";
         try {
-            ResponseEntity<String> jiraIssueResponseEntity = restTemplate.exchange(jiraUrl + "issue/" + issueKey, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getJiraHeaders()), String.class);
+            ResponseEntity<String> jiraIssueResponseEntity = restTemplate.exchange(jiraUrl + "issue/" + issueKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
             if (jiraIssueResponseEntity.getStatusCode() != HttpStatus.OK) {
                 log.error("Jira issue {} not found! Will return empty issue id", issueKey);
             } else {
