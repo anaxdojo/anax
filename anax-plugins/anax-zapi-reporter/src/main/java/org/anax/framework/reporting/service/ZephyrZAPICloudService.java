@@ -53,7 +53,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     protected String jiraUrl;
     @Value("${jira.search.tc.attribute:label}")
     protected String attribute;
-    @Value("${spring.profiles.active:NOT_CONFIGURED}")
+    @Value("${spring.profiles.active:#{null}}")
     protected String environment;
 
     /**
@@ -73,7 +73,12 @@ public class ZephyrZAPICloudService implements ZephyrService {
         String canonicalUrl = "GET&/public/rest/api/1.0/cycles/search&projectId=" + projectId + "&versionId=" + versionId;
         ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, canonicalUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {
         });
-        CycleInfo cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment)).findFirst().orElse(null);
+        CycleInfo cycleInfoFound;
+        if (environment != null && !environment.isEmpty()) {
+            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment)).findFirst().orElse(null);
+        } else {
+            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
+        }
 
         if (cycleInfoFound == null) {
             log.error("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, environment);
@@ -417,7 +422,9 @@ public class ZephyrZAPICloudService implements ZephyrService {
         if (cycleId != null) {
             cycleClone.setProjectId(projectId);
             cycleClone.setVersionId(versionId);
-            cycleClone.setEnvironment(environment);
+            if (environment != null && !environment.isEmpty()) {
+                cycleClone.setEnvironment(environment);
+            }
             String requestUrl = zapiUrl + "/public/rest/api/1.0/cycle?clonedCycleId=" + cycleId;
             String canonicalUrl = "POST&/public/rest/api/1.0/cycle&clonedCycleId=" + cycleId;
             restTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity(cycleClone, customHttpHeaders.getZapiHeaders(MediaType.APPLICATION_JSON, canonicalUrl)), CycleClone.class);

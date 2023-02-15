@@ -11,14 +11,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Resolves which issues are linked with a test for the specific environment
+ * (due to {@link AnaxIssues} is repeatable and also optionally can have an {@link AnaxIssues#environment()} specified).
+ * <p>
+ * Example: Supposing there is a test with the following annotations:
+ * </p>
+ * - {@code @AnaxIssues(issueNames = {"BUG-1"})} <br>
+ * - {@code @AnaxIssues(issueNames = {"BUG-2"}, environment = "ENV_1")} <br>
+ * - {@code @AnaxIssues(issueNames = {"BUG-3"}, environment = "ENV_2")} <br>
+ * <p>
+ * and supposing that {@code spring.profiles.active=ENV_1} <br>
+ * <p>
+ * Then the linked issues will be {@code BUG-1, BUG-2}
+ */
 @Component
 public class IssuesPerEnvironmentResolver {
 
-    @Value("${spring.profiles.active:NOT_CONFIGURED}")
+    @Value("${spring.profiles.active:#{null}}")
     String environment;
 
     /**
-     * Returns the issue names of this method, for this environment
+     * Returns a list containing the issue names of this method that are linked for this environment
      *
      * @param testMethod
      * @return

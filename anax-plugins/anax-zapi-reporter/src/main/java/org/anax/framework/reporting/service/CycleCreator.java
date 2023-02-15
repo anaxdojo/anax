@@ -30,23 +30,30 @@ public class CycleCreator {
      * @param cycleName
      */
     public String createCycleInVersion(String projectName, String versionName, String cycleName) {
-        if (zapiService instanceof ZephyrZAPIServerService) {
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatterPattern);
-            return createCycleInVersion(projectName, versionName, cycleName, dtf.format(LocalDateTime.now()));
-        } else {
-            return createCycleInVersion(projectName, versionName, cycleName, String.valueOf(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000));
-        }
-    }
-
-    private String createCycleInVersion(String projectName, String versionName, String cycleName, String date) {
         String cycleIdFound = zapiService.getCycleId(projectName, versionName, cycleName);
         if (isNull(cycleIdFound) || cycleIdFound.isEmpty()) {//Cycle not exist
-            CycleClone cycleClone = new CycleClone(cycleName, date);
+            CycleClone cycleClone = new CycleClone(cycleName, getStartDate());
             zapiService.cloneCycleToVersion(projectName, versionName, cycleClone, cycleName);
             log.info("Test Cycle created with name: " + cycleName + " at version: " + versionName);
         } else {
             log.info("Test Cycle with name: " + cycleName + " at version: " + versionName + " already exist,continue!!");
         }
         return cycleName;
+    }
+
+    /**
+     * Returns the correct cycle start date depending on the {@link ZephyrService} instance
+     *
+     * @return
+     */
+    private String getStartDate() {
+        String date;
+        if (zapiService instanceof ZephyrZAPIServerService) {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatterPattern);
+            date = dtf.format(LocalDateTime.now());
+        } else {
+            date = String.valueOf(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000);
+        }
+        return date;
     }
 }
