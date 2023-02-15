@@ -16,4 +16,7 @@ import java.util.List;
 public class Results {
     List<String> executions;
     String status;
+    boolean clearDefectMappingFlag;
+    boolean testStepStatusChangeFlag;
+    String stepStatus;
 }

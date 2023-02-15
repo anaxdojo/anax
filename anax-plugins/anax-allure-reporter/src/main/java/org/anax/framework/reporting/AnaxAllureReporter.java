@@ -4,7 +4,6 @@ import io.qameta.allure.*;
 import io.qameta.allure.model.Link;
 import io.qameta.allure.model.*;
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.AnaxIssues;
 import org.anax.framework.annotations.AnaxTestStep;
 import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.VoidController;
@@ -12,6 +11,7 @@ import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
 import org.anax.framework.model.Test;
 import org.anax.framework.model.TestMethod;
+import org.anax.framework.util.IssuesPerEnvironmentResolver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -48,6 +48,9 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
     @Autowired
     protected WebController controller;
+
+    @Autowired
+    protected IssuesPerEnvironmentResolver issuesPerEnvironmentResolver;
 
     private boolean screenshotEnable;
     private boolean videoEnable;
@@ -210,9 +213,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
 
 
     private Consumer<TestResult> setStatus(final Status status, TestMethod testMethod) {
-        AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
-                .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
-        boolean hasLinkedIssues = issueAnnotationLink != null && issueAnnotationLink.issueNames() != null && issueAnnotationLink.issueNames().length != 0;
+        boolean hasLinkedIssues = !issuesPerEnvironmentResolver.getIssueNamesOfTest(testMethod.getTestMethod()).isEmpty();
         return result -> {
             if (status == Status.FAILED && hasLinkedIssues) {
                 log.info("Failed test is has known issue. Changing status to {}", Status.KNOWN.value());
@@ -274,13 +275,10 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
     }
 
     private Consumer<TestResult> setAnaxIssue(final TestMethod testMethod) {
-
-        testMethod.getTestMethod().getDeclaredAnnotations();
         return result -> {
-            AnaxIssues issueAnnotationLink = (AnaxIssues) Arrays.stream(testMethod.getTestMethod().getDeclaredAnnotations())
-                    .filter(annotation -> annotation.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
-            if(issueAnnotationLink !=null) {
-                result.setLinks(Arrays.asList(issueAnnotationLink.issueNames()).stream().map(it->new Link().setType("issue").setName(it.contains("/") ? StringUtils.substringAfterLast(it, "/") : it).setUrl(it)).collect(Collectors.toList()));
+            List<String> issueNames = issuesPerEnvironmentResolver.getIssueNamesOfTest(testMethod.getTestMethod());
+            if (!issueNames.isEmpty()) {
+                result.setLinks(issueNames.stream().map(it -> new Link().setType("issue").setName(it.contains("/") ? StringUtils.substringAfterLast(it, "/") : it).setUrl(it)).collect(Collectors.toList()));
             }
         };
     }

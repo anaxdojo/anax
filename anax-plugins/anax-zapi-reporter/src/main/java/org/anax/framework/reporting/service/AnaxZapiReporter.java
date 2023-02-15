@@ -24,51 +24,64 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScreenshot, ReporterSupportsVideo {
     @Autowired
-    protected CycleCreator                cycleCreator;
+    protected CycleCreator cycleCreator;
     @Autowired
-    protected ExecutionManager            executionManager;
+    protected ExecutionManager executionManager;
     @Autowired
-    protected WebController               controller;
+    protected WebController controller;
     @Autowired
     protected AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
 
 
-    @Value("${zapi.enabled:true}") private Boolean enabled;
-    /** do not change the FPS value over 15, due to h/w limitations */
-    @Value("${anax.video.fps:10}") Integer videoFramesPerSec;
-    /** how many seconds to continue recording, after the "end recording" has been called */
-    @Value("${anax.video.waitSecAtEnd:5}") Integer videoWaitSeconds;
+    @Value("${zapi.enabled:true}")
+    private Boolean enabled;
+    /**
+     * do not change the FPS value over 15, due to h/w limitations
+     */
+    @Value("${anax.video.fps:10}")
+    Integer videoFramesPerSec;
+    /**
+     * how many seconds to continue recording, after the "end recording" has been called
+     */
+    @Value("${anax.video.waitSecAtEnd:5}")
+    Integer videoWaitSeconds;
 
-    @Value("${zapi.status.pass.code:1}") private String pass;
-    @Value("${zapi.status.fail.code:2}") private String fail;
-    @Value("${zapi.status.skip.code:4}") private String skip;
-    @Value("${zapi.results.directory:zapi-results/}") String resultsZapiDirectory;
-    @Value("${zapi.jira.project:NOT_CONFIGURED}") private String project;
-    @Value("${zapi.testSteps.status.update:true}") private Boolean testStepStatusUpdateEnabled;
-    private VideoMaker          videoMaker;
-    private boolean             screenshotEnable;
-    private boolean             videoEnable;
-    private String              videoBaseDirectory;
-    private String              cycleName;
-    private String              version;
-    private Map<Integer,String> tcComment;
-    private Boolean failed   =  false;
+    @Value("${zapi.status.pass.code:1}")
+    private String pass;
+    @Value("${zapi.status.fail.code:2}")
+    private String fail;
+    @Value("${zapi.status.skip.code:4}")
+    private String skip;
+    @Value("${zapi.results.directory:zapi-results/}")
+    String resultsZapiDirectory;
+    @Value("${zapi.jira.project:NOT_CONFIGURED}")
+    private String project;
+    @Value("${zapi.testSteps.status.update:true}")
+    private Boolean testStepStatusUpdateEnabled;
+    private VideoMaker videoMaker;
+    private boolean screenshotEnable;
+    private boolean videoEnable;
+    private String videoBaseDirectory;
+    private String cycleName;
+    private String version;
+    private Map<Integer, String> tcComment;
+    private Boolean failed = false;
 
 
-    private Set<String>  passedTCs   = new HashSet<>();
-    private Set<String>  failedTCs   = new HashSet<>();
-    private Set<String>  skippedTCs  = new HashSet<>();
-    private Set<String>  errorTCs    = new HashSet<>();
-    private List<String> tcSteps     = new ArrayList<>();
+    private Set<String> passedTCs = new HashSet<>();
+    private Set<String> failedTCs = new HashSet<>();
+    private Set<String> skippedTCs = new HashSet<>();
+    private Set<String> errorTCs = new HashSet<>();
+    private List<String> tcSteps = new ArrayList<>();
 
 
     @Autowired
-    public AnaxZapiReporter(AnaxZapiVersionResolver versionResolver){
+    public AnaxZapiReporter(AnaxZapiVersionResolver versionResolver) {
         version = versionResolver.resolveAppVersion();
     }
 
     @Override
-    public void startOutput(String reportDirectory, String suiteName){
+    public void startOutput(String reportDirectory, String suiteName) {
 
     }
 
@@ -84,7 +97,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
     @Override
     public void startTestSuite(Suite suite) {
-        if(enabled) {
+        if (enabled) {
             cycleName = suite.getName();
             log.info("************* ZAPI Reporter Start() ***** " + this);
             log.info("********************************************\r\n\r\n");
@@ -97,8 +110,8 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
     @Override
-    public boolean endTestSuite(Suite suite){
-        if(enabled) {
+    public boolean endTestSuite(Suite suite) {
+        if (enabled) {
             log.info("************* ZAPI Reporter onFinish() ***** " + this);
             log.info("********************************************\r\n\r\n");
             log.info("onFinish: Cycle: " + cycleName + ", version: " + version + ", manager: " + executionManager + " - " + this.toString());
@@ -167,7 +180,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
     @Override
     public void startTest(Test test, TestMethod testMethod) {
-        if(enabled) {
+        if (enabled) {
 
             if (videoEnable) {
                 try {
@@ -194,8 +207,8 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 passedTCs.add(test.getTestBeanName());
             }
 
-            if(CollectionUtils.isEmpty(tcSteps)){
-                if(!testMethod.isPassed() && testMethod.getDescription() != null) {
+            if (CollectionUtils.isEmpty(tcSteps)) {
+                if (!testMethod.isPassed() && testMethod.getDescription() != null) {
                     tcComment.put((testMethod.getOrdering() + 1), testMethod.getDescription());
                 }
             }
@@ -204,7 +217,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 if (videoMaker != null) {
                     try {
                         videoMaker.completeVideo();
-                        if(CollectionUtils.isEmpty(tcSteps)) {//attach to tc
+                        if (CollectionUtils.isEmpty(tcSteps)) {//attach to tc
                             if (!testMethod.isPassed()) {
                                 attachVideoOnTc(test, testMethod);
                             }
@@ -217,13 +230,13 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             }
 
             if (testStepStatusUpdateEnabled) {
-                if(!CollectionUtils.isEmpty(tcSteps)) {
+                if (!CollectionUtils.isEmpty(tcSteps)) {
                     File screenshot = null;
                     File video = null;
 
-                    if(!testMethod.isPassed()) {
+                    if (!testMethod.isPassed()) {
                         screenshot = (screenshotEnable) ? takeScreenshotReturnPath(test, testMethod) : null;
-                        video = (videoEnable) ? getVideoPath(test,testMethod) : null;
+                        video = (videoEnable) ? getVideoPath(test, testMethod) : null;
                     }
                     executionManager.updateTestStepStatusAddAttachments(project, version.trim(), cycleName.trim(), test.getTestBeanName(), getTestStepStatusCode(testMethod), testMethod, screenshot, video);
                 }
@@ -246,7 +259,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 }
             }
 
-            executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(),anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
+            executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(), anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
         }
     }
 
@@ -278,7 +291,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
     @Override
-    public void addError(Test test, TestMethod method, Throwable t){
+    public void addError(Test test, TestMethod method, Throwable t) {
         if (enabled) {
 
             log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
@@ -308,16 +321,16 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
     //Create cycle
     private void initialiseCycles(String projectName, String versionName, String cycleName) {
-        try{
-            cycleCreator.createCycleInVersion(projectName,versionName.trim(), cycleName.trim());
-        }catch (Exception e){
-            log.info("Cycle on Jira was not created due to: "+e.getMessage());
+        try {
+            cycleCreator.createCycleInVersion(projectName, versionName.trim(), cycleName.trim());
+        } catch (Exception e) {
+            log.info("Cycle on Jira was not created due to: " + e.getMessage());
         }
     }
 
     //Return path of screenshot
-    private File takeScreenshotReturnPath(Test test, TestMethod method){
-        String path = resultsZapiDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName()+".png";
+    private File takeScreenshotReturnPath(Test test, TestMethod method) {
+        String path = resultsZapiDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".png";
         if (screenshotEnable) {
             try {
                 FileUtils.writeByteArrayToFile(new File(path), controller.takeScreenShotAsBytes());
@@ -330,13 +343,13 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
 
     //Returns video path
-    private File getVideoPath(Test test, TestMethod method){
+    private File getVideoPath(Test test, TestMethod method) {
         return new File(videoBaseDirectory + "/" + test.getTestBeanName() + "_" + method.getTestMethod().getName() + ".mov");
     }
 
     //attach video on tc when no steps available
     private void attachVideoOnTc(Test test, TestMethod method) {
-        File recording = getVideoPath(test,method);
+        File recording = getVideoPath(test, method);
         if (recording.exists()) {
             try {
                 executionManager.addExecutionAttachment(project, version, cycleName, test.getTestBeanName(), recording);
@@ -348,29 +361,31 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     }
 
     //Returns status code
-    private String getTestStepStatusCode(TestMethod testMethod){
-        if (testMethod.isPassed()){
+    private String getTestStepStatusCode(TestMethod testMethod) {
+        if (testMethod.isPassed()) {
             return pass;
-        }else if(testMethod.isSkip()){
+        } else if (testMethod.isSkip()) {
             return skip;
-        }else{
+        } else {
             return fail;
         }
     }
 
-    private void printSuiteTestCases(Suite suite){
+    private void printSuiteTestCases(Suite suite) {
         try {
             List<String> tcs = suite.getTests().stream().map(it -> it.getTestBeanName()).collect(Collectors.toList());
             log.info("Start suite: {} with tests: {}", suite.getName(), tcs);
-        }catch (Exception e){e.printStackTrace();}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //Sort map - split entry per line
-    private String tcCommentPrettyPrint(Map map){
+    private String tcCommentPrettyPrint(Map map) {
         TreeMap<Integer, String> treeMap = new TreeMap<>(map);
 
         String mapAsString = treeMap.keySet().stream()
-                .map(key -> "Step"+String.valueOf(key) + "=" + map.get(key))
+                .map(key -> "Step" + String.valueOf(key) + "=" + map.get(key))
                 .collect(Collectors.joining("\n", "{", "}"));
         return mapAsString;
     }
