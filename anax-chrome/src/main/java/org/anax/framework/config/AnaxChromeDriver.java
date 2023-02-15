@@ -1,5 +1,6 @@
 package org.anax.framework.config;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.configuration.AnaxDriver;
 import org.anax.framework.controllers.WebController;
@@ -9,10 +10,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.Augmenter;
-import org.openqa.selenium.remote.CapabilityType;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -46,7 +44,7 @@ public class AnaxChromeDriver {
         options.setCapability("enableVNC", true);
 
         if (useLocal) {
-
+            WebDriverManager.chromedriver().setup();
             ChromeDriverService service = new ChromeDriverService.Builder().build();
             if(maximize.equals("true")) {
                 String x = (System.getProperty("os.name").toLowerCase().contains("mac")) ? "--start-fullscreen" : "--start-maximized";
@@ -63,8 +61,9 @@ public class AnaxChromeDriver {
             // adds screenshot capability to a default webdriver.
             return () -> {
                 Augmenter augmenter = new Augmenter();
-                WebDriver driver = augmenter.augment(new RemoteWebDriver(
-                    new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"), options));
+                RemoteWebDriver remoteWebDriver = new RemoteWebDriver(new URL("http://" + remoteHost + ":" + remotePort + "/wd/hub"), options);
+                remoteWebDriver.setFileDetector(new LocalFileDetector());
+                WebDriver driver = augmenter.augment(remoteWebDriver);
                 driver.get(targetUrl);
                 return driver;
             };

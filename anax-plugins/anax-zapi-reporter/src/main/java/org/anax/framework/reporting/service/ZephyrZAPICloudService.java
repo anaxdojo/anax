@@ -22,10 +22,12 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.anax.framework.reporting.utilities.JsonUtilities.filterDataByAttributeValue;
 import static org.anax.framework.reporting.utilities.JsonUtilities.filterDataByIntegerAttributeValue;
@@ -71,11 +73,10 @@ public class ZephyrZAPICloudService implements ZephyrService {
 
         String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
         String canonicalUrl = "GET&/public/rest/api/1.0/cycles/search&projectId=" + projectId + "&versionId=" + versionId;
-        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, canonicalUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {
-        });
+        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, canonicalUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {});
         CycleInfo cycleInfoFound;
-        if (environment != null && !environment.isEmpty()) {
-            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment)).findFirst().orElse(null);
+        if (StringUtils.hasLength(environment)) {
+            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment.toLowerCase().trim())).findFirst().orElse(null);
         } else {
             cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
         }
@@ -284,9 +285,8 @@ public class ZephyrZAPICloudService implements ZephyrService {
         List<String> testStepsIds = new ArrayList<>();
         try {
             JSONArray testSteps = new JSONArray(this.restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity(customHttpHeaders.getZapiHeaders(MediaType.APPLICATION_JSON, canonicalUrl)), String.class).getBody());
-            for (int i = 0; i < testSteps.length(); i++) {
-                testStepsIds.add((String) testSteps.getJSONObject(i).get("id"));
-            }
+            IntStream.range(0,testSteps.length()).forEach(i-> {try {testStepsIds.add((String) testSteps.getJSONObject(i).get("id"));} catch (JSONException e) {throw new RuntimeException(e);}});
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -422,8 +422,8 @@ public class ZephyrZAPICloudService implements ZephyrService {
         if (cycleId != null) {
             cycleClone.setProjectId(projectId);
             cycleClone.setVersionId(versionId);
-            if (environment != null && !environment.isEmpty()) {
-                cycleClone.setEnvironment(environment);
+            if (StringUtils.hasLength(environment)) {
+                cycleClone.setEnvironment(environment.toLowerCase().trim());
             }
             String requestUrl = zapiUrl + "/public/rest/api/1.0/cycle?clonedCycleId=" + cycleId;
             String canonicalUrl = "POST&/public/rest/api/1.0/cycle&clonedCycleId=" + cycleId;

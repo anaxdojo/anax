@@ -1,9 +1,7 @@
 package org.anax.framework.examples.demotestapp.tests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.anax.framework.annotations.AnaxBeforeTest;
-import org.anax.framework.annotations.AnaxTest;
-import org.anax.framework.annotations.AnaxTestStep;
+import org.anax.framework.annotations.*;
 import org.anax.framework.testing.Verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,6 +20,8 @@ public class Giannis_13__03__02ANX_User_Management_Add_User {
     public void before() throws Exception{
     }
 
+    @AnaxIssues(issueNames = "https://jira.persado.com/browse/RON-2237")
+//    @AnaxIssuesContainer({@AnaxIssues(issueNames = "https://jira.persado.com/browse/RON-2237"),@AnaxIssues(issueNames = "https://jira.persado.com/browse/RON-2237")})
     @AnaxTestStep(description = "Verify PP creation")
     public void test_step1() throws Exception{
         Assert.isTrue(1==2);
