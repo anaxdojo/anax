@@ -5,7 +5,6 @@ import org.anax.framework.annotations.AnaxIssuesContainer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public class IssuesPerEnvironmentResolver {
             anaxIssuesList.add(((AnaxIssues) anaxIssues));
         }
         anaxIssuesList.forEach(anaxIssue -> {
-            if (!StringUtils.hasLength(anaxIssue.environment()) || anaxIssue.environment().toLowerCase().trim().equals(environment.toLowerCase().trim())) {
+            if (!StringUtils.hasLength(anaxIssue.environment()) || anaxIssue.environment().toLowerCase().trim().equals(getEnvironment())) {
                 Arrays.stream(anaxIssue.issueNames()).forEach(issueName -> {
                     if (issueName != null && !issueName.isEmpty() && !issueNames.contains(issueName)) {
                         issueNames.add(issueName);
@@ -58,5 +57,9 @@ public class IssuesPerEnvironmentResolver {
             }
         });
         return issueNames;
+    }
+
+    private String getEnvironment() {
+        return environment == null ? null : environment.toLowerCase().trim();
     }
 }

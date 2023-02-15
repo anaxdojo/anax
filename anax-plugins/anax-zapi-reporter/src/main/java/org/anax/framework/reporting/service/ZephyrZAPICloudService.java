@@ -76,7 +76,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
         ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, canonicalUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {});
         CycleInfo cycleInfoFound;
         if (StringUtils.hasLength(environment)) {
-            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, environment.toLowerCase().trim())).findFirst().orElse(null);
+            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, getEnvironment())).findFirst().orElse(null);
         } else {
             cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
         }
@@ -423,7 +423,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
             cycleClone.setProjectId(projectId);
             cycleClone.setVersionId(versionId);
             if (StringUtils.hasLength(environment)) {
-                cycleClone.setEnvironment(environment.toLowerCase().trim());
+                cycleClone.setEnvironment(getEnvironment());
             }
             String requestUrl = zapiUrl + "/public/rest/api/1.0/cycle?clonedCycleId=" + cycleId;
             String canonicalUrl = "POST&/public/rest/api/1.0/cycle&clonedCycleId=" + cycleId;
@@ -567,5 +567,9 @@ public class ZephyrZAPICloudService implements ZephyrService {
         LinkedMultiValueMap postBody = new LinkedMultiValueMap();
         postBody.add("file", new FileSystemResource(file));
         restTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity(postBody, customHttpHeaders.getZapiHeaders(MediaType.MULTIPART_FORM_DATA, canonicalUrl)), String.class);
+    }
+
+    private String getEnvironment() {
+        return environment == null ? null : environment.toLowerCase().trim();
     }
 }
