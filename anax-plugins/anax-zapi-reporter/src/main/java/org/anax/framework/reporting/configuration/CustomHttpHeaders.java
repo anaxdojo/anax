@@ -2,10 +2,12 @@ package org.anax.framework.reporting.configuration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.reporting.authentication.JwtBuilder;
+import org.anax.framework.reporting.utilities.CanonicalUrlResolver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
 @Configuration
@@ -29,10 +31,10 @@ public class CustomHttpHeaders {
         return headers;
     }
 
-    public HttpHeaders getZapiHeaders(MediaType mediaType, String canonicalUrl) {
+    public HttpHeaders getZapiHeaders(MediaType mediaType, HttpMethod httpMethod, String requestUrl, String baseUrl) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(mediaType);
-        headers.add("Authorization", "JWT " + JwtBuilder.generateJWTToken(canonicalUrl, zapiAccessKey, zapiSecretKey));
+        headers.add("Authorization", "JWT " + JwtBuilder.generateJWTToken(CanonicalUrlResolver.getCanonicalUrl(httpMethod, requestUrl, baseUrl), zapiAccessKey, zapiSecretKey));
         headers.add("zapiAccessKey", zapiAccessKey);
         return headers;
     }

@@ -56,7 +56,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
      */
     @Override
     @Cacheable(value = Caches.CYCLES, unless = "#result == null")
-    public String getCycleId(String projectName, String versionName, String cycleName) {
+    public String getCycleId(String projectName, String versionName, String cycleName, boolean initialSearch) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);
         ResponseEntity<Map> entity = restTemplate.exchange(zapiUrl + "cycle?projectId=" + projectId + "&versionId=" + versionId, HttpMethod.GET, HttpEntity.EMPTY, Map.class);
@@ -136,7 +136,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
     public String getIssueExecutionIdViaAttributeValue(String projectName, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectName);
         String versionId = getVersionId(projectId, versionName);
-        String cycleId = getCycleId(projectName, versionName, cycleName);
+        String cycleId = getCycleId(projectName, versionName, cycleName, false);
 
         try {
             try {
