@@ -1,7 +1,6 @@
 package org.anax.framework.reporting.authentication;
 
 import com.google.gson.Gson;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.Mac;
@@ -16,7 +15,6 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
 
 @Slf4j
-@UtilityClass
 public class JwtBuilder {
 
     public static String generateJWTToken(String canonicalUrl, String key, String sharedSecret) {

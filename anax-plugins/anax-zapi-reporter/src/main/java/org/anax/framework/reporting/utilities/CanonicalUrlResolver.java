@@ -1,6 +1,5 @@
 package org.anax.framework.reporting.utilities;
 
-import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.StringUtils;
 
@@ -10,7 +9,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 
-@UtilityClass
 public class CanonicalUrlResolver {
 
     public static String getCanonicalUrl(HttpMethod httpMethod, String requestUrl, String baseUrlToRemove) {

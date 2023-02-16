@@ -51,8 +51,10 @@ public class ZephyrZAPICloudService implements ZephyrService {
     @Autowired
     @Qualifier("single")
     protected HttpHeaders jiraHttpHeaders;
+
     @Autowired
     protected CustomHttpHeaders customHttpHeaders;
+
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     protected String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")
@@ -75,8 +77,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
         String projectId = getProjectId(projectKey);
         String versionId = "Unscheduled".equals(versionName) ? "-1" : getVersionId(projectKey, versionName);
         String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
-        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {
-        });
+        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {});
         CycleInfo cycleInfoFound;
         if (StringUtils.hasLength(environment)) {
             cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, getEnvironment())).findFirst().orElse(null);
@@ -84,7 +85,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
             cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
         }
 
-        if (cycleInfoFound == null && initialSearch) {
+        if (cycleInfoFound == null && initialSearch) {//No need to retryconn
             log.info("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
         } else if (cycleInfoFound == null) {
             log.error("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
@@ -146,8 +147,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     public String getVersionId(String projectKey, String versionName) {
         String versionId = "";
         try {
-            ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), new ParameterizedTypeReference<List<Version>>() {
-            });
+            ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), new ParameterizedTypeReference<List<Version>>() {});
             versionId = versionResolver.getVersionFromJIRA(versionName, versions);
             log.info("Version id: {}", versionId);
             if (!StringUtils.hasLength(versionId)) {

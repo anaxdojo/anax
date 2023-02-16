@@ -1,6 +1,5 @@
 package org.anax.framework.reporting.utilities;
 
-import lombok.experimental.UtilityClass;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -8,7 +7,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
 
-@UtilityClass
 public class JsonUtilities {
     /**
      * Find the correct object in a jsonArray based on the value of an attribute,Create a list of label and then get the index of the JsonObject with this label
