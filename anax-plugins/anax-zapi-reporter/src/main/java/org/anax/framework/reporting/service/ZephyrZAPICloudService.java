@@ -1,9 +1,10 @@
 package org.anax.framework.reporting.service;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.TestMethod;
-import org.anax.framework.reporting.cache.Caches;
 import org.anax.framework.reporting.configuration.CustomHttpHeaders;
+import org.anax.framework.reporting.cache.DataObject;
 import org.anax.framework.reporting.model.CycleClone;
 import org.anax.framework.reporting.model.CycleInfo;
 import org.anax.framework.reporting.model.Results;
@@ -16,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -55,6 +55,10 @@ public class ZephyrZAPICloudService implements ZephyrService {
     @Autowired
     protected CustomHttpHeaders customHttpHeaders;
 
+    @Autowired
+    @Qualifier("cache")
+    protected LoadingCache<String, DataObject> cache;
+
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     protected String zapiUrl;
     @Value("${jira.url:https:NOT_CONFIGURED}")
@@ -72,28 +76,37 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.CYCLES, unless = "#result == null")
     public String getCycleId(String projectKey, String versionName, String cycleName, boolean initialSearch) {
-        String projectId = getProjectId(projectKey);
-        String versionId = "Unscheduled".equals(versionName) ? "-1" : getVersionId(projectKey, versionName);
-        String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
-        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {});
-        CycleInfo cycleInfoFound;
-        if (StringUtils.hasLength(environment)) {
-            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, getEnvironment())).findFirst().orElse(null);
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + cycleName + "CycleId");
+        String cycleId = "";
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            cycleId = dataObject.getData();
+            log.info("Got cycle id from cache: {}", cycleId);
         } else {
-            cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
-        }
+            String projectId = getProjectId(projectKey);
+            String versionId = "Unscheduled".equals(versionName) ? "-1" : getVersionId(projectKey, versionName);
+            String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
+            ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {
+            });
+            CycleInfo cycleInfoFound;
+            if (StringUtils.hasLength(environment)) {
+                cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, getEnvironment())).findFirst().orElse(null);
+            } else {
+                cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName)).findFirst().orElse(null);
+            }
 
-        if (cycleInfoFound == null && initialSearch) {//No need to retryconn
-            log.info("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
-        } else if (cycleInfoFound == null) {
-            log.error("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
-            throw new RetryException(MessageFormat.format("No Cycle found on project key: {0} with this name: {1} for the version: {2} and environment: {3}", projectKey, cycleName, versionName, getEnvironment()));
-        } else {
-            log.info("Cycle with id: {} and name: {} found on project key: {} for version: {} and environment: {}", cycleInfoFound.getId(), cycleName, projectKey, versionName, getEnvironment());
+            if (cycleInfoFound == null && initialSearch) {//No need to retryconn
+                log.info("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
+            } else if (cycleInfoFound == null) {
+                log.error("No Cycle found on project key: {} with this name: {} for the version: {} and environment: {}", projectKey, cycleName, versionName, getEnvironment());
+                throw new RetryException(MessageFormat.format("No Cycle found on project key: {0} with this name: {1} for the version: {2} and environment: {3}", projectKey, cycleName, versionName, getEnvironment()));
+            } else {
+                log.info("Cycle with id: {} and name: {} found on project key: {} for version: {} and environment: {}", cycleInfoFound.getId(), cycleName, projectKey, versionName, getEnvironment());
+                cache.put(projectKey + versionName + cycleName + "CycleId", new DataObject(cycleInfoFound.getId()));
+            }
+            return (cycleInfoFound != null) ? cycleInfoFound.getId() : null;
         }
-        return (cycleInfoFound != null) ? cycleInfoFound.getId() : null;
+        return cycleId;
     }
 
 
@@ -104,21 +117,27 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.PROJECTS)
     public String getProjectId(String projectKey) {
         String projectId = "";
-        try {
-            ResponseEntity<String> projectResponseEntity = restTemplate.exchange(jiraUrl + "project/" + projectKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
-            projectId = new JSONObject(projectResponseEntity.getBody()).get("id").toString();
-            if (!StringUtils.hasLength(projectId)) {
+        DataObject dataObject = cache.getIfPresent(projectKey + "ProjectId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            projectId = dataObject.getData();
+            log.info("Got project id from cache: {}", projectId);
+        } else {
+            try {
+                ResponseEntity<String> projectResponseEntity = restTemplate.exchange(jiraUrl + "project/" + projectKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
+                projectId = new JSONObject(projectResponseEntity.getBody()).get("id").toString();
+                if (!StringUtils.hasLength(projectId)) {
+                    throw new RetryException(MessageFormat.format("Error while getting the project id for projectKey {0}", projectKey));
+                }
+                cache.put(projectKey + "ProjectId", new DataObject(projectId));
+            } catch (Exception e) {
+                log.error("Error while getting the project id");
+                e.printStackTrace();
                 throw new RetryException(MessageFormat.format("Error while getting the project id for projectKey {0}", projectKey));
             }
-        } catch (Exception e) {
-            log.error("Error while getting the project id");
-            e.printStackTrace();
-            throw new RetryException(MessageFormat.format("Error while getting the project id for projectKey {0}", projectKey));
+            log.info("Project id is: {}", projectId);
         }
-        log.info("Project id is: {}", projectId);
         return projectId;
     }
 
@@ -143,18 +162,25 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.VERSIONS)
     public String getVersionId(String projectKey, String versionName) {
         String versionId = "";
-        try {
-            ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), new ParameterizedTypeReference<List<Version>>() {});
-            versionId = versionResolver.getVersionFromJIRA(versionName, versions);
-            log.info("Version id: {}", versionId);
-            if (!StringUtils.hasLength(versionId)) {
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + "VersionId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            versionId = dataObject.getData();
+            log.info("Get versionId from cache: {}", versionId);
+        } else {
+            try {
+                ResponseEntity<List<Version>> versions = restTemplate.exchange(jiraUrl + "project/" + projectKey + "/versions", HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), new ParameterizedTypeReference<List<Version>>() {
+                });
+                versionId = versionResolver.getVersionFromJIRA(versionName, versions);
+                log.info("Version id: {}", versionId);
+                if (!StringUtils.hasLength(versionId)) {
+                    throw new RetryException(MessageFormat.format("Exception while getting the version id for projectKey {0} and versionName {1}", projectKey, versionName));
+                }
+                cache.put(projectKey + versionName + "VersionId", new DataObject(versionId));
+            } catch (Exception e) {
                 throw new RetryException(MessageFormat.format("Exception while getting the version id for projectKey {0} and versionName {1}", projectKey, versionName));
             }
-        } catch (Exception e) {
-            throw new RetryException(MessageFormat.format("Exception while getting the version id for projectKey {0} and versionName {1}", projectKey, versionName));
         }
         return versionId;
     }
@@ -169,22 +195,33 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.EXECUTIONS)
     public JSONObject getIssueExecutionViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
-        JSONObject issueExecution;
-        String projectId = getProjectId(projectKey);
-        String versionId = getVersionId(projectKey, versionName);
-        String cycleId = getCycleId(projectKey, versionName, cycleName, false);
-        try {
-            String requestUrl = zapiUrl + "/public/rest/api/1.0/executions/search/cycle/" + cycleId + "?projectId=" + projectId + "&versionId=" + versionId;
-            issueExecution = filterDataByAttributeValue((JSONArray) new JSONObject(restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), String.class).getBody()).get("searchObjectList"), attribute, attributeValue).getJSONObject("execution");
-            if (issueExecution == null) {
+        JSONObject issueExecution = null;
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + cycleName + attributeValue + "IssueExecutionJSON");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            try {
+                issueExecution = new JSONObject(dataObject.getData());
+                log.info("Got issue execution JSON from cache: {}", issueExecution);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else {
+            String projectId = getProjectId(projectKey);
+            String versionId = getVersionId(projectKey, versionName);
+            String cycleId = getCycleId(projectKey, versionName, cycleName, false);
+            try {
+                String requestUrl = zapiUrl + "/public/rest/api/1.0/executions/search/cycle/" + cycleId + "?projectId=" + projectId + "&versionId=" + versionId;
+                issueExecution = filterDataByAttributeValue((JSONArray) new JSONObject(restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), String.class).getBody()).get("searchObjectList"), attribute, attributeValue).getJSONObject("execution");
+                if (issueExecution == null) {
+                    throw new RetryException(MessageFormat.format("Check !! Issue with this label: {0} was not found on project: {1} at version: {2} and cycle: {3}", attributeValue, projectKey, versionName, cycleName));
+                }
+                cache.put(projectKey + versionName + cycleName + attributeValue + "IssueExecutionJSON", new DataObject(issueExecution.toString()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Check !! Issue with this label: {} was not found on project: '{}' at version: '{}' and cycle: '{}'", attributeValue, projectKey, versionName, cycleName);
                 throw new RetryException(MessageFormat.format("Check !! Issue with this label: {0} was not found on project: {1} at version: {2} and cycle: {3}", attributeValue, projectKey, versionName, cycleName));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Check !! Issue with this label: {} was not found on project: '{}' at version: '{}' and cycle: '{}'", attributeValue, projectKey, versionName, cycleName);
-            throw new RetryException(MessageFormat.format("Check !! Issue with this label: {0} was not found on project: {1} at version: {2} and cycle: {3}", attributeValue, projectKey, versionName, cycleName));
+
         }
         return issueExecution;
     }
@@ -198,14 +235,20 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
-    @Cacheable(value = Caches.EXECUTION_IDS, unless = "#result == null")
     public String getIssueExecutionIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String issueExecutionId = "";
-        try {
-            issueExecutionId = getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("id").toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RetryException(MessageFormat.format("Error while getting issue execution id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + cycleName + attributeValue + "IssueExecutionId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            issueExecutionId = dataObject.getData();
+            log.info("Got issue execution id from cache: {}", issueExecutionId);
+        } else {
+            try {
+                issueExecutionId = getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("id").toString();
+                cache.put(projectKey + versionName + cycleName + attributeValue + "IssueExecutionId", new DataObject(issueExecutionId));
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RetryException(MessageFormat.format("Error while getting issue execution id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
+            }
         }
         return issueExecutionId;
     }
@@ -219,14 +262,20 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
-    @Cacheable(value = Caches.EXECUTION_ISSUE_IDS, unless = "#result == null")
     public String getIssueExecutionIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String issueExecutionIssueId = "";
-        try {
-            issueExecutionIssueId = getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("issueId").toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RetryException(MessageFormat.format("Error while getting issue execution issue id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + cycleName + attributeValue + "IssueExecutionIssueId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            issueExecutionIssueId = dataObject.getData();
+            log.info("Got issue execution issue id from cache: {}", issueExecutionIssueId);
+        } else {
+            try {
+                issueExecutionIssueId = getIssueExecutionViaAttributeValue(projectKey, versionName, cycleName, attributeValue).get("issueId").toString();
+                cache.put(projectKey + versionName + cycleName + attributeValue + "IssueExecutionIssueId", new DataObject(issueExecutionIssueId));
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RetryException(MessageFormat.format("Error while getting issue execution issue id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
+            }
         }
         return issueExecutionIssueId;
     }
@@ -241,24 +290,30 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.ISSUE_IDS, unless = "#result == null")
     public String getIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
-        String projectId = getProjectId(projectKey);
-        String versionId = getVersionId(projectKey, versionName);
-        String cycleId = getCycleId(projectKey, versionName, cycleName, false);
         String issueId = "";
-        try {
-            String requestUrl = zapiUrl + "/public/rest/api/2.0/executions/search/cycle/" + cycleId + "?projectId=" + projectId + "&versionId=" + versionId;
-            JSONArray result = (JSONArray) new JSONObject(new JSONObject(restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), String.class).getBody()).get("searchResult").toString()).get("searchObjectList");
-            JSONObject jsonObject = filterDataByAttributeValue(result, attribute, attributeValue);
-            issueId = new JSONObject(jsonObject.get("execution").toString()).get("issueId").toString();
-            if (!StringUtils.hasLength(issueId)) {
+        DataObject dataObject = cache.getIfPresent(projectKey + versionName + cycleName + attributeValue + "IssueId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            issueId = dataObject.getData();
+            log.info("Got issue id from cache: {}", issueId);
+        } else {
+            String projectId = getProjectId(projectKey);
+            String versionId = getVersionId(projectKey, versionName);
+            String cycleId = getCycleId(projectKey, versionName, cycleName, false);
+            try {
+                String requestUrl = zapiUrl + "/public/rest/api/2.0/executions/search/cycle/" + cycleId + "?projectId=" + projectId + "&versionId=" + versionId;
+                JSONArray result = (JSONArray) new JSONObject(new JSONObject(restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), String.class).getBody()).get("searchResult").toString()).get("searchObjectList");
+                JSONObject jsonObject = filterDataByAttributeValue(result, attribute, attributeValue);
+                issueId = new JSONObject(jsonObject.get("execution").toString()).get("issueId").toString();
+                if (!StringUtils.hasLength(issueId)) {
+                    throw new RetryException(MessageFormat.format("Error while getting issue id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
+                }
+                cache.put(projectKey + versionName + cycleName + attributeValue + "IssueId", new DataObject(issueId));
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Check !! Issue with this label: {} was not found on project: '{}' at version: '{}' and cycle: '{}'", attributeValue, projectKey, versionName, cycleName);
                 throw new RetryException(MessageFormat.format("Error while getting issue id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Check !! Issue with this label: {} was not found on project: '{}' at version: '{}' and cycle: '{}'", attributeValue, projectKey, versionName, cycleName);
-            throw new RetryException(MessageFormat.format("Error while getting issue id via attribute value, for projectKey {0}, versionName {1}, cycleName {2}, attributeValue {3}", projectKey, versionName, cycleName, attributeValue));
         }
         return issueId;
     }
@@ -467,7 +522,16 @@ public class ZephyrZAPICloudService implements ZephyrService {
                 cycleClone.setEnvironment(getEnvironment());
             }
             String requestUrl = zapiUrl + "/public/rest/api/1.0/cycle?clonedCycleId=" + cycleId;
-            restTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity(cycleClone, customHttpHeaders.getZapiHeaders(MediaType.APPLICATION_JSON, HttpMethod.POST, requestUrl, zapiUrl)), CycleClone.class);
+            ResponseEntity<String> response = restTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity(cycleClone, customHttpHeaders.getZapiHeaders(MediaType.APPLICATION_JSON, HttpMethod.POST, requestUrl, zapiUrl)), String.class);
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RetryException(MessageFormat.format("Failed to clone cycle with name {0} of project {1} from the Unscheduled version to the version {2}", originalCycleName, projectKey, versionName));
+            } else {
+                try {
+                    cache.put(projectKey + versionName + originalCycleName + "CycleId", new DataObject(new JSONObject(response.getBody()).get("id").toString()));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
         } else {
             log.error("Cycle with name {} does not exist on 'Unschedule' of project: {}", originalCycleName, projectKey);
         }
@@ -568,22 +632,28 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param issueKey
      * @return
      */
-    @Cacheable(value = Caches.ISSUES)
     private String getJiraIssueId(String issueKey) {
         String issueId = "";
-        try {
-            ResponseEntity<String> jiraIssueResponseEntity = restTemplate.exchange(jiraUrl + "issue/" + issueKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
-            if (jiraIssueResponseEntity.getStatusCode() != HttpStatus.OK) {
-                log.error("Jira issue {} not found!", issueKey);
+        DataObject dataObject = cache.getIfPresent(issueKey + "JiraIssueId");
+        if (dataObject != null && StringUtils.hasLength(dataObject.getData())) {
+            issueId = dataObject.getData();
+            log.info("Got jira issue id from cache: {}", issueId);
+        } else {
+            try {
+                ResponseEntity<String> jiraIssueResponseEntity = restTemplate.exchange(jiraUrl + "issue/" + issueKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);
+                if (jiraIssueResponseEntity.getStatusCode() != HttpStatus.OK) {
+                    log.error("Jira issue {} not found!", issueKey);
+                    throw new RetryException(MessageFormat.format("Error while getting jira issue id for issueKey {0}", issueKey));
+                } else {
+                    issueId = (String) new JSONObject(jiraIssueResponseEntity.getBody()).get("id");
+                    log.info("Found jira issue id: {} for issue key: {}", issueId, issueKey);
+                    cache.put(issueKey + "JiraIssueId", new DataObject(issueId));
+                }
+            } catch (Exception e) {
+                log.error("Error while getting jira issue id with key: {}", issueKey);
+                e.printStackTrace();
                 throw new RetryException(MessageFormat.format("Error while getting jira issue id for issueKey {0}", issueKey));
-            } else {
-                issueId = (String) new JSONObject(jiraIssueResponseEntity.getBody()).get("id");
-                log.info("Found jira issue id: {} for issue key: {}", issueId, issueKey);
             }
-        } catch (Exception e) {
-            log.error("Error while getting jira issue id with key: {}", issueKey);
-            e.printStackTrace();
-            throw new RetryException(MessageFormat.format("Error while getting jira issue id for issueKey {0}", issueKey));
         }
         return issueId;
     }

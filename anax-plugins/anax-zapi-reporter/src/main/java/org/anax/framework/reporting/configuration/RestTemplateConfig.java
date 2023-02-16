@@ -1,5 +1,9 @@
 package org.anax.framework.reporting.configuration;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import org.anax.framework.reporting.cache.DataObject;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -27,5 +31,10 @@ public class RestTemplateConfig {
                 .setConnectTimeout(time_out)
                 .setReadTimeout(time_out)
                 .build();
+    }
+
+    @Bean("cache")
+    public @NonNull LoadingCache<String, DataObject> cache() {
+        return Caffeine.newBuilder().build(DataObject::get);
     }
 }
