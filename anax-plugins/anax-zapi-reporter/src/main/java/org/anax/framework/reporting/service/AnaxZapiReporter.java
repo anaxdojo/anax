@@ -46,7 +46,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Value("${anax.video.waitSecAtEnd:5}")
     Integer videoWaitSeconds;
 
-    @Value("${jira.suite : null}")
+    @Value("${jira.suite:#{null}}")
     private String jira_suite;
     @Value("${zapi.status.pass.code:1}")
     private String pass;

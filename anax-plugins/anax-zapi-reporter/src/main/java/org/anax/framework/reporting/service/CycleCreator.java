@@ -30,7 +30,7 @@ public class CycleCreator {
      * @param cycleName
      */
     public String createCycleInVersion(String projectName, String versionName, String cycleName) {
-        String cycleIdFound = zapiService.getCycleId(projectName, versionName, cycleName);
+        String cycleIdFound = zapiService.getCycleId(projectName, versionName, cycleName, true);
         if (isNull(cycleIdFound) || cycleIdFound.isEmpty()) {//Cycle not exist
             CycleClone cycleClone = new CycleClone(cycleName, getStartDate());
             zapiService.cloneCycleToVersion(projectName, versionName, cycleClone, cycleName);

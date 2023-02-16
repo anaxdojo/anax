@@ -164,13 +164,13 @@ public class ExecutionManager {
             if (screenshot != null) {
                 String projectId = zapiService.getProjectId(projectNameOrKey);
                 String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
-                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName);
+                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
                 zapiService.addStepExecutionAttachments(stepResultId, tcExecutionId, issueId, projectId, versionId, cycleId, screenshot);
             }
             if (video != null) {
                 String projectId = zapiService.getProjectId(projectNameOrKey);
                 String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
-                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName);
+                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
                 zapiService.addStepExecutionAttachments(stepResultId, tcExecutionId, issueId, projectId, versionId, cycleId, video);
             }
         } else {
@@ -234,7 +234,7 @@ public class ExecutionManager {
         String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
         String projectId = zapiService.getProjectId(projectNameOrKey);
         String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
-        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName);
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
         if (!tcExecutionId.isEmpty()) {
             zapiService.addTcExecutionAttachments(tcExecutionId, "", issueId, projectId, versionId, cycleId, file);
         } else {
