@@ -46,6 +46,8 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Value("${anax.video.waitSecAtEnd:5}")
     Integer videoWaitSeconds;
 
+    @Value("${jira.suite : null}")
+    private String jira_suite;
     @Value("${zapi.status.pass.code:1}")
     private String pass;
     @Value("${zapi.status.fail.code:2}")
@@ -98,7 +100,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void startTestSuite(Suite suite) {
         if (enabled) {
-            cycleName = suite.getName();
+            cycleName = (jira_suite != null) ? jira_suite : suite.getName();
             log.info("************* ZAPI Reporter Start() ***** " + this);
             log.info("********************************************\r\n\r\n");
             log.info("Create Cycle: " + suite.getName() + ", at project: " + project);
