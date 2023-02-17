@@ -42,7 +42,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     protected RestTemplate restTemplate;
 
     @Autowired
-    JiraService jiraService;
+    protected JiraService jiraService;
 
     @Autowired
     protected CycleEnvironmentResolver cycleEnvironmentResolver;
@@ -51,7 +51,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
     protected CustomHttpHeaders customHttpHeaders;
 
     @Autowired
-    CacheManager cacheManager;
+    protected CacheManager cacheManager;
 
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     protected String zapiUrl;
@@ -384,7 +384,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
             if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
                 log.error("Error while cloning cycle {} from projectKey {} versionName {} ", originalCycleName, projectKey, versionName);
                 throw new RetryException(MessageFormat.format("Error while cloning cycle {0} from projectKey {1} versionName {2} ", originalCycleName, projectKey, versionName));
-            } else {
+            } else {//Take created cycle id after clone - cache it
                 Objects.requireNonNull(cacheManager.getCache(Caches.CYCLES)).put(projectKey + versionName + originalCycleName, response.getBody().getId());
             }
 

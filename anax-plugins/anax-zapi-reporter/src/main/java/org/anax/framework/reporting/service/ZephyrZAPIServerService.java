@@ -41,7 +41,7 @@ public class ZephyrZAPIServerService implements ZephyrService {
     protected JiraService jiraService;
 
     @Autowired
-    CustomHttpHeaders customHttpHeaders;
+    protected CustomHttpHeaders customHttpHeaders;
 
     @Value("${zapi.url:https:NOT_CONFIGURED}")
     private String zapiUrl;

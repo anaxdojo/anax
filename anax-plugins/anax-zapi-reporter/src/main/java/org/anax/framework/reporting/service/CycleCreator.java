@@ -21,9 +21,6 @@ public class CycleCreator {
     String formatterPattern;
 
     @Autowired
-    CacheManager cacheManager;
-
-    @Autowired
     protected ZephyrService zapiService;
 
     /**
