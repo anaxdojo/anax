@@ -31,6 +31,12 @@ public class CustomHttpHeaders {
         return headers;
     }
 
+    public HttpHeaders getHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
     public HttpHeaders getZapiHeaders(MediaType mediaType, HttpMethod httpMethod, String requestUrl, String baseUrl) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(mediaType);

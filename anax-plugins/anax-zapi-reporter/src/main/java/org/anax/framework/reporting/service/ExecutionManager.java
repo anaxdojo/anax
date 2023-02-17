@@ -20,17 +20,24 @@ import java.util.stream.Collectors;
 public class ExecutionManager {
 
     private final ZephyrService zapiService;
+    private final JiraService jiraService;
     private final TestCaseToIssueResolver issueResolver;
 
     @Autowired
-    public ExecutionManager(ZephyrService zapiService, TestCaseToIssueResolver issueResolver) {
+    public ExecutionManager(ZephyrService zapiService, JiraService jiraService, TestCaseToIssueResolver issueResolver) {
         this.zapiService = zapiService;
-        if (this.zapiService instanceof ZephyrZAPIServerService) {
-            log.info("Instantiated ZAPI server service...");
-        } else if (this.zapiService instanceof ZephyrZAPICloudService) {
-            log.info("Instantiated ZAPI cloud service...");
-        }
+        this.jiraService = jiraService;
         this.issueResolver = issueResolver;
+        if (this.zapiService instanceof ZephyrZAPIServerService) {
+            log.info("Instantiated ZAPI server service");
+        } else if (this.zapiService instanceof ZephyrZAPICloudService) {
+            log.info("Instantiated ZAPI cloud service");
+        }
+        if (this.jiraService instanceof JiraServerService) {
+            log.info("Instantiated Jira server service");
+        } else if (this.jiraService instanceof JiraCloudService) {
+            log.info("Instantiated Jira cloud service");
+        }
     }
 
     /**
@@ -50,8 +57,8 @@ public class ExecutionManager {
             log.error("There are no test cases contained in update list");
             throw new NoSuchFieldException();
         }
-
-        executionIds = tcAttributes.stream().map(tc -> zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tc))).collect(Collectors.toList());
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        executionIds = tcAttributes.stream().map(tc -> zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tc), cycleId)).collect(Collectors.toList());
         executionIds.removeAll(Collections.singleton(""));//remove the execution ids that were not found and service returned ''
 
         Results results = Results.builder().executions(executionIds).status(tcStatus).build();
@@ -76,13 +83,14 @@ public class ExecutionManager {
      * @param comment
      */
     public void updateTestExecutionComment(String projectNameOrKey, String versionName, String cycleName, String tcAttribute, String comment) {
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
         if (!StringUtils.isEmpty(tcExecutionId)) {
             if (zapiService instanceof ZephyrZAPIServerService) {
                 zapiService.updateTestExecutionComment(tcExecutionId, comment);
             } else {
-                String tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
-                zapiService.updateTestExecutionComment(projectNameOrKey, versionName, cycleName, tcExecutionId, tcExecutionIssueId, comment);
+                String tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
+                zapiService.updateTestExecutionComment(projectNameOrKey, versionName, cycleName, tcExecutionId, tcExecutionIssueId, comment, cycleId);
             }
         } else {
             log.error("Check: No test step found for this tc: {} at project: '{}' and version: '{}' in order to update test comment!!!", tcAttribute, projectNameOrKey, versionName);
@@ -100,13 +108,14 @@ public class ExecutionManager {
      */
     public void updateTestExecutionBugs(String projectNameOrKey, String versionName, String cycleName, String tcAttribute, List<String> bugs) {
         if (!CollectionUtils.isEmpty(bugs)) {
-            String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+            String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+            String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
             if (!StringUtils.isEmpty(tcExecutionId)) {
                 if (zapiService instanceof ZephyrZAPIServerService) {
                     zapiService.updateTestExecutionBugs(tcExecutionId, bugs);
                 } else {
-                    String tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
-                    zapiService.updateTestExecutionBugs(projectNameOrKey, versionName, cycleName, tcExecutionId, tcExecutionIssueId, bugs);
+                    String tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
+                    zapiService.updateTestExecutionBugs(projectNameOrKey, versionName, cycleName, tcExecutionId, tcExecutionIssueId, bugs, cycleId);
                 }
                 log.error("Bugs: '{}' was added on tc '{}' at project: '{}' and version: '{}' ", new HashSet<>(bugs).toString(), tcAttribute, projectNameOrKey, versionName);
             } else {
@@ -126,7 +135,8 @@ public class ExecutionManager {
      * @param testMethod
      */
     public void updateTestStepStatusAddAttachments(String projectNameOrKey, String versionName, String cycleName, String tcAttribute, String status, TestMethod testMethod, File screenshot, File video) {
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
         if (!tcExecutionId.isEmpty()) {
             if (zapiService instanceof ZephyrZAPIServerService) {
                 updateTestStepStatusAddAttachmentsServer(tcExecutionId, tcAttribute, status, testMethod, screenshot, video);
@@ -156,21 +166,18 @@ public class ExecutionManager {
 
     private void updateTestStepStatusAddAttachmentsCloud(String projectNameOrKey, String versionName, String cycleName, String testCaseName, String status, TestMethod testMethod, File screenshot, File video) {
         String stepId = getTestCaseStep(projectNameOrKey, versionName, cycleName, testCaseName, testMethod.getOrdering() + 1);
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName));
-        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName));
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName), cycleId);
+        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName), cycleId);
         String stepResultId = zapiService.getTestStepResultId(tcExecutionId, issueId, testMethod.getOrdering() + 1);
+        String projectId = jiraService.getProjectId(projectNameOrKey);
+        String versionId = jiraService.getVersionId(projectNameOrKey, versionName);
         if (!tcExecutionId.isEmpty()) {
             zapiService.updateTestStepStatus(tcExecutionId, stepResultId, issueId, stepId, status);
             if (screenshot != null) {
-                String projectId = zapiService.getProjectId(projectNameOrKey);
-                String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
-                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
                 zapiService.addStepExecutionAttachments(stepResultId, tcExecutionId, issueId, projectId, versionId, cycleId, screenshot);
             }
             if (video != null) {
-                String projectId = zapiService.getProjectId(projectNameOrKey);
-                String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
-                String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
                 zapiService.addStepExecutionAttachments(stepResultId, tcExecutionId, issueId, projectId, versionId, cycleId, video);
             }
         } else {
@@ -191,10 +198,11 @@ public class ExecutionManager {
     public List<String> getTestCaseSteps(String projectNameOrKey, String versionName, String cycleName, String tcAttribute) {
         List<String> tcStepExecutionIds = new ArrayList<>();
         String tcExecutionIssueId;
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
         if (zapiService instanceof ZephyrZAPIServerService) {
-            tcExecutionIssueId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+            tcExecutionIssueId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
         } else {
-            tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+            tcExecutionIssueId = zapiService.getIssueExecutionIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
         }
         if (!tcExecutionIssueId.isEmpty()) {
             tcStepExecutionIds = zapiService.getTestSteps(tcExecutionIssueId, projectNameOrKey);
@@ -221,7 +229,8 @@ public class ExecutionManager {
     }
 
     private void addExecutionAttachmentServer(String projectNameOrKey, String versionName, String cycleName, String tcAttribute, File file) {
-        String id = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String id = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
         if (!id.isEmpty()) {
             zapiService.addTcExecutionAttachments(id, file);
         } else {
@@ -230,11 +239,11 @@ public class ExecutionManager {
     }
 
     private void addExecutionAttachmentCloud(String projectNameOrKey, String versionName, String cycleName, String tcAttribute, File file) {
-        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
-        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute));
-        String projectId = zapiService.getProjectId(projectNameOrKey);
-        String versionId = zapiService.getVersionId(projectNameOrKey, versionName);
         String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String tcExecutionId = zapiService.getIssueExecutionIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
+        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(tcAttribute), cycleId);
+        String projectId = jiraService.getProjectId(projectNameOrKey);
+        String versionId = jiraService.getVersionId(projectNameOrKey, versionName);
         if (!tcExecutionId.isEmpty()) {
             zapiService.addTcExecutionAttachments(tcExecutionId, "", issueId, projectId, versionId, cycleId, file);
         } else {
@@ -252,8 +261,9 @@ public class ExecutionManager {
      * @return
      */
     public String getTestCaseStep(String projectNameOrKey, String versionName, String cycleName, String testCaseName, int ordering) {
-        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName));
-        String projectId = zapiService.getProjectId(projectNameOrKey);
+        String cycleId = zapiService.getCycleId(projectNameOrKey, versionName, cycleName, false);
+        String issueId = zapiService.getIssueIdViaAttributeValue(projectNameOrKey, versionName, cycleName, resolveTcToIssue(testCaseName), cycleId);
+        String projectId = jiraService.getProjectId(projectNameOrKey);
 
         String stepId = null;
         if (!issueId.isEmpty()) {
