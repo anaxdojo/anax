@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.reporting.model.CycleClone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,9 @@ public class CycleCreator {
 
     @Value("${zapi.dateformatter.pattern:dd/MMM/yy}")
     String formatterPattern;
+
+    @Autowired
+    CacheManager cacheManager;
 
     @Autowired
     protected ZephyrService zapiService;
