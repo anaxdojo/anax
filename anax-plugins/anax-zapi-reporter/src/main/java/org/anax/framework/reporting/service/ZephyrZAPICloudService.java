@@ -2,7 +2,6 @@ package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.anax.framework.model.TestMethod;
-import org.anax.framework.reporting.cache.Caches;
 import org.anax.framework.reporting.configuration.CustomHttpHeaders;
 import org.anax.framework.reporting.model.CycleClone;
 import org.anax.framework.reporting.model.CycleInfo;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -72,7 +70,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.CYCLES, unless = "#result == null")
     public String getCycleId(String projectKey, String versionName, String cycleName, boolean initialSearch) {
         String projectId = getProjectId(projectKey);
         String versionId = "Unscheduled".equals(versionName) ? "-1" : getVersionId(projectKey, versionName);
@@ -104,7 +101,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.PROJECTS)
     public String getProjectId(String projectKey) {
         String projectId = "";
         try {
@@ -143,7 +139,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.VERSIONS)
     public String getVersionId(String projectKey, String versionName) {
         String versionId = "";
         try {
@@ -169,7 +164,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.EXECUTIONS)
     public JSONObject getIssueExecutionViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         JSONObject issueExecution;
         String projectId = getProjectId(projectKey);
@@ -198,7 +192,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
-    @Cacheable(value = Caches.EXECUTION_IDS, unless = "#result == null")
     public String getIssueExecutionIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String issueExecutionId = "";
         try {
@@ -219,7 +212,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param attributeValue - the TC number for which to get the execution
      */
     @Override
-    @Cacheable(value = Caches.EXECUTION_ISSUE_IDS, unless = "#result == null")
     public String getIssueExecutionIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String issueExecutionIssueId = "";
         try {
@@ -241,7 +233,6 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @return
      */
     @Override
-    @Cacheable(value = Caches.ISSUE_IDS, unless = "#result == null")
     public String getIssueIdViaAttributeValue(String projectKey, String versionName, String cycleName, String attributeValue) {
         String projectId = getProjectId(projectKey);
         String versionId = getVersionId(projectKey, versionName);
@@ -568,8 +559,7 @@ public class ZephyrZAPICloudService implements ZephyrService {
      * @param issueKey
      * @return
      */
-    @Cacheable(value = Caches.ISSUES)
-    private String getJiraIssueId(String issueKey) {
+    public String getJiraIssueId(String issueKey) {
         String issueId = "";
         try {
             ResponseEntity<String> jiraIssueResponseEntity = restTemplate.exchange(jiraUrl + "issue/" + issueKey, HttpMethod.GET, new HttpEntity<>(jiraHttpHeaders), String.class);

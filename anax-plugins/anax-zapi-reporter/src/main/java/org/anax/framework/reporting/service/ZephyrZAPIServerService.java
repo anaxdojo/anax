@@ -338,6 +338,14 @@ public class ZephyrZAPIServerService implements ZephyrService {
         log.error("Not implemented for Zephyr server instance");
     }
 
+    @Override
+    public String getJiraIssueId(String issueKey){
+        log.error("Not implemented for Zephyr server instance");
+        return null;
+    }
+
+
+
     //Search all the steps of tc executionId , returns the testStepId according the orderId
     private String getTestStepIdViaOrder(List<TestStepExecution> testStepExecutions, int ordering) {
 
