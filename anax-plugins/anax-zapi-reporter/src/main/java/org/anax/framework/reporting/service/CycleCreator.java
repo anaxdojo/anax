@@ -18,13 +18,17 @@ import static java.util.Objects.isNull;
 public class CycleCreator {
 
     @Value("${zapi.dateformatter.pattern:dd/MMM/yy}")
-    String formatterPattern;
+    protected String formatterPattern;
+
+    @Value("${jira.clone.cycle:true}")//Variable for parallel tc execution not for suite
+    protected Boolean clone_cycle;
 
     @Autowired
     protected ZephyrService zapiService;
 
     /**
      * Create new cycle (clone existing one). If not exist create with given name, else do nothing
+     * If test are running parallel (not on suite level)
      *
      * @param projectName
      * @param versionName
@@ -32,7 +36,7 @@ public class CycleCreator {
      */
     public String createCycleInVersion(String projectName, String versionName, String cycleName) {
         String cycleIdFound = zapiService.getCycleId(projectName, versionName, cycleName, true);
-        if (isNull(cycleIdFound) || cycleIdFound.isEmpty()) {//Cycle not exist
+        if ((isNull(cycleIdFound) || cycleIdFound.isEmpty() && clone_cycle)) {//Cycle not exist
             CycleClone cycleClone = new CycleClone(cycleName, getStartDate());
             zapiService.cloneCycleToVersion(projectName, versionName, cycleClone, cycleName);
             log.info("Test Cycle created with name: " + cycleName + " at version: " + versionName);

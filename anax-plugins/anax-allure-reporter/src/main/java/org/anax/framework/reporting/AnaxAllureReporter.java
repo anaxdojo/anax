@@ -216,7 +216,7 @@ public class AnaxAllureReporter implements AnaxTestReporter, ReporterSupportsScr
         boolean hasLinkedIssues = !issuesPerEnvironmentResolver.getIssueNamesOfTest(testMethod.getTestMethod()).isEmpty();
         return result -> {
             if (status == Status.FAILED && hasLinkedIssues) {
-                log.info("Failed test is has known issue. Changing status to {}", Status.KNOWN.value());
+                log.info("Failed test has known issue. Changing status to {}", Status.KNOWN.value());
                 result.setStatus(Status.KNOWN);
                 result.getSteps().forEach(stepResult -> stepResult.setStatus(Status.KNOWN));
                 result.setStatusDetails(result.getStatusDetails() == null ? new StatusDetails().setKnown(true) : result.getStatusDetails().setKnown(true));

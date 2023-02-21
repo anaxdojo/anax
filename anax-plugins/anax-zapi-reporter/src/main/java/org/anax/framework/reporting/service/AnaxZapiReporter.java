@@ -1,6 +1,7 @@
 package org.anax.framework.reporting.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.anax.framework.annotations.AnaxIssues;
 import org.anax.framework.capture.VideoMaker;
 import org.anax.framework.controllers.WebController;
 import org.anax.framework.model.Suite;
@@ -17,6 +18,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     private String fail;
     @Value("${zapi.status.skip.code:4}")
     private String skip;
+    @Value("${zapi.status.known.code:6}")
+    private String known;
+
     @Value("${zapi.results.directory:zapi-results/}")
     String resultsZapiDirectory;
     @Value("${zapi.jira.project:NOT_CONFIGURED}")
@@ -74,6 +79,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     private Set<String> failedTCs = new HashSet<>();
     private Set<String> skippedTCs = new HashSet<>();
     private Set<String> errorTCs = new HashSet<>();
+    private Set<String> knowTCs = new HashSet<>();
     private List<String> tcSteps = new ArrayList<>();
 
 
@@ -122,13 +128,15 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             log.info("Finally: List of Passed TCs: " + passedTCs.toString());
             log.info("Finally: List of Skipped TCs: " + skippedTCs.toString());
             log.info("Finally: List of Failed TCs: " + errorTCs.toString());
+            log.info("Finally: List of Pass with Known TCs: " + knowTCs.toString());
+
 
             /**
              * Update Test Cases execution Status
              */
             try {
                 if (passedTCs.size() != 0) {
-                    log.info("Update as PASS the following TCs: " + passedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    log.info("Update as PASS the following TCs: " + passedTCs + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     executionManager.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(passedTCs), pass);
                 }
             } catch (Exception e) {
@@ -137,7 +145,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             try {
                 if (skippedTCs.size() != 0) {
-                    log.info("Update as SKIPPED the following TCs: " + skippedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    log.info("Update as SKIPPED the following TCs: " + skippedTCs + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     executionManager.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(skippedTCs), skip);
                 }
             } catch (Exception e2) {
@@ -146,7 +154,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             try {
                 if (failedTCs.size() != 0) {
-                    log.info("Update as FAIL the following TCs: " + failedTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    log.info("Update as FAIL the following TCs: " + failedTCs + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     executionManager.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(failedTCs), fail);
                 }
             } catch (Exception e1) {
@@ -155,11 +163,20 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             try {
                 if (errorTCs.size() != 0) {
-                    log.info("Update as FAIL the following TCs: " + errorTCs.toString() + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    log.info("Update as FAIL the following TCs: " + errorTCs + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
                     executionManager.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(errorTCs), fail);
                 }
             } catch (Exception e1) {
                 log.info("The update of FAILED TCs on jira did not happen due to: " + e1.getMessage());
+            }
+
+            try {
+                if (knowTCs.size() != 0) {
+                    log.info("Update as PASS WITH KNOWN the following TCs: " + knowTCs + " at version: " + version.trim() + " on cycle: " + cycleName.trim());
+                    executionManager.updateTestExecutions(project, version.trim(), cycleName.trim(), new ArrayList<>(knowTCs), known);
+                }
+            } catch (Exception e1) {
+                log.info("The update of PASS WITH KNOWN TCs on jira did not happen due to: " + e1.getMessage());
             }
         }
 
@@ -203,7 +220,7 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
         if (enabled) {
 
             log.info("Identify test status...");
-            if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName())) {
+            if (!failedTCs.contains(test.getTestBeanName()) && !skippedTCs.contains(test.getTestBeanName()) && !knowTCs.contains(test.getTestBeanName())) {
                 passedTCs.add(test.getTestBeanName());
             }
 
@@ -251,6 +268,10 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             errorTCs.forEach(it -> passedTCs.remove(it));
             failedTCs.forEach(it -> passedTCs.remove(it));
             skippedTCs.forEach(it -> passedTCs.remove(it));
+            knowTCs.forEach(it -> passedTCs.remove(it));
+
+            errorTCs.forEach(it -> knowTCs.remove(it));
+            failedTCs.forEach(it -> knowTCs.remove(it));
 
 
             if (testStepStatusUpdateEnabled) {
@@ -266,10 +287,15 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void addFailure(Test test, TestMethod method, Throwable t) {
         if (enabled) {
+            Annotation annotation = filterForAnaxIssueAnnotation(method);
 
             log.info("Added TC on the failedTCs is: " + test.getTestBeanName());
             failed = true;
-            failedTCs.add(test.getTestBeanName());
+            if(annotation != null){//Fails with known - knowTCs
+                knowTCs.add(test.getTestBeanName());
+            }else {//Fails with No known(s) - failedTCs
+                failedTCs.add(test.getTestBeanName());
+            }
         }
     }
 
@@ -294,10 +320,17 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     public void addError(Test test, TestMethod method, Throwable t) {
         if (enabled) {
 
+            Annotation annotation = filterForAnaxIssueAnnotation(method);
+
             log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
             failed = true;
 
-            errorTCs.add(test.getTestBeanName());
+            if(annotation != null){//Fails with known - knowTCs
+                knowTCs.add(test.getTestBeanName());
+            }else {//Fails with No known(s) - failedTCs
+                errorTCs.add(test.getTestBeanName());
+            }
+
             if (CollectionUtils.isEmpty(tcSteps)) {//no-steps add attachment on tc execution
                 if (screenshotEnable) {
                     File file = takeScreenshotReturnPath(test, method);
@@ -388,5 +421,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 .map(key -> "Step" + String.valueOf(key) + "=" + map.get(key))
                 .collect(Collectors.joining("\n", "{", "}"));
         return mapAsString;
+    }
+
+    private Annotation filterForAnaxIssueAnnotation(TestMethod method){
+        return Arrays.stream(method.getTestMethod().getDeclaredAnnotations()).collect(Collectors.toList()).stream().filter(it -> it.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
     }
 }
