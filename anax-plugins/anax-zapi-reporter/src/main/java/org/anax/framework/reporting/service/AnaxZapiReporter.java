@@ -10,6 +10,7 @@ import org.anax.framework.model.TestMethod;
 import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReporterSupportsScreenshot;
 import org.anax.framework.reporting.ReporterSupportsVideo;
+import org.anax.framework.util.IssuesPerEnvironmentResolver;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     protected WebController controller;
     @Autowired
     protected AnaxIssueAnnotationResolver anaxIssueAnnotationResolver;
+
+    @Autowired
+    protected IssuesPerEnvironmentResolver issuesPerEnvironmentResolver;
 
 
     @Value("${zapi.enabled:true}")
@@ -287,11 +291,11 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     @Override
     public void addFailure(Test test, TestMethod method, Throwable t) {
         if (enabled) {
-            Annotation annotation = filterForAnaxIssueAnnotation(method);
+            List<String> issues = issuesPerEnvironmentResolver.getIssueNamesOfTest(method.getTestMethod());
 
             log.info("Added TC on the failedTCs is: " + test.getTestBeanName());
             failed = true;
-            if(annotation != null){//Fails with known - knowTCs
+            if(!issues.isEmpty()){//Fails with known - knowTCs
                 knowTCs.add(test.getTestBeanName());
             }else {//Fails with No known(s) - failedTCs
                 failedTCs.add(test.getTestBeanName());
@@ -320,12 +324,12 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
     public void addError(Test test, TestMethod method, Throwable t) {
         if (enabled) {
 
-            Annotation annotation = filterForAnaxIssueAnnotation(method);
+            List<String> issues = issuesPerEnvironmentResolver.getIssueNamesOfTest(method.getTestMethod());
 
             log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
             failed = true;
 
-            if(annotation != null){//Fails with known - knowTCs
+            if(!issues.isEmpty()){//Fails with known - knowTCs
                 knowTCs.add(test.getTestBeanName());
             }else {//Fails with No known(s) - failedTCs
                 errorTCs.add(test.getTestBeanName());
@@ -421,9 +425,5 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
                 .map(key -> "Step" + String.valueOf(key) + "=" + map.get(key))
                 .collect(Collectors.joining("\n", "{", "}"));
         return mapAsString;
-    }
-
-    private Annotation filterForAnaxIssueAnnotation(TestMethod method){
-        return Arrays.stream(method.getTestMethod().getDeclaredAnnotations()).collect(Collectors.toList()).stream().filter(it -> it.annotationType().equals(AnaxIssues.class)).findFirst().orElse(null);
     }
 }

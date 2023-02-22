@@ -20,7 +20,7 @@ public class CycleCreator {
     @Value("${zapi.dateformatter.pattern:dd/MMM/yy}")
     protected String formatterPattern;
 
-    @Value("${jira.clone.cycle:true}")//Variable for parallel tc execution not for suite
+    @Value("${jira.clone.cycle:true}")//Variable for parallel tc execution not for suite level
     protected Boolean clone_cycle;
 
     @Autowired
