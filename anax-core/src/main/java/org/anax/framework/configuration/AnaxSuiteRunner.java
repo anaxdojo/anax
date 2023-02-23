@@ -18,10 +18,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.lang.reflect.Method;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,6 +36,7 @@ public class AnaxSuiteRunner {
 
     @Value("${anax.report.directory:reports/}") String reportDirectory;
     @Value("${anax.exec.suite:ALL}") String executeSuite;
+    @Value("${anax.exec.features:ALL}") String executeFeatures;
     @Value("${enable.video:true}") Boolean videoOn;
     @Value("${enable.screenshot:true}") Boolean screenshotOn;
 
@@ -168,8 +166,9 @@ public class AnaxSuiteRunner {
 
         log.info("--------------");
 
+        List<String> featuresToRun = Arrays.asList(executeFeatures.toUpperCase().replaceAll("\\s+", "").split(","));
         //sort by ordering
-        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip()).collect(Collectors.toList());
+        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip() && featuresToRun.contains(testMethod.getFeature().toUpperCase().replaceAll("\\s+", ""))).collect(Collectors.toList());
 
         List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
         skippedTests.removeAll(testsToRun);
@@ -410,11 +409,12 @@ public class AnaxSuiteRunner {
         return test;
     }
 
-    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, Object dataproviderValue, Object datasupplierValue) {
+    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, String feature, Object dataproviderValue, Object datasupplierValue) {
         TestMethod testMethod = TestMethod.builder()
                 .testMethod(method)
                 .description(description)
                 .ordering(ordering).skip(skip)
+                .feature(feature)
                 .dataproviderValue(dataproviderValue)
                 .datasupplierValue(datasupplierValue)
                 .build();

@@ -94,7 +94,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                             for (int nbr = 0; nbr < bound; nbr++) {
                                 mainTestMethod.set(
                                         suiteRunner.registerTestMethod(test, method, testStep.description()
-                                                , testStep.ordering(), testStep.skip(), objects.get(nbr),null));
+                                                , testStep.ordering(), testStep.skip(), testStep.feature(), objects.get(nbr),null));
                             }
                         }
                     }
@@ -106,12 +106,12 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                             mySupplier.forEach(s->
                                     mainTestMethod.set(
                                             suiteRunner.registerTestMethod(test, method, testStep.description()
-                                                    , testStep.ordering(), testStep.skip(),null ,s)));
+                                                    , testStep.ordering(), testStep.skip(), testStep.feature(),null ,s)));
                         }
                     }
                     else {
                         mainTestMethod.set(suiteRunner.registerTestMethod(test, method,testStep.description() ,testStep.ordering()
-                                , testStep.skip(), null,null));
+                                , testStep.skip(), testStep.feature(), null,null));
                     }
                 });
 //---------------------------------------------------------------------------------------------------------------------------------
