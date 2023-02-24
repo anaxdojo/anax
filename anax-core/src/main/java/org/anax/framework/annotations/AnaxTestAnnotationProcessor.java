@@ -62,7 +62,7 @@ public class AnaxTestAnnotationProcessor implements BeanPostProcessor {
                 rgSuites.add(r);
             }
 
-            Test test = suiteRunner.registerTest(bean, anaxTest.description(), beanName ,anaxTest.priority(), rgSuites);
+            Test test = suiteRunner.registerTest(bean, anaxTest.description(), beanName ,anaxTest.priority(), anaxTest.feature(), rgSuites);
 
             // then, on method level:
             ReflectionUtils.doWithMethods(aClass, method -> {

@@ -17,4 +17,6 @@ public @interface AnaxTest {
 
     int priority() default 0;
 
+    String feature() default "ALL";
+
 }

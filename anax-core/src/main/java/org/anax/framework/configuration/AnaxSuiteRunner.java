@@ -30,15 +30,20 @@ public class AnaxSuiteRunner {
 
     private final AnaxTestReporter reporter;
 
-    Map<String,Suite> suitesMap = new HashMap<>();
+    Map<String, Suite> suitesMap = new HashMap<>();
 
     boolean shouldAlsoExecute = false;
 
-    @Value("${anax.report.directory:reports/}") String reportDirectory;
-    @Value("${anax.exec.suite:ALL}") String executeSuite;
-    @Value("${anax.exec.features:ALL}") String executeFeatures;
-    @Value("${enable.video:true}") Boolean videoOn;
-    @Value("${enable.screenshot:true}") Boolean screenshotOn;
+    @Value("${anax.report.directory:reports/}")
+    String reportDirectory;
+    @Value("${anax.exec.suite:ALL}")
+    String executeSuite;
+    @Value("${anax.exec.features:ALL}")
+    String executeFeatures;
+    @Value("${enable.video:true}")
+    Boolean videoOn;
+    @Value("${enable.screenshot:true}")
+    Boolean screenshotOn;
 
     @Autowired
     WebController controller;
@@ -97,7 +102,7 @@ public class AnaxSuiteRunner {
         }
 
         //configuring reporters here
-        if(videoOn && reporter instanceof ReporterSupportsVideo) {
+        if (videoOn && reporter instanceof ReporterSupportsVideo) {
             ((ReporterSupportsVideo) reporter).videoRecording(videoOn, "allure-recordings");
             log.info("Enabled Video recordings feature");
         }
@@ -109,7 +114,7 @@ public class AnaxSuiteRunner {
 
         AtomicBoolean globalFailures = new AtomicBoolean(false);
 
-        suitesMap.keySet().stream().forEach( (String name) -> {
+        suitesMap.keySet().stream().forEach((String name) -> {
             try {
                 if (!executeSuite.contentEquals("ALL") &&
                         !executeSuite.contentEquals(name)) {
@@ -117,7 +122,7 @@ public class AnaxSuiteRunner {
                 } else {
                     final Suite suite = suitesMap.get(name);
 
-                    try  {
+                    try {
                         reporter.startOutput(reportDirectory, name);
                         final boolean suiteFail = executeTestSuite(suite);
                         globalFailures.compareAndSet(false, suiteFail);
@@ -125,11 +130,11 @@ public class AnaxSuiteRunner {
                         globalFailures.set(true);
                         throw new ReportException("IO Error writing report file : " + ioe.getMessage(), ioe);
                     } finally {
-			            controller.quit();
-		            }
+                        controller.quit();
+                    }
                 }
             } catch (ReportException rpe) {
-                log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(),rpe);
+                log.error("Failed to initialize, check reports subsystem {}", rpe.getMessage(), rpe);
             }
         });
         return globalFailures.get();
@@ -140,9 +145,9 @@ public class AnaxSuiteRunner {
         log.info("SUITE START: {}", suite.getName());
         log.trace("Starting suite reporting...");
         reporter.startTestSuite(suite);
-        log.trace("About to execute suite tests: {}",suite.getTests().size());
+        log.trace("About to execute suite tests: {}", suite.getTests().size());
 
-        List<Test> copy = Lists.newArrayList(suite.getTests());
+        List<Test> copy = Lists.newArrayList(suite.getTests().stream().filter(test -> containsAny(getFeaturesFromString(test.getFeature()), getFeaturesFromString(executeFeatures))).collect(Collectors.toList()));
         copy.sort(Comparator.comparingInt(Test::getPriority));
         copy.forEach(test -> {
             reporter.startAnaxTest(test);
@@ -165,14 +170,12 @@ public class AnaxSuiteRunner {
         AtomicBoolean globalSkip = new AtomicBoolean(false);
 
         log.info("--------------");
-
-        List<String> featuresToRun = Arrays.asList(executeFeatures.toUpperCase().replaceAll("\\s+", "").split(","));
         //sort by ordering
-        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip() && featuresToRun.contains(testMethod.getFeature().toUpperCase().replaceAll("\\s+", ""))).collect(Collectors.toList());
+        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip() && evaluateTestMethodFeatures(test, testMethod)).collect(Collectors.toList());
 
-        List<TestMethod> skippedTests = Lists.newArrayList( test.getTestMethods() );
+        List<TestMethod> skippedTests = Lists.newArrayList(test.getTestMethods());
         skippedTests.removeAll(testsToRun);
-        skippedTests.forEach( testMethod -> {
+        skippedTests.forEach(testMethod -> {
             testMethod.setSkip(true);
         });
         log.info("Test: {} - steps: {}, skipped: {}", test.getTestBean().getClass().getName(), testsToRun.size(), skippedTests.size());
@@ -197,7 +200,7 @@ public class AnaxSuiteRunner {
             log.info("---- BEFORE END: {}", tm.getTestMethod());
         });
 
-        if(!globalSkip.get()) {
+        if (!globalSkip.get()) {
             testsToRun.forEach(testMethod -> {
                 AtomicBoolean localSkip = new AtomicBoolean(false);
                 reporter.startTest(test, testMethod);
@@ -282,8 +285,8 @@ public class AnaxSuiteRunner {
         PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
 
-        System.setOut( new PrintStream( new DuplicatingOutputStream(originalOut, storedOut) ));
-        System.setErr( new PrintStream( new DuplicatingOutputStream(originalErr, storedErr)));
+        System.setOut(new PrintStream(new DuplicatingOutputStream(originalOut, storedOut)));
+        System.setErr(new PrintStream(new DuplicatingOutputStream(originalErr, storedErr)));
         log.trace("Replaced out and error streams with recording versions");
         //execute method
         log.debug("About to execute {} ", tm.getTestMethod());
@@ -291,24 +294,21 @@ public class AnaxSuiteRunner {
         long execTime = 0;
         try {
             long t0 = System.currentTimeMillis();
-            if(tm.getDataproviderValue()==null && tm.getDatasupplierValue()==null) {
+            if (tm.getDataproviderValue() == null && tm.getDatasupplierValue() == null) {
                 tm.getTestMethod().invoke(test.getTestBean());
-            }
-            else {
-                if(tm.getDatasupplierValue()==null && tm.getDataproviderValue()!=null){
-                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDataproviderValue());
-                }
-                else if(tm.getDatasupplierValue()!=null && tm.getDataproviderValue()==null){
-                    tm.getTestMethod().invoke(test.getTestBean(),tm.getDatasupplierValue());
+            } else {
+                if (tm.getDatasupplierValue() == null && tm.getDataproviderValue() != null) {
+                    tm.getTestMethod().invoke(test.getTestBean(), tm.getDataproviderValue());
+                } else if (tm.getDatasupplierValue() != null && tm.getDataproviderValue() == null) {
+                    tm.getTestMethod().invoke(test.getTestBean(), tm.getDatasupplierValue());
                 }
             }
-
 
 
 //            tm.getTestMethod().invoke(test.getTestBean());
             long t1 = System.currentTimeMillis();
             //if we're here, this was executed.
-            execTime = t1-t0;
+            execTime = t1 - t0;
             log.debug("Test Method {} was executed", tm.getTestMethod());
         } catch (ReflectiveOperationException e) {
             result.setInError(true);
@@ -357,19 +357,19 @@ public class AnaxSuiteRunner {
             return suitesMap.get(name);
         } else {
             Suite suite = Suite.builder().name(name).build();
-            suitesMap.put(name,suite);
+            suitesMap.put(name, suite);
             return suite;
         }
 
 
     }
 
-    public Test registerTest(Object bean,String beanDescription ,String beanName, int priority, List<Suite> rgSuites) {
+    public Test registerTest(Object bean, String beanDescription, String beanName, int priority, String feature, List<Suite> rgSuites) {
 
-        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).build();
+        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).feature(feature).build();
         for (Suite s : rgSuites) {
             if (!suitesMap.containsKey(s.getName())) {
-                suitesMap.put(s.getName(),s);
+                suitesMap.put(s.getName(), s);
             }
             s.getTests().add(test);
         }
@@ -380,6 +380,7 @@ public class AnaxSuiteRunner {
         TestMethod testMethod = TestMethod.builder().testMethod(method).ordering(ordering).build();
         test.getTestBeforeMethods().add(testMethod);
     }
+
     public void registerAfterTest(Test test, Method method) {
         TestMethod testMethod = TestMethod.builder().testMethod(method).build();
         test.getTestAfterMethods().add(testMethod);
@@ -445,8 +446,49 @@ public class AnaxSuiteRunner {
         }
 
         public void write(byte[] b, int off, int len) throws IOException {
-            firstStream.write(b,off,len);
-            secondStream.write(b,off,len);
+            firstStream.write(b, off, len);
+            secondStream.write(b, off, len);
         }
+    }
+
+    /**
+     * Parses the {@code featureStr} value, removes any whitespace, turns to uppercase and returns as an array the value
+     * @param featureStr - Comma separated values
+     * @return
+     */
+    private List<String> getFeaturesFromString(String featureStr) {
+        return Arrays.asList(featureStr.toUpperCase().replaceAll("\\s+", "").split(","));
+    }
+
+    /**
+     * Checks whether any element of the {@code list1} exists in the {@code list2}
+     *
+     * @param list1
+     * @param list2
+     * @param <T>
+     * @return
+     */
+    private <T> boolean containsAny(List<T> list1, List<T> list2) {
+        for (T element : list1) {
+            if (list2.contains(element)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the {@testMethod} has to run, according to the features. A TestMethod will run only if a TestMethod feature
+     * exists in the Test class features and if this feature also exists in the {@code anax.exec.features}
+     *
+     * @param test
+     * @param testMethod
+     * @return
+     */
+    private boolean evaluateTestMethodFeatures(Test test, TestMethod testMethod) {
+        List<String> featuresToRun = getFeaturesFromString(executeFeatures);
+        List<String> testFeatures = getFeaturesFromString(test.getFeature());
+        List<String> testMethodFeatures = getFeaturesFromString(testMethod.getFeature());
+        return testMethodFeatures.stream().anyMatch(testMethodFeature -> testFeatures.contains(testMethodFeature) && featuresToRun.contains(testMethodFeature));
     }
 }
