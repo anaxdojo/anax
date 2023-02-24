@@ -11,6 +11,7 @@ import org.anax.framework.reporting.AnaxTestReporter;
 import org.anax.framework.reporting.ReportException;
 import org.anax.framework.reporting.ReporterSupportsScreenshot;
 import org.anax.framework.reporting.ReporterSupportsVideo;
+import org.anax.framework.util.FeaturesResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -38,8 +39,6 @@ public class AnaxSuiteRunner {
     String reportDirectory;
     @Value("${anax.exec.suite:ALL}")
     String executeSuite;
-    @Value("${anax.exec.features:ALL}")
-    String executeFeatures;
     @Value("${enable.video:true}")
     Boolean videoOn;
     @Value("${enable.screenshot:true}")
@@ -47,6 +46,9 @@ public class AnaxSuiteRunner {
 
     @Autowired
     WebController controller;
+
+    @Autowired
+    FeaturesResolver featuresResolver;
 
     public AnaxSuiteRunner(@Autowired AnaxTestReporter reporter) {
         this.reporter = reporter;
@@ -147,7 +149,7 @@ public class AnaxSuiteRunner {
         reporter.startTestSuite(suite);
         log.trace("About to execute suite tests: {}", suite.getTests().size());
 
-        List<Test> copy = Lists.newArrayList(suite.getTests().stream().filter(test -> containsAny(getFeaturesFromString(test.getFeature()), getFeaturesFromString(executeFeatures))).collect(Collectors.toList()));
+        List<Test> copy = Lists.newArrayList(suite.getTests().stream().filter(test -> featuresResolver.evaluateTestFeatures(test)).collect(Collectors.toList()));
         copy.sort(Comparator.comparingInt(Test::getPriority));
         copy.forEach(test -> {
             reporter.startAnaxTest(test);
@@ -171,7 +173,7 @@ public class AnaxSuiteRunner {
 
         log.info("--------------");
         //sort by ordering
-        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip() && evaluateTestMethodFeatures(test, testMethod)).collect(Collectors.toList());
+        List<TestMethod> testsToRun = Lists.newArrayList(test.getTestMethods()).stream().filter(testMethod -> !testMethod.isSkip() && featuresResolver.evaluateTestMethodFeatures(test, testMethod)).collect(Collectors.toList());
 
         List<TestMethod> skippedTests = Lists.newArrayList(test.getTestMethods());
         skippedTests.removeAll(testsToRun);
@@ -364,9 +366,9 @@ public class AnaxSuiteRunner {
 
     }
 
-    public Test registerTest(Object bean, String beanDescription, String beanName, int priority, String feature, List<Suite> rgSuites) {
+    public Test registerTest(Object bean, String beanDescription, String beanName, int priority, String[] feature, List<Suite> rgSuites) {
 
-        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).feature(feature).build();
+        Test test = Test.builder().testBean(bean).testBeanDescription(beanDescription).testBeanName(beanName).priority(priority).features(feature).build();
         for (Suite s : rgSuites) {
             if (!suitesMap.containsKey(s.getName())) {
                 suitesMap.put(s.getName(), s);
@@ -410,12 +412,12 @@ public class AnaxSuiteRunner {
         return test;
     }
 
-    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, String feature, Object dataproviderValue, Object datasupplierValue) {
+    public TestMethod registerTestMethod(Test test, Method method, String description, int ordering, boolean skip, String[] feature, Object dataproviderValue, Object datasupplierValue) {
         TestMethod testMethod = TestMethod.builder()
                 .testMethod(method)
                 .description(description)
                 .ordering(ordering).skip(skip)
-                .feature(feature)
+                .features(feature)
                 .dataproviderValue(dataproviderValue)
                 .datasupplierValue(datasupplierValue)
                 .build();
@@ -449,46 +451,5 @@ public class AnaxSuiteRunner {
             firstStream.write(b, off, len);
             secondStream.write(b, off, len);
         }
-    }
-
-    /**
-     * Parses the {@code featureStr} value, removes any whitespace, turns to uppercase and returns as an array the value
-     * @param featureStr - Comma separated values
-     * @return
-     */
-    private List<String> getFeaturesFromString(String featureStr) {
-        return Arrays.asList(featureStr.toUpperCase().replaceAll("\\s+", "").split(","));
-    }
-
-    /**
-     * Checks whether any element of the {@code list1} exists in the {@code list2}
-     *
-     * @param list1
-     * @param list2
-     * @param <T>
-     * @return
-     */
-    private <T> boolean containsAny(List<T> list1, List<T> list2) {
-        for (T element : list1) {
-            if (list2.contains(element)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if the {@testMethod} has to run, according to the features. A TestMethod will run only if a TestMethod feature
-     * exists in the Test class features and if this feature also exists in the {@code anax.exec.features}
-     *
-     * @param test
-     * @param testMethod
-     * @return
-     */
-    private boolean evaluateTestMethodFeatures(Test test, TestMethod testMethod) {
-        List<String> featuresToRun = getFeaturesFromString(executeFeatures);
-        List<String> testFeatures = getFeaturesFromString(test.getFeature());
-        List<String> testMethodFeatures = getFeaturesFromString(testMethod.getFeature());
-        return testMethodFeatures.stream().anyMatch(testMethodFeature -> testFeatures.contains(testMethodFeature) && featuresToRun.contains(testMethodFeature));
     }
 }

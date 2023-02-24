@@ -29,5 +29,5 @@ public @interface AnaxTestStep {
      *
      * @return
      */
-    String feature() default "ALL";
+    String[] features() default "CORE";
 }

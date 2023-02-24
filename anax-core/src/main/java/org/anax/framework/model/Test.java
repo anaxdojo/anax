@@ -14,7 +14,7 @@ public class Test {
 
     Object testBean;
     String testBeanName;
-    String feature;
+    String[] features;
 
     String testBeanDescription;
 
