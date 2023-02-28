@@ -11,10 +11,12 @@ import java.lang.annotation.*;
 @Component
 public @interface AnaxTest {
 
-    String[] value() default { "Anax Default Suite" };
+    String[] value() default {"Anax Default Suite"};
 
     String description() default "";
 
     int priority() default 0;
+
+    String[] features() default "CORE";
 
 }

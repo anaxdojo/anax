@@ -21,6 +21,7 @@ public class TestMethod {
     boolean passed;
     Object dataproviderValue;
     Object datasupplierValue;
+    String[] features;
 
     @Builder.Default StringBuilder stdOut = new StringBuilder();
     @Builder.Default StringBuilder stdErr = new StringBuilder();
