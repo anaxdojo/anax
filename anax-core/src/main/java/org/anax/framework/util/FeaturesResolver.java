@@ -5,17 +5,24 @@ import org.anax.framework.model.TestMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @Component
 public class FeaturesResolver {
+    static String executeFeaturesStatic;
 
     @Value("${anax.exec.features:CORE}")
     String executeFeatures;
 
     private static final String SEPARATOR = ",";
+
+    @PostConstruct
+    public synchronized void init() {
+        executeFeaturesStatic = this.executeFeatures;
+    }
 
     /**
      * Parses the {@code featureStr} value, removes any whitespace, turns to uppercase and returns the value as list
@@ -23,7 +30,7 @@ public class FeaturesResolver {
      * @param featureStr - Comma separated values
      * @return
      */
-    private List<String> getFeaturesFromString(String featureStr) {
+    private static List<String> getFeaturesFromString(String featureStr) {
         return Arrays.asList(featureStr.toUpperCase().replaceAll("\\s+", "").split(SEPARATOR));
     }
 
@@ -44,8 +51,8 @@ public class FeaturesResolver {
      *
      * @return
      */
-    private List<String> getFeaturesToRun() {
-        return getFeaturesFromString(executeFeatures);
+    private static List<String> getFeaturesToRun() {
+        return getFeaturesFromString(executeFeaturesStatic);
     }
 
     /**
@@ -96,7 +103,7 @@ public class FeaturesResolver {
      * @param feature
      * @return
      */
-    public boolean isFeatureEnabled(String feature) {
+    public static boolean isFeatureEnabled(String feature) {
         return getFeaturesToRun().contains(feature.toUpperCase().replaceAll("\\s+", ""));
     }
 }
