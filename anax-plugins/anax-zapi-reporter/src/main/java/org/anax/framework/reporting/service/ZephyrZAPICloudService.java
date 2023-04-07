@@ -72,7 +72,11 @@ public class ZephyrZAPICloudService implements ZephyrService {
         String projectId = jiraService.getProjectId(projectKey);
         String versionId = "Unscheduled".equals(versionName) ? "-1" : jiraService.getVersionId(projectKey, versionName);
         String requestUrl = zapiUrl + "/public/rest/api/1.0/cycles/search?projectId=" + projectId + "&versionId=" + versionId;
-        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {});
+        ResponseEntity<List<CycleInfo>> cycleInfos = restTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(customHttpHeaders.getZapiHeaders(MediaType.TEXT_PLAIN, HttpMethod.GET, requestUrl, zapiUrl)), new ParameterizedTypeReference<List<CycleInfo>>() {
+        });
+        if (cycleInfos.getStatusCode() != HttpStatus.OK) {
+            throw new RetryException(MessageFormat.format("HTTP Error while getting the cycle id for project key: {} with name: {} for the version: {}", projectKey, cycleName, versionName));
+        }
         CycleInfo cycleInfoFound;
         if (StringUtils.hasLength(environment)) {
             cycleInfoFound = Objects.requireNonNull(cycleInfos.getBody()).stream().filter(cycleInfo -> cycleInfo.getName().equals(cycleName) && cycleEnvironmentResolver.isCycleEnvironmentSameWithRunEnvironment(versionName, cycleInfo, getEnvironment())).findFirst().orElse(null);

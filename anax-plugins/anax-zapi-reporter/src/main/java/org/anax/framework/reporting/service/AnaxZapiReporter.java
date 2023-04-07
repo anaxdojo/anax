@@ -190,11 +190,15 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
     @Override
     public void startAnaxTest(Test test) {
-        if (enabled) {
-            tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
-            if (CollectionUtils.isEmpty(tcSteps)) {//If no steps exist ,init map
-                tcComment = new HashMap<>();
+        try {
+            if (enabled) {
+                tcSteps = executionManager.getTestCaseSteps(project, version.trim(), cycleName.trim(), test.getTestBeanName());
+                if (CollectionUtils.isEmpty(tcSteps)) {//If no steps exist ,init map
+                    tcComment = new HashMap<>();
+                }
             }
+        } catch (Exception e) {
+            log.error("{} failed to start Anax test! Exception was {}", this.getClass().getName(), e.getMessage());
         }
     }
 
@@ -267,24 +271,27 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
     @Override
     public void endAnaxTest(Test test) {
-        if (enabled) {
+        try {
+            if (enabled) {
+                errorTCs.forEach(it -> passedTCs.remove(it));
+                failedTCs.forEach(it -> passedTCs.remove(it));
+                skippedTCs.forEach(it -> passedTCs.remove(it));
+                knowTCs.forEach(it -> passedTCs.remove(it));
 
-            errorTCs.forEach(it -> passedTCs.remove(it));
-            failedTCs.forEach(it -> passedTCs.remove(it));
-            skippedTCs.forEach(it -> passedTCs.remove(it));
-            knowTCs.forEach(it -> passedTCs.remove(it));
-
-            errorTCs.forEach(it -> knowTCs.remove(it));
-            failedTCs.forEach(it -> knowTCs.remove(it));
+                errorTCs.forEach(it -> knowTCs.remove(it));
+                failedTCs.forEach(it -> knowTCs.remove(it));
 
 
-            if (testStepStatusUpdateEnabled) {
-                if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
-                    executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed Steps:\n" + tcCommentPrettyPrint(tcComment));
+                if (testStepStatusUpdateEnabled) {
+                    if (!passedTCs.contains(test.getTestBeanName()) && CollectionUtils.isEmpty(tcSteps) && !tcComment.isEmpty()) {//is not pass and has no steps
+                        executionManager.updateTestExecutionComment(project, version.trim(), cycleName.trim(), test.getTestBeanName(), "Failed Steps:\n" + tcCommentPrettyPrint(tcComment));
+                    }
                 }
-            }
 
-            executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(), anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
+                executionManager.updateTestExecutionBugs(project, version.trim(), cycleName.trim(), test.getTestBeanName(), anaxIssueAnnotationResolver.resolveBugsFromAnnotation(test.getTestIssues()));
+            }
+        } catch (Exception e) {
+            log.error("{} failed to end Anax test! Exception was {}", this.getClass().getName(), e.getMessage());
         }
     }
 
@@ -295,9 +302,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
 
             log.info("Added TC on the failedTCs is: " + test.getTestBeanName());
             failed = true;
-            if(!issues.isEmpty()){//Fails with known - knowTCs
+            if (!issues.isEmpty()) {//Fails with known - knowTCs
                 knowTCs.add(test.getTestBeanName());
-            }else {//Fails with No known(s) - failedTCs
+            } else {//Fails with No known(s) - failedTCs
                 failedTCs.add(test.getTestBeanName());
             }
         }
@@ -329,9 +336,9 @@ public class AnaxZapiReporter implements AnaxTestReporter, ReporterSupportsScree
             log.info("Added TC on the errorTCs is: " + test.getTestBeanName());
             failed = true;
 
-            if(!issues.isEmpty()){//Fails with known - knowTCs
+            if (!issues.isEmpty()) {//Fails with known - knowTCs
                 knowTCs.add(test.getTestBeanName());
-            }else {//Fails with No known(s) - failedTCs
+            } else {//Fails with No known(s) - failedTCs
                 errorTCs.add(test.getTestBeanName());
             }
 
